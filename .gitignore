@@ -52,3 +52,9 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# EasySave runtime output folder if created inside the repository during tests
+BackupState/
+
+# Runtime job registry if copied into the repository during tests
+jobs.json
