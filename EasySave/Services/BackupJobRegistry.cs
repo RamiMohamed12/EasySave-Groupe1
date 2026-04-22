@@ -26,13 +26,14 @@ public class BackupJobRegistry
             return;
         }
 
+        string sampleRootDirectory = GetSampleRootDirectory();
         var sampleJobs = new List<BackupJob>
         {
-            new BackupJob { Name = "Job1", Source = "/home/user/source1", Target = "/home/user/target1", Type = BackupType.Full },
-            new BackupJob { Name = "Job2", Source = "/home/user/source2", Target = "/home/user/target2", Type = BackupType.Differential },
-            new BackupJob { Name = "Job3", Source = "/home/user/source3", Target = "/home/user/target3", Type = BackupType.Full },
-            new BackupJob { Name = "Job4", Source = "/home/user/source4", Target = "/home/user/target4", Type = BackupType.Differential },
-            new BackupJob { Name = "Job5", Source = "/home/user/source5", Target = "/home/user/target5", Type = BackupType.Full }
+            new BackupJob { Name = "Job1", Source = Path.Combine(sampleRootDirectory, "Source1"), Target = Path.Combine(sampleRootDirectory, "Target1"), Type = BackupType.Full },
+            new BackupJob { Name = "Job2", Source = Path.Combine(sampleRootDirectory, "Source2"), Target = Path.Combine(sampleRootDirectory, "Target2"), Type = BackupType.Differential },
+            new BackupJob { Name = "Job3", Source = Path.Combine(sampleRootDirectory, "Source3"), Target = Path.Combine(sampleRootDirectory, "Target3"), Type = BackupType.Full },
+            new BackupJob { Name = "Job4", Source = Path.Combine(sampleRootDirectory, "Source4"), Target = Path.Combine(sampleRootDirectory, "Target4"), Type = BackupType.Differential },
+            new BackupJob { Name = "Job5", Source = Path.Combine(sampleRootDirectory, "Source5"), Target = Path.Combine(sampleRootDirectory, "Target5"), Type = BackupType.Full }
         };
 
         var options = new JsonSerializerOptions
@@ -40,7 +41,31 @@ public class BackupJobRegistry
             WriteIndented = true
         };
 
-        string json = JsonSerializer.Serialize(sampleJobs, options);
-        File.WriteAllText(_jobsFilePath, json);
+        try
+        {
+            using FileStream stream = new FileStream(_jobsFilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+            JsonSerializer.Serialize(stream, sampleJobs, options);
+        }
+        catch (IOException) when (File.Exists(_jobsFilePath))
+        {
+            // Another process created the default configuration first.
+        }
+    }
+
+    private static string GetSampleRootDirectory()
+    {
+        string baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            baseDirectory = RuntimeStoragePaths.BackupStateDirectory;
+        }
+
+        return Path.Combine(baseDirectory, "EasySaveSamples");
     }
 }
