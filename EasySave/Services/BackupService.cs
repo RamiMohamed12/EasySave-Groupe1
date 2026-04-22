@@ -5,22 +5,25 @@ public class BackupService : IBackupService
     private readonly BackupHistoryService _backupHistoryService;
     private readonly LoggerService _loggerService;
     private readonly StateService _stateService;
+    private readonly ApplicationTextService _textService;
 
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
-        BackupHistoryService backupHistoryService)
+        BackupHistoryService backupHistoryService,
+        ApplicationTextService textService)
     {
         _loggerService = loggerService;
         _stateService = stateService;
         _backupHistoryService = backupHistoryService;
+        _textService = textService;
     }
 
     public void StartBackup(BackupJob backupJob)
     {
         if (!Directory.Exists(backupJob.Source))
         {
-            Console.WriteLine("Source directory does not exist.");
+            Console.WriteLine(_textService.GetSourceDirectoryMissingMessage());
             return;
         }
 

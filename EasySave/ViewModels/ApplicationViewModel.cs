@@ -3,28 +3,38 @@ public class ApplicationViewModel
     private readonly ArgumentParser _argumentParser;
     private readonly BackupJobRegistry _jobRegistry;
     private readonly BackupController _backupController;
+    private readonly StateService _stateService;
+    private readonly ApplicationTextService _textService;
 
     public IReadOnlyList<string> Messages { get; private set; }
     public IReadOnlyList<BackupJob> SelectedJobs { get; private set; }
+    public IReadOnlyList<BackupJob> AvailableJobs { get; private set; }
 
     public bool CanStartBackups => Messages.Count == 0 && SelectedJobs.Count > 0;
 
     public ApplicationViewModel(
         ArgumentParser argumentParser,
         BackupJobRegistry jobRegistry,
-        BackupController backupController)
+        BackupController backupController,
+        StateService stateService,
+        ApplicationTextService textService)
     {
         _argumentParser = argumentParser;
         _jobRegistry = jobRegistry;
         _backupController = backupController;
+        _stateService = stateService;
+        _textService = textService;
         Messages = Array.Empty<string>();
         SelectedJobs = Array.Empty<BackupJob>();
+        AvailableJobs = Array.Empty<BackupJob>();
     }
 
     public void Load(string[] args)
     {
         Messages = Array.Empty<string>();
         SelectedJobs = Array.Empty<BackupJob>();
+        AvailableJobs = _jobRegistry.LoadJobs();
+        _stateService.SynchronizeConfiguredJobs(AvailableJobs);
 
         try
         {
@@ -32,18 +42,17 @@ public class ApplicationViewModel
             {
                 Messages = new[]
                 {
-                    "Usage: EasySave <job-selection>",
-                    "Examples: EasySave 1-3 | EasySave 1;3 | EasySave 2"
+                    _textService.GetUsageMessage(),
+                    _textService.GetUsageExamples()
                 };
                 return;
             }
 
             List<int> selectedJobNumbers = _argumentParser.ParseJobSelection(args[0]);
-            IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
 
-            if (jobs.Count == 0)
+            if (AvailableJobs.Count == 0)
             {
-                Messages = new[] { "No backup jobs are configured." };
+                Messages = new[] { _textService.GetNoConfiguredJobsMessage() };
                 return;
             }
 
@@ -51,13 +60,13 @@ public class ApplicationViewModel
 
             foreach (int jobNumber in selectedJobNumbers)
             {
-                if (jobNumber > jobs.Count)
+                if (jobNumber > AvailableJobs.Count)
                 {
-                    Messages = new[] { $"Job {jobNumber} is not configured in jobs.json." };
+                    Messages = new[] { _textService.GetJobNotConfiguredMessage(jobNumber) };
                     return;
                 }
 
-                selectedJobs.Add(jobs[jobNumber - 1]);
+                selectedJobs.Add(AvailableJobs[jobNumber - 1]);
             }
 
             SelectedJobs = selectedJobs;

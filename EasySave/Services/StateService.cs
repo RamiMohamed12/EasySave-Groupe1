@@ -3,18 +3,77 @@ using System.Text.Json;
 public class StateService
 {
     private readonly string _stateFilePath;
+    private readonly string _jobsFilePath;
     private readonly Dictionary<string, BackupState> _statesByBackupName;
 
     public StateService()
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
+        _jobsFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "jobs.json");
         _statesByBackupName = new Dictionary<string, BackupState>();
     }
 
     public void WriteState(BackupState state)
     {
         _statesByBackupName[state.BackupName] = state;
+        SynchronizeConfiguredJobsCore(LoadConfiguredJobs());
+        WriteStateSnapshot();
+    }
 
+    public void SynchronizeConfiguredJobs(IEnumerable<BackupJob> jobs)
+    {
+        SynchronizeConfiguredJobsCore(jobs);
+        WriteStateSnapshot();
+    }
+
+    private void SynchronizeConfiguredJobsCore(IEnumerable<BackupJob> jobs)
+    {
+        var configuredJobNames = jobs
+            .Select(job => job.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string backupName in _statesByBackupName.Keys.ToList())
+        {
+            if (!configuredJobNames.Contains(backupName))
+            {
+                _statesByBackupName.Remove(backupName);
+            }
+        }
+
+        DateTime snapshotTime = DateTime.Now;
+
+        foreach (BackupJob job in jobs)
+        {
+            if (_statesByBackupName.ContainsKey(job.Name))
+            {
+                continue;
+            }
+
+            _statesByBackupName[job.Name] = new BackupState
+            {
+                BackupName = job.Name,
+                IsRunning = false,
+                LastBackupUpdateTime = snapshotTime
+            };
+        }
+    }
+
+    private IReadOnlyList<BackupJob> LoadConfiguredJobs()
+    {
+        if (!File.Exists(_jobsFilePath))
+        {
+            return Array.Empty<BackupJob>();
+        }
+
+        string json = File.ReadAllText(_jobsFilePath);
+        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json);
+
+        return jobs ?? new List<BackupJob>();
+    }
+
+    private void WriteStateSnapshot()
+    {
         var options = new JsonSerializerOptions
         {
             WriteIndented = true
