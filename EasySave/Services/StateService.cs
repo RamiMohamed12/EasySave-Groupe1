@@ -10,7 +10,7 @@ public class StateService
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
         _jobsFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "jobs.json");
-        _statesByBackupName = new Dictionary<string, BackupState>();
+        _statesByBackupName = LoadExistingStates();
     }
 
     public void WriteState(BackupState state)
@@ -70,6 +70,31 @@ public class StateService
         List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json);
 
         return jobs ?? new List<BackupJob>();
+    }
+
+    private Dictionary<string, BackupState> LoadExistingStates()
+    {
+        if (!File.Exists(_stateFilePath))
+        {
+            return new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        string json = File.ReadAllText(_stateFilePath);
+        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json);
+        var statesByBackupName = new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
+
+        if (states is null)
+        {
+            return statesByBackupName;
+        }
+
+        foreach (BackupState state in states)
+        {
+            state.LastRunTransferredFiles ??= new List<BackupTransferredFile>();
+            statesByBackupName[state.BackupName] = state;
+        }
+
+        return statesByBackupName;
     }
 
     private void WriteStateSnapshot()

@@ -1,4 +1,4 @@
 public interface IBackupService
 {
-    void StartBackup(BackupJob backupJob);
+    void StartBackup(SelectedBackupJob selectedBackupJob);
 }
