@@ -7,14 +7,14 @@ public class BackupController
         _backupService = backupService;
     }
 
-    public void StartBackup(BackupJob backupJob)
+    public void StartBackup(SelectedBackupJob selectedBackupJob)
     {
-        _backupService.StartBackup(backupJob);
+        _backupService.StartBackup(selectedBackupJob);
     }
 
-    public void StartBackups(IEnumerable<BackupJob> backupJobs)
+    public void StartBackups(IEnumerable<SelectedBackupJob> backupJobs)
     {
-        foreach (BackupJob backupJob in backupJobs)
+        foreach (SelectedBackupJob backupJob in backupJobs)
         {
             _backupService.StartBackup(backupJob);
         }

@@ -15,6 +15,9 @@ public class BackupState
 
     public long TotalEligibleBytes {get; set;}
     public long RemainingBytes {get; set;}
+    public DateTime? LastRunStartedAt { get; set; }
+    public DateTime? LastRunCompletedAt { get; set; }
+    public List<BackupTransferredFile> LastRunTransferredFiles { get; set; }
 
     public double Progress => TotalEligibleBytes > 0 ? (double)TransferredBytes / TotalEligibleBytes * 100 : 0;
     public BackupState()
@@ -30,6 +33,9 @@ public class BackupState
         RemainingFileCount = 0;
         TotalEligibleBytes = 0;
         RemainingBytes = 0;
+        LastRunStartedAt = null;
+        LastRunCompletedAt = null;
+        LastRunTransferredFiles = new List<BackupTransferredFile>();
     }
     
 }

@@ -29,6 +29,8 @@ If the job is running:
 - Full address of the source file being backed up
 - Full address of the destination file
 
+In this implementation, `state.json` remains a per-job live status file and also stores the details of the most recent run for each configured job. The daily dated log file remains the full long-term history of all copied files across runs.
+
 The locations of both files (daily log and real-time state) must be studied to work on our clients' servers. Avoid locations like `c:\temp\`.
 
 All files (daily log and state) and configuration files must be in JSON format. For quick reading via Notepad, line breaks between JSON elements are necessary. Pagination would be a bonus.
