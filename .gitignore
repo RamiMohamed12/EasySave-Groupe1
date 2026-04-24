@@ -58,3 +58,9 @@ BackupState/
 
 # Runtime job registry if copied into the repository during tests
 jobs.json
+
+publish/EasySave
+
+.vs/
+
+
