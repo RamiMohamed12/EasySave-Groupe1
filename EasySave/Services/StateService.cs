@@ -75,7 +75,7 @@ public class StateService
         }
 
         string json = File.ReadAllText(_jobsFilePath);
-        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json);
+        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json, _serializerOptions);
 
         return jobs ?? new List<BackupJob>();
     }
@@ -88,7 +88,7 @@ public class StateService
         }
 
         string json = File.ReadAllText(_stateFilePath);
-        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json);
+        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json, _serializerOptions);
         var statesByBackupName = new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
 
         if (states is null)

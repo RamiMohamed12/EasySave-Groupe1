@@ -23,7 +23,7 @@ public class BackupJobRegistry
         EnsureJobsFileExists();
 
         string json = File.ReadAllText(_jobsFilePath);
-        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json);
+        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json, _serializerOptions);
         List<BackupJob> normalizedJobs = NormalizeJobs(jobs ?? new List<BackupJob>());
 
         SaveJobs(normalizedJobs);
