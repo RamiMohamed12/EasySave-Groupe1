@@ -2,11 +2,18 @@ using System.Text.Json;
 
 public class BackupJobRegistry
 {
+    public const int MaximumJobs = 5;
+
     private readonly string _jobsFilePath;
+    private readonly JsonSerializerOptions _serializerOptions;
 
     public BackupJobRegistry()
     {
         _jobsFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "jobs.json");
+        _serializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
     }
 
     public IReadOnlyList<BackupJob> LoadJobs()
@@ -15,8 +22,10 @@ public class BackupJobRegistry
 
         string json = File.ReadAllText(_jobsFilePath);
         List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json);
+        List<BackupJob> normalizedJobs = NormalizeJobs(jobs ?? new List<BackupJob>());
 
-        return jobs ?? new List<BackupJob>();
+        SaveJobs(normalizedJobs);
+        return normalizedJobs;
     }
 
     private void EnsureJobsFileExists()
@@ -26,25 +35,12 @@ public class BackupJobRegistry
             return;
         }
 
-        string sampleRootDirectory = GetSampleRootDirectory();
-        var sampleJobs = new List<BackupJob>
-        {
-            new BackupJob { Name = "Job1", Source = Path.Combine(sampleRootDirectory, "Source1"), Target = Path.Combine(sampleRootDirectory, "Target1"), Type = BackupType.Full },
-            new BackupJob { Name = "Job2", Source = Path.Combine(sampleRootDirectory, "Source2"), Target = Path.Combine(sampleRootDirectory, "Target2"), Type = BackupType.Differential },
-            new BackupJob { Name = "Job3", Source = Path.Combine(sampleRootDirectory, "Source3"), Target = Path.Combine(sampleRootDirectory, "Target3"), Type = BackupType.Full },
-            new BackupJob { Name = "Job4", Source = Path.Combine(sampleRootDirectory, "Source4"), Target = Path.Combine(sampleRootDirectory, "Target4"), Type = BackupType.Differential },
-            new BackupJob { Name = "Job5", Source = Path.Combine(sampleRootDirectory, "Source5"), Target = Path.Combine(sampleRootDirectory, "Target5"), Type = BackupType.Full }
-        };
-
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
+        List<BackupJob> defaultJobs = CreateDefaultJobs();
 
         try
         {
             using FileStream stream = new FileStream(_jobsFilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
-            JsonSerializer.Serialize(stream, sampleJobs, options);
+            JsonSerializer.Serialize(stream, defaultJobs, _serializerOptions);
         }
         catch (IOException) when (File.Exists(_jobsFilePath))
         {
@@ -52,20 +48,40 @@ public class BackupJobRegistry
         }
     }
 
-    private static string GetSampleRootDirectory()
+    private void SaveJobs(List<BackupJob> jobs)
     {
-        string baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string json = JsonSerializer.Serialize(jobs, _serializerOptions);
+        File.WriteAllText(_jobsFilePath, json);
+    }
 
-        if (string.IsNullOrWhiteSpace(baseDirectory))
+    private static List<BackupJob> NormalizeJobs(IReadOnlyList<BackupJob> jobs)
+    {
+        List<BackupJob> defaultJobs = CreateDefaultJobs();
+
+        for (int index = 0; index < MaximumJobs; index++)
         {
-            baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (index >= jobs.Count)
+            {
+                continue;
+            }
+
+            BackupJob existingJob = jobs[index] ?? new BackupJob();
+            defaultJobs[index].Source = existingJob.Source ?? string.Empty;
+            defaultJobs[index].Target = existingJob.Target ?? string.Empty;
         }
 
-        if (string.IsNullOrWhiteSpace(baseDirectory))
-        {
-            baseDirectory = RuntimeStoragePaths.BackupStateDirectory;
-        }
+        return defaultJobs;
+    }
 
-        return Path.Combine(baseDirectory, "EasySaveSamples");
+    private static List<BackupJob> CreateDefaultJobs()
+    {
+        return new List<BackupJob>
+        {
+            new BackupJob { Name = "Job1", Source = string.Empty, Target = string.Empty, Type = BackupType.Full },
+            new BackupJob { Name = "Job2", Source = string.Empty, Target = string.Empty, Type = BackupType.Differential },
+            new BackupJob { Name = "Job3", Source = string.Empty, Target = string.Empty, Type = BackupType.Full },
+            new BackupJob { Name = "Job4", Source = string.Empty, Target = string.Empty, Type = BackupType.Differential },
+            new BackupJob { Name = "Job5", Source = string.Empty, Target = string.Empty, Type = BackupType.Full }
+        };
     }
 }
