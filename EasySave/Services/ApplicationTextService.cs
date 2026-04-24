@@ -250,8 +250,8 @@ public class ApplicationTextService
             string readableBytes = FormatBytes(result.TransferredBytes);
             string elapsedTime = FormatDuration(result.ElapsedTime);
             return _useFrench
-                ? $"Tache {result.JobNumber} terminee : {result.BackupName}\n  Fichiers transferes : {result.TransferredFileCount}\n  Octets transferes : {readableBytes}\n  Temps ecoule : {elapsedTime}"
-                : $"Job {result.JobNumber} completed: {result.BackupName}\n  Transferred files: {result.TransferredFileCount}\n  Transferred bytes: {readableBytes}\n  Elapsed time: {elapsedTime}";
+                ? $"Fichiers transferes : {result.TransferredFileCount}\nOctets transferes : {readableBytes}\nTemps ecoule : {elapsedTime}"
+                : $"Transferred files: {result.TransferredFileCount}\nTransferred bytes: {readableBytes}\nElapsed time: {elapsedTime}";
         }
 
         return _useFrench

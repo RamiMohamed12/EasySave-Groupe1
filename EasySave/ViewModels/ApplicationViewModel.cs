@@ -82,6 +82,7 @@ public class ApplicationViewModel
                 {
                     _textService.GetJobPathUpdatedMessage(command.JobNumber, updatedJob, command.PathField.Value)
                 };
+                ShowJobList = true;
                 ConfiguredJobNumber = command.JobNumber;
                 IsConfigurationMessage = true;
                 return;
@@ -121,7 +122,11 @@ public class ApplicationViewModel
 
         IReadOnlyList<BackupResult> results = _backupController.StartBackups(SelectedJobs);
         var messages = new List<string>(results.Select(_textService.FormatBackupResult));
-        messages.Add(_textService.GetBackupSuccessMessage());
+        if (results.All(result => result.Status == BackupExecutionStatus.Finished))
+        {
+            messages.Add(_textService.GetBackupSuccessMessage());
+        }
+
         Messages = messages;
         IsBackupResultMessage = true;
     }
