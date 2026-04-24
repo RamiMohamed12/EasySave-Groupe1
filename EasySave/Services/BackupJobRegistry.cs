@@ -9,7 +9,7 @@ public class BackupJobRegistry
 
     public BackupJobRegistry()
     {
-        _jobsFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "jobs.json");
+        _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
         _serializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true

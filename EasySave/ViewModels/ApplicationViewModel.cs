@@ -77,6 +77,21 @@ public class ApplicationViewModel
                 return;
             }
 
+            if (command.Type == CliCommandType.ConfigureStorageDirectory)
+            {
+                RuntimeStoragePaths.SetStorageDirectory(command.PathValue);
+                var jobRegistry = new BackupJobRegistry();
+                var stateService = new StateService();
+                AvailableJobs = jobRegistry.LoadJobs();
+                stateService.SynchronizeConfiguredJobs(AvailableJobs);
+                Messages = new[]
+                {
+                    _textService.GetStorageDirectoryUpdatedMessage(RuntimeStoragePaths.BackupStateDirectory)
+                };
+                ShowJobList = true;
+                return;
+            }
+
             SelectedJobs = BuildSelectedJobs(command.SelectedJobNumbers);
         }
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException)

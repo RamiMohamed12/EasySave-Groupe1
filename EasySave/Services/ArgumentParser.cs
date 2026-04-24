@@ -24,6 +24,11 @@ public class ArgumentParser
                 return ParseConfigureCommand(args);
             }
 
+            if (IsStorageDirectoryArgument(args))
+            {
+                return ParseStorageDirectoryCommand(args);
+            }
+
             throw new ArgumentException(_textService.GetInvalidCommandMessage());
         }
 
@@ -142,5 +147,32 @@ public class ArgumentParser
     {
         return args.Length > 0
             && args[0].Equals("--configure", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private CliCommand ParseStorageDirectoryCommand(string[] args)
+    {
+        if (args.Length != 2)
+        {
+            throw new ArgumentException(_textService.GetInvalidStorageDirectoryCommandMessage());
+        }
+
+        string pathValue = args[1]?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(pathValue))
+        {
+            throw new ArgumentException(_textService.GetPathValueRequiredMessage());
+        }
+
+        return new CliCommand
+        {
+            Type = CliCommandType.ConfigureStorageDirectory,
+            PathValue = pathValue
+        };
+    }
+
+    private static bool IsStorageDirectoryArgument(string[] args)
+    {
+        return args.Length > 0
+            && args[0].Equals("--storage-dir", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -24,8 +24,8 @@ public class ApplicationTextService
     public string GetUsageMessage()
     {
         return _useFrench
-            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin>"
-            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path>";
+            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin> | EasySave --storage-dir <chemin>"
+            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path> | EasySave --storage-dir <path>";
     }
 
     public string GetUsageExamples()
@@ -126,6 +126,13 @@ public class ApplicationTextService
             : "A non-empty path is required.";
     }
 
+    public string GetInvalidStorageDirectoryCommandMessage()
+    {
+        return _useFrench
+            ? "Commande storage-dir invalide. Utilisez : EasySave --storage-dir <chemin>."
+            : "Invalid storage-dir command. Use: EasySave --storage-dir <path>.";
+    }
+
     public IReadOnlyList<string> GetHelpLines()
     {
         return new[]
@@ -147,6 +154,9 @@ public class ApplicationTextService
             _useFrench
                 ? "Utilisez --configure <job> source <chemin> ou --configure <job> target <chemin> pour modifier un slot."
                 : "Use --configure <job> source <path> or --configure <job> target <path> to update a slot.",
+            _useFrench
+                ? "Utilisez --storage-dir <chemin> pour deplacer jobs.json, state.json, backup-history.json et les logs."
+                : "Use --storage-dir <path> to relocate jobs.json, state.json, backup-history.json, and the logs.",
             GetUsageExamples(),
             _useFrench
                 ? "Exemple invalide : EasySave 2-1, car le debut de plage doit etre inferieur ou egal a la fin."
@@ -210,6 +220,13 @@ public class ApplicationTextService
         return _useFrench
             ? $"La tache {jobNumber} a ete mise a jour : {fieldName} = {pathValue}"
             : $"Job {jobNumber} was updated: {fieldName} = {pathValue}";
+    }
+
+    public string GetStorageDirectoryUpdatedMessage(string path)
+    {
+        return _useFrench
+            ? $"Le dossier de stockage runtime a ete mis a jour : {path}"
+            : $"Runtime storage directory was updated: {path}";
     }
 
     public string GetBackupTypeDisplayName(BackupType backupType)

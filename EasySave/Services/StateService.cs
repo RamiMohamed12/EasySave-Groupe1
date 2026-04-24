@@ -9,7 +9,7 @@ public class StateService
     public StateService()
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
-        _jobsFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "jobs.json");
+        _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
         _statesByBackupName = LoadExistingStates();
     }
 

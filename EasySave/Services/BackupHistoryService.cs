@@ -6,7 +6,7 @@ public class BackupHistoryService
 
     public BackupHistoryService()
     {
-        _historyFilePath = Path.Combine(RuntimeStoragePaths.BackupStateDirectory, "backup-history.json");
+        _historyFilePath = RuntimeStoragePaths.BackupHistoryFilePath;
     }
 
     public DateTime? GetLastFullBackupUtc(string backupName)
