@@ -12,12 +12,12 @@ public class StateService
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
         _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
-        _statesByBackupName = LoadExistingStates();
         _serializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true
         };
         _serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        _statesByBackupName = LoadExistingStates();
     }
 
     public void WriteState(BackupState state)
