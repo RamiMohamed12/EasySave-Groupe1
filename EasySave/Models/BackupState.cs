@@ -5,10 +5,13 @@ public class BackupState
     public string CurrentSourcePath {get; set;}
     public string CurrentTargetPath {get; set;}
     public bool IsRunning {get; set;} 
+    public BackupExecutionStatus Status { get; set; }
+    public string ErrorMessage { get; set; }
     public long CurrentFileSize {get; set;}
     public DateTime LastBackupUpdateTime {get; set;}
 
     public long TransferredBytes {get; set;}
+    public long ProcessedBytes { get; set; }
 
     public long TotalEligibleFileCount {get; set;}
     public long RemainingFileCount {get; set;}
@@ -19,16 +22,19 @@ public class BackupState
     public DateTime? LastRunCompletedAt { get; set; }
     public List<BackupTransferredFile> LastRunTransferredFiles { get; set; }
 
-    public double Progress => TotalEligibleBytes > 0 ? (double)TransferredBytes / TotalEligibleBytes * 100 : 0;
+    public double Progress => TotalEligibleBytes > 0 ? (double)ProcessedBytes / TotalEligibleBytes * 100 : 0;
     public BackupState()
     {
         BackupName = "";
         CurrentSourcePath = "";
         CurrentTargetPath = "";
         IsRunning = false;
+        Status = BackupExecutionStatus.Inactive;
+        ErrorMessage = string.Empty;
         CurrentFileSize = 0;
         LastBackupUpdateTime = DateTime.MinValue;
         TransferredBytes = 0;
+        ProcessedBytes = 0;
         TotalEligibleFileCount = 0;
         RemainingFileCount = 0;
         TotalEligibleBytes = 0;

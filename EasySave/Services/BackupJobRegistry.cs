@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public class BackupJobRegistry
 {
@@ -14,6 +15,7 @@ public class BackupJobRegistry
         {
             WriteIndented = true
         };
+        _serializerOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
     public IReadOnlyList<BackupJob> LoadJobs()

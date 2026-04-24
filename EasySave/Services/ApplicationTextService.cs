@@ -63,6 +63,20 @@ public class ApplicationTextService
             : $"Job {selectedBackupJob.JobNumber} ({selectedBackupJob.Job.Name}) failed: source directory does not exist: {selectedBackupJob.Job.Source}";
     }
 
+    public string GetSourcePathRequiredMessage()
+    {
+        return _useFrench
+            ? "Le chemin source doit etre configure avant l'execution."
+            : "Source path must be configured before execution.";
+    }
+
+    public string GetTargetPathRequiredMessage()
+    {
+        return _useFrench
+            ? "Le chemin cible doit etre configure avant l'execution."
+            : "Target path must be configured before execution.";
+    }
+
     public string GetSelectionRequiredMessage()
     {
         return _useFrench
@@ -227,6 +241,20 @@ public class ApplicationTextService
         return _useFrench
             ? $"Le dossier de stockage runtime a ete mis a jour : {path}"
             : $"Runtime storage directory was updated: {path}";
+    }
+
+    public string FormatBackupResult(BackupResult result)
+    {
+        if (result.Status == BackupExecutionStatus.Finished)
+        {
+            return _useFrench
+                ? $"Tache {result.JobNumber} terminee : {result.BackupName} | fichiers transferes : {result.TransferredFileCount} | octets transferes : {result.TransferredBytes}"
+                : $"Job {result.JobNumber} completed: {result.BackupName} | transferred files: {result.TransferredFileCount} | transferred bytes: {result.TransferredBytes}";
+        }
+
+        return _useFrench
+            ? $"Tache {result.JobNumber} en erreur : {result.BackupName} | {result.ErrorMessage}"
+            : $"Job {result.JobNumber} failed: {result.BackupName} | {result.ErrorMessage}";
     }
 
     public string GetBackupTypeDisplayName(BackupType backupType)

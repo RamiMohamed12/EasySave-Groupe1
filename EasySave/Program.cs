@@ -16,3 +16,8 @@ var view = new ConsoleApplicationView(textService);
 viewModel.Load(args);
 view.Render(viewModel);
 viewModel.StartBackups();
+
+if (viewModel.Messages.Count > 0)
+{
+    view.Render(viewModel);
+}

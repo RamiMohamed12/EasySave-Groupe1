@@ -109,7 +109,8 @@ public class ApplicationViewModel
             return;
         }
 
-        _backupController.StartBackups(SelectedJobs);
+        IReadOnlyList<BackupResult> results = _backupController.StartBackups(SelectedJobs);
+        Messages = results.Select(_textService.FormatBackupResult).ToList();
     }
 
     private IReadOnlyList<SelectedBackupJob> BuildSelectedJobs(IEnumerable<int> selectedJobNumbers)

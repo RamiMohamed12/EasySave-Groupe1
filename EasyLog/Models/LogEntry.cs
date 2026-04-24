@@ -8,6 +8,10 @@ public class LogEntry
 
     public string DestinationPath { get; set; }
 
+    public string ActionType { get; set; }
+
+    public string ErrorMessage { get; set; }
+
     // One log entry represents one copied file, so this stores a single file size.
     public long FileSizeBytes { get; set; }
 
@@ -20,6 +24,8 @@ public class LogEntry
         BackupName = string.Empty;
         SourcePath = string.Empty;
         DestinationPath = string.Empty;
+        ActionType = string.Empty;
+        ErrorMessage = string.Empty;
         FileSizeBytes = 0;
         TransferTimeMilliseconds = 0;
     }

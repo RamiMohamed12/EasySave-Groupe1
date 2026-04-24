@@ -1,16 +1,23 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public class StateService
 {
     private readonly string _stateFilePath;
     private readonly string _jobsFilePath;
     private readonly Dictionary<string, BackupState> _statesByBackupName;
+    private readonly JsonSerializerOptions _serializerOptions;
 
     public StateService()
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
         _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
         _statesByBackupName = LoadExistingStates();
+        _serializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+        _serializerOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
     public void WriteState(BackupState state)
@@ -54,6 +61,7 @@ public class StateService
             {
                 BackupName = job.Name,
                 IsRunning = false,
+                Status = BackupExecutionStatus.Inactive,
                 LastBackupUpdateTime = snapshotTime
             };
         }
@@ -99,16 +107,11 @@ public class StateService
 
     private void WriteStateSnapshot()
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-
         List<BackupState> stateSnapshot = _statesByBackupName.Values
             .OrderBy(currentState => currentState.BackupName)
             .ToList();
 
-        string json = JsonSerializer.Serialize(stateSnapshot, options);
+        string json = JsonSerializer.Serialize(stateSnapshot, _serializerOptions);
         File.WriteAllText(_stateFilePath, json);
     }
 }
