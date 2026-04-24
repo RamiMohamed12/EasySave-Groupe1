@@ -69,6 +69,20 @@ public class ApplicationViewModelTests
         Assert.Single(viewModel.Messages);
     }
 
+    [Fact]
+    public void StartBackups_AfterSelection_FormatsControllerResults()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out FakeBackupService fakeBackupService);
+
+        viewModel.Load(["1;3"]);
+        viewModel.StartBackups();
+
+        Assert.Equal([1, 3], fakeBackupService.ReceivedJobs.Select(job => job.JobNumber).ToArray());
+        Assert.Equal(2, viewModel.Messages.Count);
+        Assert.Contains("Job 1", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
+    }
+
     private static ApplicationViewModel CreateViewModel(out FakeBackupService fakeBackupService)
     {
         var textService = ApplicationTextService.Create();
@@ -93,7 +107,9 @@ public class ApplicationViewModelTests
             {
                 JobNumber = selectedBackupJob.JobNumber,
                 BackupName = selectedBackupJob.Job.Name,
-                Status = BackupExecutionStatus.Finished
+                Status = BackupExecutionStatus.Finished,
+                TransferredFileCount = 1,
+                TransferredBytes = 10
             };
         }
     }
