@@ -1,0 +1,148 @@
+using System.Text.Json;
+
+namespace EasySave.Tests;
+
+public class BackupServiceTests
+{
+    [Fact]
+    public void StartBackup_ReturnsError_WhenSourcePathIsNotConfigured()
+    {
+        using var workspace = new TestWorkspace();
+        BackupJob job = PrepareConfiguredSlot(1, source: "", target: workspace.CreateDirectory("target"));
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Error, result.Status);
+        Assert.Contains("Source", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void StartBackup_FullBackupCopiesFiles_AndWritesRuntimeArtifacts()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source", "nested");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "report.txt"), "monthly report");
+        BackupJob job = PrepareConfiguredSlot(1, workspace.GetPath("source"), targetDirectory);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.True(File.Exists(Path.Combine(targetDirectory, "nested", "report.txt")));
+
+        List<LogEntry> logs = LoadLogEntries();
+        Assert.Contains(logs, entry => entry.ActionType == "CreateDirectory");
+        Assert.Contains(logs, entry => entry.ActionType == "FileTransfer");
+
+        List<BackupState> states = LoadStates();
+        Assert.Equal(BackupJobRegistry.MaximumJobs, states.Count);
+        Assert.Contains(states, state => state.BackupName == "Job1" && state.Status == BackupExecutionStatus.Finished);
+    }
+
+    [Fact]
+    public void StartBackup_DifferentialBackupCopiesOnlyChangedFiles()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "same.txt"), "same");
+        File.WriteAllText(Path.Combine(sourceDirectory, "changed.txt"), "before");
+
+        BackupJob fullJob = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+        BackupService service = CreateBackupService();
+        service.StartBackup(CreateSelectedJob(1, fullJob));
+
+        Thread.Sleep(1100);
+        File.WriteAllText(Path.Combine(sourceDirectory, "changed.txt"), "after");
+        File.WriteAllText(Path.Combine(sourceDirectory, "new.txt"), "new");
+
+        BackupJob differentialJob = new BackupJob
+        {
+            Name = fullJob.Name,
+            Source = fullJob.Source,
+            Target = fullJob.Target,
+            Type = BackupType.Differential
+        };
+
+        BackupResult result = service.StartBackup(CreateSelectedJob(1, differentialJob));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.Equal("same", File.ReadAllText(Path.Combine(targetDirectory, "same.txt")));
+        Assert.Equal("after", File.ReadAllText(Path.Combine(targetDirectory, "changed.txt")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(targetDirectory, "new.txt")));
+        Assert.Equal(2, result.TransferredFileCount);
+    }
+
+    [Fact]
+    public void StartBackup_ErrorDuringCopy_WritesNegativeTransferTime()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "blocked.txt"), "content");
+        Directory.CreateDirectory(Path.Combine(targetDirectory, "blocked.txt"));
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Error, result.Status);
+        LogEntry errorEntry = LoadLogEntries().Last(entry => entry.ActionType == "Error");
+        Assert.True(errorEntry.TransferTimeMilliseconds < 0);
+    }
+
+    [Fact]
+    public void StartBackup_FullSuccess_UpdatesBackupHistory()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "a.txt"), "A");
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.NotNull(new BackupHistoryService().GetLastFullBackupUtc("Job1"));
+    }
+
+    private static BackupService CreateBackupService()
+    {
+        return new BackupService(
+            new LoggerService(),
+            new StateService(),
+            new BackupHistoryService(),
+            ApplicationTextService.Create());
+    }
+
+    private static BackupJob PrepareConfiguredSlot(int jobNumber, string source, string target)
+    {
+        var registry = new BackupJobRegistry();
+        registry.UpdateJobPath(jobNumber, JobPathField.Source, source);
+        registry.UpdateJobPath(jobNumber, JobPathField.Target, target);
+        return registry.LoadJobs()[jobNumber - 1];
+    }
+
+    private static SelectedBackupJob CreateSelectedJob(int jobNumber, BackupJob job)
+    {
+        return new SelectedBackupJob
+        {
+            JobNumber = jobNumber,
+            Job = job
+        };
+    }
+
+    private static List<LogEntry> LoadLogEntries()
+    {
+        string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
+        return File.ReadAllLines(logFilePath)
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line => JsonSerializer.Deserialize<LogEntry>(line)!)
+            .ToList();
+    }
+
+    private static List<BackupState> LoadStates()
+    {
+        string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
+        return JsonSerializer.Deserialize<List<BackupState>>(json, JsonTestHelper.SerializerOptions) ?? new List<BackupState>();
+    }
+}
