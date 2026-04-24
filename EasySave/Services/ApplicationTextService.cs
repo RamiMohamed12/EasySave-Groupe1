@@ -24,8 +24,8 @@ public class ApplicationTextService
     public string GetUsageMessage()
     {
         return _useFrench
-            ? "Utilisation : EasySave <selection-des-taches> | EasySave --help"
-            : "Usage: EasySave <job-selection> | EasySave --help";
+            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches>"
+            : "Usage: EasySave | EasySave --help | EasySave <job-selection>";
     }
 
     public string GetUsageExamples()
@@ -105,11 +105,14 @@ public class ApplicationTextService
             GetUsageMessage(),
             string.Empty,
             _useFrench
-                ? "Une tache de sauvegarde est une entree de jobs.json avec un nom, un dossier source, un dossier cible et un type de sauvegarde."
-                : "A backup job is one entry in jobs.json with a name, a source folder, a target folder, and a backup type.",
+                ? "EasySave sans argument affiche les 5 taches configurees."
+                : "EasySave without arguments displays the 5 configured jobs.",
             _useFrench
-                ? "Les numeros de tache correspondent a la position des entrees dans jobs.json."
-                : "Job numbers match the position of entries in jobs.json.",
+                ? "Utilisez --help pour afficher cette aide."
+                : "Use --help to display this help.",
+            _useFrench
+                ? "Les numeros de tache vont de 1 a 5."
+                : "Job numbers range from 1 to 5.",
             _useFrench
                 ? "Vous pouvez lancer une seule tache, une plage ou une liste separee par des points-virgules."
                 : "You can run a single job, a range, or a semicolon-separated list.",
@@ -137,15 +140,15 @@ public class ApplicationTextService
     public string GetJobSourceLine(string sourcePath)
     {
         return _useFrench
-            ? $"  Source : {sourcePath}"
-            : $"  Source: {sourcePath}";
+            ? $"  Source : {FormatConfiguredPath(sourcePath)}"
+            : $"  Source: {FormatConfiguredPath(sourcePath)}";
     }
 
     public string GetJobTargetLine(string targetPath)
     {
         return _useFrench
-            ? $"  Cible : {targetPath}"
-            : $"  Target: {targetPath}";
+            ? $"  Cible : {FormatConfiguredPath(targetPath)}"
+            : $"  Target: {FormatConfiguredPath(targetPath)}";
     }
 
     public string GetJobTypeLine(BackupType backupType)
@@ -153,6 +156,17 @@ public class ApplicationTextService
         return _useFrench
             ? $"  Type : {GetBackupTypeDisplayName(backupType)}"
             : $"  Type: {GetBackupTypeDisplayName(backupType)}";
+    }
+
+    public string GetJobConfigurationStatusLine(BackupJob job)
+    {
+        string status = IsConfigured(job)
+            ? (_useFrench ? "Configure" : "Configured")
+            : (_useFrench ? "Incomplet" : "Incomplete");
+
+        return _useFrench
+            ? $"  Statut : {status}"
+            : $"  Status: {status}";
     }
 
     public string GetBackupTypeDisplayName(BackupType backupType)
@@ -303,5 +317,21 @@ public class ApplicationTextService
         }
 
         return $"{elapsedTime.TotalMilliseconds:0}ms";
+    }
+
+    private string FormatConfiguredPath(string path)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            return path;
+        }
+
+        return _useFrench ? "<non configure>" : "<not configured>";
+    }
+
+    private static bool IsConfigured(BackupJob job)
+    {
+        return !string.IsNullOrWhiteSpace(job.Source)
+            && !string.IsNullOrWhiteSpace(job.Target);
     }
 }

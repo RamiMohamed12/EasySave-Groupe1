@@ -53,6 +53,7 @@ public class ConsoleApplicationView
             Console.WriteLine(_textService.GetJobSourceLine(job.Source));
             Console.WriteLine(_textService.GetJobTargetLine(job.Target));
             Console.WriteLine(_textService.GetJobTypeLine(job.Type));
+            Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
             Console.WriteLine();
         }
     }

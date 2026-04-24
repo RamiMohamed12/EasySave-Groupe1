@@ -55,7 +55,6 @@ public class ApplicationViewModel
             if (command.Type == CliCommandType.ShowHelp)
             {
                 ShowHelp = true;
-                ShowJobList = true;
                 return;
             }
 
