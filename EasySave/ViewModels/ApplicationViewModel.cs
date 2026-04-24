@@ -64,9 +64,22 @@ public class ApplicationViewModel
                 return;
             }
 
+            if (command.Type == CliCommandType.ConfigureJobPath)
+            {
+                BackupJob updatedJob = _jobRegistry.UpdateJobPath(command.JobNumber, command.PathField!.Value, command.PathValue);
+                AvailableJobs = _jobRegistry.LoadJobs();
+                _stateService.SynchronizeConfiguredJobs(AvailableJobs);
+                Messages = new[]
+                {
+                    _textService.GetJobPathUpdatedMessage(command.JobNumber, updatedJob, command.PathField.Value)
+                };
+                ShowJobList = true;
+                return;
+            }
+
             SelectedJobs = BuildSelectedJobs(command.SelectedJobNumbers);
         }
-        catch (ArgumentException exception)
+        catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException)
         {
             Messages = new[] { exception.Message };
             ShowHelp = true;

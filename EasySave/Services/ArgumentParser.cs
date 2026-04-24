@@ -19,7 +19,12 @@ public class ArgumentParser
 
         if (args.Length != 1)
         {
-            throw new ArgumentException(_textService.GetSingleArgumentExpectedMessage());
+            if (IsConfigureArgument(args))
+            {
+                return ParseConfigureCommand(args);
+            }
+
+            throw new ArgumentException(_textService.GetInvalidCommandMessage());
         }
 
         if (IsHelpArgument(args[0]))
@@ -91,5 +96,51 @@ public class ArgumentParser
     {
         return argument.Equals("--help", StringComparison.OrdinalIgnoreCase)
             || argument.Equals("-h", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private CliCommand ParseConfigureCommand(string[] args)
+    {
+        if (args.Length != 4)
+        {
+            throw new ArgumentException(_textService.GetInvalidConfigureCommandMessage());
+        }
+
+        int jobNumber = ParseSingleIndex(args[1]);
+        JobPathField pathField = ParsePathField(args[2]);
+        string pathValue = args[3]?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(pathValue))
+        {
+            throw new ArgumentException(_textService.GetPathValueRequiredMessage());
+        }
+
+        return new CliCommand
+        {
+            Type = CliCommandType.ConfigureJobPath,
+            JobNumber = jobNumber,
+            PathField = pathField,
+            PathValue = pathValue
+        };
+    }
+
+    private JobPathField ParsePathField(string value)
+    {
+        if (value.Equals("source", StringComparison.OrdinalIgnoreCase))
+        {
+            return JobPathField.Source;
+        }
+
+        if (value.Equals("target", StringComparison.OrdinalIgnoreCase))
+        {
+            return JobPathField.Target;
+        }
+
+        throw new ArgumentException(_textService.GetInvalidConfigureFieldMessage());
+    }
+
+    private static bool IsConfigureArgument(string[] args)
+    {
+        return args.Length > 0
+            && args[0].Equals("--configure", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -24,8 +24,8 @@ public class ApplicationTextService
     public string GetUsageMessage()
     {
         return _useFrench
-            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches>"
-            : "Usage: EasySave | EasySave --help | EasySave <job-selection>";
+            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin>"
+            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path>";
     }
 
     public string GetUsageExamples()
@@ -98,6 +98,34 @@ public class ApplicationTextService
             : "Expected a single argument. Use --help to display help.";
     }
 
+    public string GetInvalidCommandMessage()
+    {
+        return _useFrench
+            ? "Commande invalide. Utilisez --help pour afficher l'aide."
+            : "Invalid command. Use --help to display help.";
+    }
+
+    public string GetInvalidConfigureCommandMessage()
+    {
+        return _useFrench
+            ? "Commande de configuration invalide. Utilisez : EasySave --configure <job> source|target <chemin>."
+            : "Invalid configure command. Use: EasySave --configure <job> source|target <path>.";
+    }
+
+    public string GetInvalidConfigureFieldMessage()
+    {
+        return _useFrench
+            ? "Le champ de configuration doit etre source ou target."
+            : "Configuration field must be source or target.";
+    }
+
+    public string GetPathValueRequiredMessage()
+    {
+        return _useFrench
+            ? "Un chemin non vide est requis."
+            : "A non-empty path is required.";
+    }
+
     public IReadOnlyList<string> GetHelpLines()
     {
         return new[]
@@ -116,6 +144,9 @@ public class ApplicationTextService
             _useFrench
                 ? "Vous pouvez lancer une seule tache, une plage ou une liste separee par des points-virgules."
                 : "You can run a single job, a range, or a semicolon-separated list.",
+            _useFrench
+                ? "Utilisez --configure <job> source <chemin> ou --configure <job> target <chemin> pour modifier un slot."
+                : "Use --configure <job> source <path> or --configure <job> target <path> to update a slot.",
             GetUsageExamples(),
             _useFrench
                 ? "Exemple invalide : EasySave 2-1, car le debut de plage doit etre inferieur ou egal a la fin."
@@ -167,6 +198,18 @@ public class ApplicationTextService
         return _useFrench
             ? $"  Statut : {status}"
             : $"  Status: {status}";
+    }
+
+    public string GetJobPathUpdatedMessage(int jobNumber, BackupJob job, JobPathField pathField)
+    {
+        string fieldName = pathField == JobPathField.Source
+            ? (_useFrench ? "source" : "source")
+            : (_useFrench ? "cible" : "target");
+        string pathValue = pathField == JobPathField.Source ? job.Source : job.Target;
+
+        return _useFrench
+            ? $"La tache {jobNumber} a ete mise a jour : {fieldName} = {pathValue}"
+            : $"Job {jobNumber} was updated: {fieldName} = {pathValue}";
     }
 
     public string GetBackupTypeDisplayName(BackupType backupType)

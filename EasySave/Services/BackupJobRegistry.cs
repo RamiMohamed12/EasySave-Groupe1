@@ -28,6 +28,31 @@ public class BackupJobRegistry
         return normalizedJobs;
     }
 
+    public BackupJob UpdateJobPath(int jobNumber, JobPathField pathField, string pathValue)
+    {
+        List<BackupJob> jobs = LoadJobs().ToList();
+        int jobIndex = jobNumber - 1;
+
+        if (jobIndex < 0 || jobIndex >= MaximumJobs)
+        {
+            throw new ArgumentOutOfRangeException(nameof(jobNumber));
+        }
+
+        BackupJob job = jobs[jobIndex];
+
+        if (pathField == JobPathField.Source)
+        {
+            job.Source = pathValue;
+        }
+        else
+        {
+            job.Target = pathValue;
+        }
+
+        SaveJobs(jobs);
+        return job;
+    }
+
     private void EnsureJobsFileExists()
     {
         if (File.Exists(_jobsFilePath))
