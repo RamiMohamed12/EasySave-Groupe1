@@ -6,6 +6,7 @@ public class BackupResult
     public int TransferredFileCount { get; set; }
     public long TransferredBytes { get; set; }
     public string ErrorMessage { get; set; }
+    public TimeSpan ElapsedTime { get; set; }
 
     public BackupResult()
     {
@@ -15,5 +16,6 @@ public class BackupResult
         TransferredFileCount = 0;
         TransferredBytes = 0;
         ErrorMessage = string.Empty;
+        ElapsedTime = TimeSpan.Zero;
     }
 }

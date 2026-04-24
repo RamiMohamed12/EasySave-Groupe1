@@ -11,6 +11,9 @@ public class ApplicationViewModel
     public IReadOnlyList<BackupJob> AvailableJobs { get; private set; }
     public bool ShowHelp { get; private set; }
     public bool ShowJobList { get; private set; }
+    public int? ConfiguredJobNumber { get; private set; }
+    public bool IsConfigurationMessage { get; private set; }
+    public bool IsBackupResultMessage { get; private set; }
 
     public bool CanStartBackups => Messages.Count == 0 && SelectedJobs.Count > 0;
 
@@ -31,6 +34,9 @@ public class ApplicationViewModel
         AvailableJobs = Array.Empty<BackupJob>();
         ShowHelp = false;
         ShowJobList = false;
+        ConfiguredJobNumber = null;
+        IsConfigurationMessage = false;
+        IsBackupResultMessage = false;
     }
 
     public void Load(string[] args)
@@ -41,6 +47,9 @@ public class ApplicationViewModel
         _stateService.SynchronizeConfiguredJobs(AvailableJobs);
         ShowHelp = false;
         ShowJobList = false;
+        ConfiguredJobNumber = null;
+        IsConfigurationMessage = false;
+        IsBackupResultMessage = false;
 
         if (AvailableJobs.Count == 0)
         {
@@ -73,7 +82,8 @@ public class ApplicationViewModel
                 {
                     _textService.GetJobPathUpdatedMessage(command.JobNumber, updatedJob, command.PathField.Value)
                 };
-                ShowJobList = true;
+                ConfiguredJobNumber = command.JobNumber;
+                IsConfigurationMessage = true;
                 return;
             }
 
@@ -110,7 +120,10 @@ public class ApplicationViewModel
         }
 
         IReadOnlyList<BackupResult> results = _backupController.StartBackups(SelectedJobs);
-        Messages = results.Select(_textService.FormatBackupResult).ToList();
+        var messages = new List<string>(results.Select(_textService.FormatBackupResult));
+        messages.Add(_textService.GetBackupSuccessMessage());
+        Messages = messages;
+        IsBackupResultMessage = true;
     }
 
     private IReadOnlyList<SelectedBackupJob> BuildSelectedJobs(IEnumerable<int> selectedJobNumbers)
