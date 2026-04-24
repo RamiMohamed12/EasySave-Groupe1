@@ -1,0 +1,100 @@
+namespace EasySave.Tests;
+
+public class ApplicationViewModelTests
+{
+    [Fact]
+    public void Load_WithoutArguments_ShowsConfiguredSlots()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(Array.Empty<string>());
+
+        Assert.True(viewModel.ShowJobList);
+        Assert.False(viewModel.ShowHelp);
+        Assert.Empty(viewModel.Messages);
+        Assert.Equal(BackupJobRegistry.MaximumJobs, viewModel.AvailableJobs.Count);
+    }
+
+    [Fact]
+    public void Load_WithHelpArgument_ShowsHelpOnly()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["--help"]);
+
+        Assert.True(viewModel.ShowHelp);
+        Assert.False(viewModel.ShowJobList);
+    }
+
+    [Fact]
+    public void Load_WithConfigureCommand_UpdatesRequestedSlot()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["--configure", "1", "source", @"C:\Desktop"]);
+
+        Assert.True(viewModel.ShowJobList);
+        Assert.Single(viewModel.Messages);
+        Assert.Equal(@"C:\Desktop", viewModel.AvailableJobs[0].Source);
+    }
+
+    [Fact]
+    public void Load_WithStorageDirectoryCommand_RelocatesRuntimeFiles()
+    {
+        using var workspace = new TestWorkspace();
+        string usbPath = workspace.CreateDirectory("usb-storage");
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["--storage-dir", usbPath]);
+
+        Assert.True(viewModel.ShowJobList);
+        Assert.Single(viewModel.Messages);
+        Assert.Equal(Path.GetFullPath(usbPath), RuntimeStoragePaths.BackupStateDirectory);
+        Assert.True(File.Exists(Path.Combine(usbPath, "jobs.json")));
+    }
+
+    [Fact]
+    public void Load_WithInvalidSelection_ShowsErrorAndHelp()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["6"]);
+
+        Assert.True(viewModel.ShowHelp);
+        Assert.True(viewModel.ShowJobList);
+        Assert.Single(viewModel.Messages);
+    }
+
+    private static ApplicationViewModel CreateViewModel(out FakeBackupService fakeBackupService)
+    {
+        var textService = ApplicationTextService.Create();
+        fakeBackupService = new FakeBackupService();
+
+        return new ApplicationViewModel(
+            new ArgumentParser(textService),
+            new BackupJobRegistry(),
+            new BackupController(fakeBackupService),
+            new StateService(),
+            textService);
+    }
+
+    private sealed class FakeBackupService : IBackupService
+    {
+        public List<SelectedBackupJob> ReceivedJobs { get; } = new();
+
+        public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
+        {
+            ReceivedJobs.Add(selectedBackupJob);
+            return new BackupResult
+            {
+                JobNumber = selectedBackupJob.JobNumber,
+                BackupName = selectedBackupJob.Job.Name,
+                Status = BackupExecutionStatus.Finished
+            };
+        }
+    }
+}
