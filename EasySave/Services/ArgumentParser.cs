@@ -7,6 +7,36 @@ public class ArgumentParser
         _textService = textService;
     }
 
+    public CliCommand Parse(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            return new CliCommand
+            {
+                Type = CliCommandType.ShowJobs
+            };
+        }
+
+        if (args.Length != 1)
+        {
+            throw new ArgumentException(_textService.GetSingleArgumentExpectedMessage());
+        }
+
+        if (IsHelpArgument(args[0]))
+        {
+            return new CliCommand
+            {
+                Type = CliCommandType.ShowHelp
+            };
+        }
+
+        return new CliCommand
+        {
+            Type = CliCommandType.RunSelection,
+            SelectedJobNumbers = ParseJobSelection(args[0])
+        };
+    }
+
     public List<int> ParseJobSelection(string selection)
     {
         if (string.IsNullOrWhiteSpace(selection))
@@ -55,5 +85,11 @@ public class ArgumentParser
         }
 
         return index;
+    }
+
+    private static bool IsHelpArgument(string argument)
+    {
+        return argument.Equals("--help", StringComparison.OrdinalIgnoreCase)
+            || argument.Equals("-h", StringComparison.OrdinalIgnoreCase);
     }
 }

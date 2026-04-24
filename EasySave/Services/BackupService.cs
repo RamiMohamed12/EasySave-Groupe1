@@ -6,20 +6,17 @@ public class BackupService : IBackupService
     private readonly BackupHistoryService _backupHistoryService;
     private readonly LoggerService _loggerService;
     private readonly StateService _stateService;
-    private readonly IBackupProgressReporter _progressReporter;
     private readonly ApplicationTextService _textService;
 
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
         BackupHistoryService backupHistoryService,
-        IBackupProgressReporter progressReporter,
         ApplicationTextService textService)
     {
         _loggerService = loggerService;
         _stateService = stateService;
         _backupHistoryService = backupHistoryService;
-        _progressReporter = progressReporter;
         _textService = textService;
     }
 
@@ -49,7 +46,6 @@ public class BackupService : IBackupService
             };
 
             _stateService.WriteState(missingSourceState);
-            _progressReporter.ReportSourceDirectoryMissing(selectedBackupJob);
             return;
         }
 
@@ -81,7 +77,6 @@ public class BackupService : IBackupService
         };
 
         _stateService.WriteState(state);
-        _progressReporter.ReportJobStarted(selectedBackupJob, state);
 
         foreach (string sourceFilePath in filesToCopy)
         {
@@ -129,7 +124,6 @@ public class BackupService : IBackupService
                 FileSizeBytes = currentFileSize,
                 TransferTimeMilliseconds = stopwatch.ElapsedMilliseconds
             });
-            _progressReporter.ReportFileCopied(selectedBackupJob, state, transferredFile);
         }
 
         state.IsRunning = false;
@@ -137,7 +131,6 @@ public class BackupService : IBackupService
         state.LastRunCompletedAt = state.LastBackupUpdateTime;
         _stateService.WriteState(state);
         jobStopwatch.Stop();
-        _progressReporter.ReportJobCompleted(selectedBackupJob, state, jobStopwatch.Elapsed);
 
         if (backupJob.Type == BackupType.Full)
         {
@@ -192,7 +185,6 @@ public class BackupService : IBackupService
         {
             if (TryGetSkipReason(sourceFilePath, out string skipReason))
             {
-                _progressReporter.ReportFileSkipped(selectedBackupJob, sourceFilePath, skipReason);
                 continue;
             }
 

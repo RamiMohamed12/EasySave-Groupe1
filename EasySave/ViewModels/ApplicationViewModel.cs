@@ -50,49 +50,22 @@ public class ApplicationViewModel
 
         try
         {
-            if (args.Length == 0)
+            CliCommand command = _argumentParser.Parse(args);
+
+            if (command.Type == CliCommandType.ShowHelp)
             {
                 ShowHelp = true;
                 ShowJobList = true;
                 return;
             }
 
-            if (args.Length != 1)
+            if (command.Type == CliCommandType.ShowJobs)
             {
-                Messages = new[] { _textService.GetSingleArgumentExpectedMessage() };
-                ShowHelp = true;
                 ShowJobList = true;
                 return;
             }
 
-            if (IsHelpArgument(args[0]))
-            {
-                ShowHelp = true;
-                ShowJobList = true;
-                return;
-            }
-
-            List<int> selectedJobNumbers = _argumentParser.ParseJobSelection(args[0]);
-            var selectedJobs = new List<SelectedBackupJob>();
-
-            foreach (int jobNumber in selectedJobNumbers)
-            {
-                if (jobNumber > AvailableJobs.Count)
-                {
-                    Messages = new[] { _textService.GetJobNotConfiguredMessage(jobNumber) };
-                    ShowHelp = true;
-                    ShowJobList = true;
-                    return;
-                }
-
-                selectedJobs.Add(new SelectedBackupJob
-                {
-                    JobNumber = jobNumber,
-                    Job = AvailableJobs[jobNumber - 1]
-                });
-            }
-
-            SelectedJobs = selectedJobs;
+            SelectedJobs = BuildSelectedJobs(command.SelectedJobNumbers);
         }
         catch (ArgumentException exception)
         {
@@ -112,9 +85,24 @@ public class ApplicationViewModel
         _backupController.StartBackups(SelectedJobs);
     }
 
-    private static bool IsHelpArgument(string argument)
+    private IReadOnlyList<SelectedBackupJob> BuildSelectedJobs(IEnumerable<int> selectedJobNumbers)
     {
-        return argument.Equals("--help", StringComparison.OrdinalIgnoreCase)
-            || argument.Equals("-h", StringComparison.OrdinalIgnoreCase);
+        var selectedJobs = new List<SelectedBackupJob>();
+
+        foreach (int jobNumber in selectedJobNumbers)
+        {
+            if (jobNumber > AvailableJobs.Count)
+            {
+                throw new ArgumentException(_textService.GetJobNotConfiguredMessage(jobNumber));
+            }
+
+            selectedJobs.Add(new SelectedBackupJob
+            {
+                JobNumber = jobNumber,
+                Job = AvailableJobs[jobNumber - 1]
+            });
+        }
+
+        return selectedJobs;
     }
 }
