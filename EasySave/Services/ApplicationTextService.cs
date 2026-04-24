@@ -247,14 +247,23 @@ public class ApplicationTextService
     {
         if (result.Status == BackupExecutionStatus.Finished)
         {
+            string readableBytes = FormatBytes(result.TransferredBytes);
+            string elapsedTime = FormatDuration(result.ElapsedTime);
             return _useFrench
-                ? $"Tache {result.JobNumber} terminee : {result.BackupName} | fichiers transferes : {result.TransferredFileCount} | octets transferes : {result.TransferredBytes}"
-                : $"Job {result.JobNumber} completed: {result.BackupName} | transferred files: {result.TransferredFileCount} | transferred bytes: {result.TransferredBytes}";
+                ? $"Fichiers transferes : {result.TransferredFileCount}\nOctets transferes : {readableBytes}\nTemps ecoule : {elapsedTime}"
+                : $"Transferred files: {result.TransferredFileCount}\nTransferred bytes: {readableBytes}\nElapsed time: {elapsedTime}";
         }
 
         return _useFrench
             ? $"Tache {result.JobNumber} en erreur : {result.BackupName} | {result.ErrorMessage}"
             : $"Job {result.JobNumber} failed: {result.BackupName} | {result.ErrorMessage}";
+    }
+
+    public string GetBackupSuccessMessage()
+    {
+        return _useFrench
+            ? "Sauvegarde completee avec succes !"
+            : "Backup completed successfully!";
     }
 
     public string GetBackupTypeDisplayName(BackupType backupType)

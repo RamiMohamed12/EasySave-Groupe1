@@ -79,8 +79,28 @@ public class ApplicationViewModelTests
         viewModel.StartBackups();
 
         Assert.Equal([1, 3], fakeBackupService.ReceivedJobs.Select(job => job.JobNumber).ToArray());
-        Assert.Equal(2, viewModel.Messages.Count);
-        Assert.Contains("Job 1", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(3, viewModel.Messages.Count);
+        Assert.StartsWith("Transferred files:", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Backup completed successfully!", viewModel.Messages[^1]);
+    }
+
+    [Fact]
+    public void StartBackups_WhenAJobFails_DoesNotAppendSuccessMessage()
+    {
+        using var workspace = new TestWorkspace();
+        var textService = ApplicationTextService.Create();
+        var viewModel = new ApplicationViewModel(
+            new ArgumentParser(textService),
+            new BackupJobRegistry(),
+            new BackupController(new FailingBackupService()),
+            new StateService(),
+            textService);
+
+        viewModel.Load(["1"]);
+        viewModel.StartBackups();
+
+        Assert.Single(viewModel.Messages);
+        Assert.DoesNotContain("completed successfully", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
     }
 
     private static ApplicationViewModel CreateViewModel(out FakeBackupService fakeBackupService)
@@ -110,6 +130,20 @@ public class ApplicationViewModelTests
                 Status = BackupExecutionStatus.Finished,
                 TransferredFileCount = 1,
                 TransferredBytes = 10
+            };
+        }
+    }
+
+    private sealed class FailingBackupService : IBackupService
+    {
+        public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
+        {
+            return new BackupResult
+            {
+                JobNumber = selectedBackupJob.JobNumber,
+                BackupName = selectedBackupJob.Job.Name,
+                Status = BackupExecutionStatus.Error,
+                ErrorMessage = "failure"
             };
         }
     }

@@ -11,7 +11,22 @@ public class ConsoleApplicationView
     {
         foreach (string message in viewModel.Messages)
         {
-            Console.WriteLine(message);
+            if (viewModel.IsConfigurationMessage)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(message);
+                Console.ResetColor();
+            }
+            else if (viewModel.IsBackupResultMessage && (message.Contains("Sauvegarde completee") || message.Contains("Backup completed successfully")))
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(message);
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine(message);
+            }
         }
 
         if (viewModel.ShowHelp)
@@ -24,7 +39,16 @@ public class ConsoleApplicationView
             RenderHelp();
         }
 
-        if (viewModel.ShowJobList)
+        if (viewModel.ConfiguredJobNumber.HasValue && viewModel.IsConfigurationMessage)
+        {
+            if (viewModel.Messages.Count > 0)
+            {
+                Console.WriteLine();
+            }
+
+            RenderSingleJob(viewModel.AvailableJobs, viewModel.ConfiguredJobNumber.Value);
+        }
+        else if (viewModel.ShowJobList)
         {
             if (viewModel.Messages.Count > 0 || viewModel.ShowHelp)
             {
@@ -56,5 +80,22 @@ public class ConsoleApplicationView
             Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
             Console.WriteLine();
         }
+    }
+
+    private void RenderSingleJob(IEnumerable<BackupJob> jobs, int jobNumber)
+    {
+        BackupJob? job = jobs.ElementAtOrDefault(jobNumber - 1);
+        if (job == null)
+        {
+            return;
+        }
+
+        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        Console.WriteLine(_textService.GetJobSummaryLine(jobNumber, job));
+        Console.WriteLine(_textService.GetJobSourceLine(job.Source));
+        Console.WriteLine(_textService.GetJobTargetLine(job.Target));
+        Console.WriteLine(_textService.GetJobTypeLine(job.Type));
+        Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
+        Console.WriteLine();
     }
 }

@@ -17,7 +17,7 @@ viewModel.Load(args);
 view.Render(viewModel);
 viewModel.StartBackups();
 
-if (viewModel.Messages.Count > 0)
+if (viewModel.Messages.Count > 0 && !viewModel.IsConfigurationMessage)
 {
     view.Render(viewModel);
 }

@@ -21,6 +21,7 @@ public class BackupService : IBackupService
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
     {
+        var globalStopwatch = Stopwatch.StartNew();
         BackupJob backupJob = selectedBackupJob.Job;
         var result = new BackupResult
         {
@@ -162,10 +163,12 @@ public class BackupService : IBackupService
             _backupHistoryService.SetLastFullBackupUtc(backupJob.Name, DateTime.UtcNow);
         }
 
+        globalStopwatch.Stop();
         result.Status = state.Status;
         result.TransferredFileCount = state.LastRunTransferredFiles.Count;
         result.TransferredBytes = state.TransferredBytes;
         result.ErrorMessage = state.ErrorMessage;
+        result.ElapsedTime = globalStopwatch.Elapsed;
 
         return result;
     }

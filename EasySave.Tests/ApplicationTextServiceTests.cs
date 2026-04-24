@@ -42,8 +42,10 @@ public class ApplicationTextServiceTests : IDisposable
             TransferredBytes = 128
         });
 
-        Assert.Contains("completed", message, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("Transferred files: 2", message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("128", message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Job 1", message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("\n  ", message, StringComparison.Ordinal);
     }
 
     public void Dispose()
