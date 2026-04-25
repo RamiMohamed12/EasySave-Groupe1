@@ -29,6 +29,11 @@ public class ArgumentParser
                 return ParseStorageDirectoryCommand(args);
             }
 
+            if (IsLanguageArgument(args))
+            {
+                return ParseLanguageCommand(args);
+            }
+
             throw new ArgumentException(_textService.GetInvalidCommandMessage());
         }
 
@@ -174,5 +179,33 @@ public class ArgumentParser
     {
         return args.Length > 0
             && args[0].Equals("--storage-dir", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private CliCommand ParseLanguageCommand(string[] args)
+    {
+        if (args.Length != 2)
+        {
+            throw new ArgumentException(_textService.GetInvalidLanguageCommandMessage());
+        }
+
+        string languageCode = args[1]?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        if (languageCode != ApplicationTextService.EnglishLanguageCode
+            && languageCode != ApplicationTextService.FrenchLanguageCode)
+        {
+            throw new ArgumentException(_textService.GetInvalidLanguageCodeMessage());
+        }
+
+        return new CliCommand
+        {
+            Type = CliCommandType.ConfigureLanguage,
+            LanguageCode = languageCode
+        };
+    }
+
+    private static bool IsLanguageArgument(string[] args)
+    {
+        return args.Length > 0
+            && args[0].Equals("--lang", StringComparison.OrdinalIgnoreCase);
     }
 }

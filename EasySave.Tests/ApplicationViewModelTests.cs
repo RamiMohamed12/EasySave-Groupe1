@@ -57,6 +57,22 @@ public class ApplicationViewModelTests
     }
 
     [Fact]
+    public void Load_WithLanguageCommand_PersistsLanguageAndUsesNewMessages()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["--lang", "fr"]);
+
+        Assert.True(viewModel.ShowJobList);
+        Assert.True(viewModel.IsConfigurationMessage);
+        Assert.Single(viewModel.Messages);
+        Assert.Equal("fr", RuntimeStoragePaths.GetLanguageCode());
+        Assert.Equal("fr", viewModel.TextService.GetLanguageCode());
+        Assert.Contains("langue", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Load_WithInvalidSelection_ShowsErrorAndHelp()
     {
         using var workspace = new TestWorkspace();
@@ -105,7 +121,7 @@ public class ApplicationViewModelTests
 
     private static ApplicationViewModel CreateViewModel(out FakeBackupService fakeBackupService)
     {
-        var textService = ApplicationTextService.Create();
+        var textService = ApplicationTextService.Create(ApplicationTextService.EnglishLanguageCode);
         fakeBackupService = new FakeBackupService();
 
         return new ApplicationViewModel(

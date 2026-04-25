@@ -5,6 +5,7 @@ public class CliCommand
     public int JobNumber { get; set; }
     public JobPathField? PathField { get; set; }
     public string PathValue { get; set; }
+    public string LanguageCode { get; set; }
 
     public CliCommand()
     {
@@ -13,5 +14,6 @@ public class CliCommand
         JobNumber = 0;
         PathField = null;
         PathValue = string.Empty;
+        LanguageCode = string.Empty;
     }
 }
