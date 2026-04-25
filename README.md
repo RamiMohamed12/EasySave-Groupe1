@@ -17,6 +17,7 @@ Elle prend en charge les sauvegardes complètes et différentielles, conserve l�
   * [Exécuter une liste personnalisée](#exécuter-une-liste-personnalisée)
   * [Configurer un chemin source](#configurer-un-chemin-source)
   * [Configurer un chemin cible](#configurer-un-chemin-cible)
+  * [Changer la langue de l’application](#changer-la-langue-de-lapplication)
   * [Modifier le répertoire de stockage](#modifier-le-répertoire-de-stockage-à-lexécution)
 * [Fichiers d’exécution](#fichiers-dexécution)
 * [Support des langues](#support-des-langues)
@@ -100,6 +101,18 @@ Les commandes suivantes vous permettent d’interagir simplement avec l’applic
 
 ---
 
+### Changer la langue de l’application
+
+```powershell
+.\EasySave.exe --lang fr
+```
+
+Utilisez `fr` pour le français ou `en` pour l’anglais.
+
+Le choix est enregistré et réutilisé au prochain lancement.
+
+---
+
 ### Modifier le répertoire de stockage à l’exécution
 
 ```powershell
@@ -155,7 +168,25 @@ Si vous souhaitez analyser en détail les opérations effectuées, les journaux 
 
 ## Support des langues
 
-L’application s’adapte automatiquement à la langue de votre système.
+Le changement de langue peut maintenant se faire directement en ligne de commande :
+
+```powershell
+.\EasySave.exe --lang en
+```
+
+ou
+
+```powershell
+.\EasySave.exe --lang fr
+```
+
+Le dernier choix est stocké dans `storage-settings.json` et conservé entre les exécutions.
+
+Ordre de priorité utilisé par l’application :
+
+1. variable d’environnement `EASYSAVE_LANGUAGE`
+2. langue enregistrée via `--lang`
+3. langue du système (fallback)
 
 Si vous souhaitez forcer une langue spécifique :
 
