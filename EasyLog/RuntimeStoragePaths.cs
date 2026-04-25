@@ -20,17 +20,18 @@ public static class RuntimeStoragePaths
     public static void SetStorageDirectory(string storageDirectory)
     {
         string resolvedStorageDirectory = ResolveDirectoryPath(storageDirectory);
-        var settings = new RuntimeStorageSettings
-        {
-            StorageDirectory = resolvedStorageDirectory
-        };
+        UpdateSettings(settings => settings.StorageDirectory = resolvedStorageDirectory);
+    }
 
-        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-        File.WriteAllText(ConfigurationFilePath, json);
-        Reload();
+    public static string GetLanguageCode()
+    {
+        return NormalizeLanguageCode(GetSettings().LanguageCode);
+    }
+
+    public static void SetLanguageCode(string languageCode)
+    {
+        string normalizedLanguageCode = NormalizeLanguageCode(languageCode);
+        UpdateSettings(settings => settings.LanguageCode = normalizedLanguageCode);
     }
 
     public static void Reload()
@@ -79,6 +80,22 @@ public static class RuntimeStoragePaths
         return storageDirectory;
     }
 
+    private static void UpdateSettings(Action<RuntimeStorageSettings> updateSettings)
+    {
+        lock (SyncRoot)
+        {
+            RuntimeStorageSettings settings = LoadSettings();
+            updateSettings(settings);
+
+            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            File.WriteAllText(ConfigurationFilePath, json);
+            _settings = settings;
+        }
+    }
+
     private static string ResolveDirectoryPath(string path)
     {
         string trimmedPath = path.Trim();
@@ -87,5 +104,12 @@ public static class RuntimeStoragePaths
             : Path.Combine(GetBaseDirectory(), trimmedPath);
 
         return Path.GetFullPath(resolvedPath);
+    }
+
+    private static string NormalizeLanguageCode(string? languageCode)
+    {
+        return string.IsNullOrWhiteSpace(languageCode)
+            ? string.Empty
+            : languageCode.Trim().ToLowerInvariant();
     }
 }

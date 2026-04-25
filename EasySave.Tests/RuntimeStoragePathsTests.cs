@@ -29,4 +29,27 @@ public class RuntimeStoragePathsTests
         Assert.Equal(Path.Combine(Path.GetFullPath(externalPath), "jobs.json"), RuntimeStoragePaths.JobsFilePath);
         Assert.Equal(Path.Combine(Path.GetFullPath(externalPath), "state.json"), RuntimeStoragePaths.StateFilePath);
     }
+
+    [Fact]
+    public void SetLanguageCode_PersistsLanguageAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLanguageCode("fr");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal("fr", RuntimeStoragePaths.GetLanguageCode());
+    }
+
+    [Fact]
+    public void SetStorageDirectory_PreservesConfiguredLanguage()
+    {
+        using var workspace = new TestWorkspace();
+        string externalPath = workspace.CreateDirectory("usb");
+
+        RuntimeStoragePaths.SetLanguageCode("fr");
+        RuntimeStoragePaths.SetStorageDirectory(externalPath);
+
+        Assert.Equal("fr", RuntimeStoragePaths.GetLanguageCode());
+    }
 }

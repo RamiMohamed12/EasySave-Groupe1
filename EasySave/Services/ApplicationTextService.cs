@@ -2,6 +2,9 @@ using System.Globalization;
 
 public class ApplicationTextService
 {
+    public const string EnglishLanguageCode = "en";
+    public const string FrenchLanguageCode = "fr";
+
     private readonly bool _useFrench;
 
     private ApplicationTextService(bool useFrench)
@@ -12,20 +15,28 @@ public class ApplicationTextService
     public static ApplicationTextService Create()
     {
         string? languageOverride = Environment.GetEnvironmentVariable("EASYSAVE_LANGUAGE");
+        string? configuredLanguage = RuntimeStoragePaths.GetLanguageCode();
 
-        if (!string.IsNullOrWhiteSpace(languageOverride))
+        return Create(!string.IsNullOrWhiteSpace(languageOverride) ? languageOverride : configuredLanguage);
+    }
+
+    public static ApplicationTextService Create(string? languageCode)
+    {
+        if (!string.IsNullOrWhiteSpace(languageCode))
         {
-            return new ApplicationTextService(languageOverride.StartsWith("fr", StringComparison.OrdinalIgnoreCase));
+            return new ApplicationTextService(
+                languageCode.StartsWith(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase));
         }
 
-        return new ApplicationTextService(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("fr", StringComparison.OrdinalIgnoreCase));
+        return new ApplicationTextService(
+            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase));
     }
 
     public string GetUsageMessage()
     {
         return _useFrench
-            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin> | EasySave --storage-dir <chemin>"
-            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path> | EasySave --storage-dir <path>";
+            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin> | EasySave --storage-dir <chemin> | EasySave --lang en|fr"
+            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path> | EasySave --storage-dir <path> | EasySave --lang en|fr";
     }
 
     public string GetUsageExamples()
@@ -147,6 +158,20 @@ public class ApplicationTextService
             : "Invalid storage-dir command. Use: EasySave --storage-dir <path>.";
     }
 
+    public string GetInvalidLanguageCommandMessage()
+    {
+        return _useFrench
+            ? "Commande lang invalide. Utilisez : EasySave --lang en|fr."
+            : "Invalid lang command. Use: EasySave --lang en|fr.";
+    }
+
+    public string GetInvalidLanguageCodeMessage()
+    {
+        return _useFrench
+            ? "Code de langue invalide. Utilisez en ou fr."
+            : "Invalid language code. Use en or fr.";
+    }
+
     public IReadOnlyList<string> GetHelpLines()
     {
         return new[]
@@ -171,6 +196,9 @@ public class ApplicationTextService
             _useFrench
                 ? "Utilisez --storage-dir <chemin> pour deplacer jobs.json, state.json, backup-history.json et les logs."
                 : "Use --storage-dir <path> to relocate jobs.json, state.json, backup-history.json, and the logs.",
+            _useFrench
+                ? "Utilisez --lang fr ou --lang en pour changer la langue de l'application."
+                : "Use --lang fr or --lang en to switch the application language.",
             GetUsageExamples(),
             _useFrench
                 ? "Exemple invalide : EasySave 2-1, car le debut de plage doit etre inferieur ou egal a la fin."
@@ -241,6 +269,13 @@ public class ApplicationTextService
         return _useFrench
             ? $"Le dossier de stockage runtime a ete mis a jour : {path}"
             : $"Runtime storage directory was updated: {path}";
+    }
+
+    public string GetLanguageUpdatedMessage()
+    {
+        return _useFrench
+            ? "La langue a ete changee en francais avec succes."
+            : "Language switched to English successfully.";
     }
 
     public string FormatBackupResult(BackupResult result)
@@ -379,6 +414,11 @@ public class ApplicationTextService
         return _useFrench
             ? $"Temps ecoule : {FormatDuration(elapsedTime)}"
             : $"Elapsed time: {FormatDuration(elapsedTime)}";
+    }
+
+    public string GetLanguageCode()
+    {
+        return _useFrench ? FrenchLanguageCode : EnglishLanguageCode;
     }
 
     private static string FormatBytes(long bytes)

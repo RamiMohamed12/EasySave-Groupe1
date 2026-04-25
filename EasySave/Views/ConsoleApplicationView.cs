@@ -1,10 +1,7 @@
 public class ConsoleApplicationView
 {
-    private readonly ApplicationTextService _textService;
-
-    public ConsoleApplicationView(ApplicationTextService textService)
+    public ConsoleApplicationView()
     {
-        _textService = textService;
     }
 
     public void Render(ApplicationViewModel viewModel)
@@ -36,7 +33,7 @@ public class ConsoleApplicationView
                 Console.WriteLine();
             }
 
-            RenderHelp();
+            RenderHelp(viewModel.TextService);
         }
 
         if (viewModel.ConfiguredJobNumber.HasValue && viewModel.IsConfigurationMessage)
@@ -46,7 +43,7 @@ public class ConsoleApplicationView
                 Console.WriteLine();
             }
 
-            RenderSingleJob(viewModel.AvailableJobs, viewModel.ConfiguredJobNumber.Value);
+            RenderSingleJob(viewModel.AvailableJobs, viewModel.ConfiguredJobNumber.Value, viewModel.TextService);
         }
         else if (viewModel.ShowJobList)
         {
@@ -55,34 +52,34 @@ public class ConsoleApplicationView
                 Console.WriteLine();
             }
 
-            RenderJobList(viewModel.AvailableJobs);
+            RenderJobList(viewModel.AvailableJobs, viewModel.TextService);
         }
     }
 
-    private void RenderHelp()
+    private static void RenderHelp(ApplicationTextService textService)
     {
-        foreach (string line in _textService.GetHelpLines())
+        foreach (string line in textService.GetHelpLines())
         {
             Console.WriteLine(line);
         }
     }
 
-    private void RenderJobList(IEnumerable<BackupJob> jobs)
+    private static void RenderJobList(IEnumerable<BackupJob> jobs, ApplicationTextService textService)
     {
-        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        Console.WriteLine(textService.GetConfiguredJobsHeader());
 
         foreach ((BackupJob job, int index) in jobs.Select((job, index) => (job, index)))
         {
-            Console.WriteLine(_textService.GetJobSummaryLine(index + 1, job));
-            Console.WriteLine(_textService.GetJobSourceLine(job.Source));
-            Console.WriteLine(_textService.GetJobTargetLine(job.Target));
-            Console.WriteLine(_textService.GetJobTypeLine(job.Type));
-            Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
+            Console.WriteLine(textService.GetJobSummaryLine(index + 1, job));
+            Console.WriteLine(textService.GetJobSourceLine(job.Source));
+            Console.WriteLine(textService.GetJobTargetLine(job.Target));
+            Console.WriteLine(textService.GetJobTypeLine(job.Type));
+            Console.WriteLine(textService.GetJobConfigurationStatusLine(job));
             Console.WriteLine();
         }
     }
 
-    private void RenderSingleJob(IEnumerable<BackupJob> jobs, int jobNumber)
+    private static void RenderSingleJob(IEnumerable<BackupJob> jobs, int jobNumber, ApplicationTextService textService)
     {
         BackupJob? job = jobs.ElementAtOrDefault(jobNumber - 1);
         if (job == null)
@@ -90,12 +87,12 @@ public class ConsoleApplicationView
             return;
         }
 
-        Console.WriteLine(_textService.GetConfiguredJobsHeader());
-        Console.WriteLine(_textService.GetJobSummaryLine(jobNumber, job));
-        Console.WriteLine(_textService.GetJobSourceLine(job.Source));
-        Console.WriteLine(_textService.GetJobTargetLine(job.Target));
-        Console.WriteLine(_textService.GetJobTypeLine(job.Type));
-        Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
+        Console.WriteLine(textService.GetConfiguredJobsHeader());
+        Console.WriteLine(textService.GetJobSummaryLine(jobNumber, job));
+        Console.WriteLine(textService.GetJobSourceLine(job.Source));
+        Console.WriteLine(textService.GetJobTargetLine(job.Target));
+        Console.WriteLine(textService.GetJobTypeLine(job.Type));
+        Console.WriteLine(textService.GetJobConfigurationStatusLine(job));
         Console.WriteLine();
     }
 }

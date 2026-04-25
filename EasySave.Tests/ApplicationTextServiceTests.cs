@@ -48,6 +48,19 @@ public class ApplicationTextServiceTests : IDisposable
         Assert.DoesNotContain("\n  ", message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Create_UsesPersistedLanguage_WhenNoEnvironmentOverrideExists()
+    {
+        using var workspace = new TestWorkspace();
+        Environment.SetEnvironmentVariable("EASYSAVE_LANGUAGE", null);
+        RuntimeStoragePaths.SetLanguageCode("fr");
+
+        ApplicationTextService textService = ApplicationTextService.Create();
+
+        Assert.Equal("fr", textService.GetLanguageCode());
+        Assert.Contains("Utilisation", textService.GetUsageMessage(), StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         Environment.SetEnvironmentVariable("EASYSAVE_LANGUAGE", _originalLanguage);

@@ -4,7 +4,7 @@ public class ApplicationViewModel
     private readonly BackupJobRegistry _jobRegistry;
     private readonly BackupController _backupController;
     private readonly StateService _stateService;
-    private readonly ApplicationTextService _textService;
+    private ApplicationTextService _textService;
 
     public IReadOnlyList<string> Messages { get; private set; }
     public IReadOnlyList<SelectedBackupJob> SelectedJobs { get; private set; }
@@ -14,6 +14,7 @@ public class ApplicationViewModel
     public int? ConfiguredJobNumber { get; private set; }
     public bool IsConfigurationMessage { get; private set; }
     public bool IsBackupResultMessage { get; private set; }
+    public ApplicationTextService TextService => _textService;
 
     public bool CanStartBackups => Messages.Count == 0 && SelectedJobs.Count > 0;
 
@@ -100,6 +101,21 @@ public class ApplicationViewModel
                     _textService.GetStorageDirectoryUpdatedMessage(RuntimeStoragePaths.BackupStateDirectory)
                 };
                 ShowJobList = true;
+                return;
+            }
+
+            if (command.Type == CliCommandType.ConfigureLanguage)
+            {
+                RuntimeStoragePaths.SetLanguageCode(command.LanguageCode);
+                _textService = ApplicationTextService.Create(command.LanguageCode);
+                AvailableJobs = _jobRegistry.LoadJobs();
+                _stateService.SynchronizeConfiguredJobs(AvailableJobs);
+                Messages = new[]
+                {
+                    _textService.GetLanguageUpdatedMessage()
+                };
+                ShowJobList = true;
+                IsConfigurationMessage = true;
                 return;
             }
 

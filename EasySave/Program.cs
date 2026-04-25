@@ -11,7 +11,7 @@ var controller = new BackupController(backupService);
 var argumentParser = new ArgumentParser(textService);
 var jobRegistry = new BackupJobRegistry();
 var viewModel = new ApplicationViewModel(argumentParser, jobRegistry, controller, stateService, textService);
-var view = new ConsoleApplicationView(textService);
+var view = new ConsoleApplicationView();
 
 viewModel.Load(args);
 view.Render(viewModel);

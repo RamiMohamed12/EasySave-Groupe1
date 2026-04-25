@@ -4,5 +4,6 @@ public enum CliCommandType
     ShowHelp,
     RunSelection,
     ConfigureJobPath,
-    ConfigureStorageDirectory
+    ConfigureStorageDirectory,
+    ConfigureLanguage
 }

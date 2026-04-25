@@ -6,7 +6,7 @@ public class ArgumentParserTests
 
     public ArgumentParserTests()
     {
-        _parser = new ArgumentParser(ApplicationTextService.Create());
+        _parser = new ArgumentParser(ApplicationTextService.Create(ApplicationTextService.EnglishLanguageCode));
     }
 
     [Fact]
@@ -56,8 +56,23 @@ public class ArgumentParserTests
     }
 
     [Fact]
+    public void Parse_ReturnsConfigureLanguage_ForLanguageCommand()
+    {
+        CliCommand command = _parser.Parse(["--lang", "fr"]);
+
+        Assert.Equal(CliCommandType.ConfigureLanguage, command.Type);
+        Assert.Equal("fr", command.LanguageCode);
+    }
+
+    [Fact]
     public void Parse_Throws_ForInvalidConfigureField()
     {
         Assert.Throws<ArgumentException>(() => _parser.Parse(["--configure", "1", "name", @"C:\Data"]));
+    }
+
+    [Fact]
+    public void Parse_Throws_ForInvalidLanguageCode()
+    {
+        Assert.Throws<ArgumentException>(() => _parser.Parse(["--lang", "de"]));
     }
 }
