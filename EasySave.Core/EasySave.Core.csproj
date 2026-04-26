@@ -1,15 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\EasySave.Core\EasySave.Core.csproj" />
+    <ProjectReference Include="..\EasyLog\EasyLog.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <AssemblyName>EasySave.Core</AssemblyName>
+    <RootNamespace>EasySave.Core</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
-
-
-    <AssemblyName>EasySave</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
