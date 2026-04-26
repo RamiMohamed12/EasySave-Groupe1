@@ -1,23 +1,29 @@
-﻿var textService = ApplicationTextService.Create();
 var loggerService = new LoggerService();
 var stateService = new StateService();
 var backupHistoryService = new BackupHistoryService();
-IBackupService backupService = new BackupService(
-    loggerService,
-    stateService,
-    backupHistoryService,
-    textService);
-var controller = new BackupController(backupService);
-var argumentParser = new ArgumentParser(textService);
 var jobRegistry = new BackupJobRegistry();
-var view = new ConsoleApplicationView();
 
 var menuManager = new MenuManager(
-    textService,
+    CreateRuntime,
     jobRegistry,
-    argumentParser,
-    controller,
-    stateService,
-    view);
+    stateService);
 
 menuManager.Start();
+
+ConsoleMenuRuntime CreateRuntime(string? languageCode)
+{
+    var textService = string.IsNullOrWhiteSpace(languageCode)
+        ? ApplicationTextService.Create()
+        : ApplicationTextService.Create(languageCode);
+
+    IBackupService backupService = new BackupService(
+        loggerService,
+        stateService,
+        backupHistoryService,
+        textService);
+
+    return new ConsoleMenuRuntime(
+        textService,
+        new ArgumentParser(textService),
+        new BackupController(backupService));
+}

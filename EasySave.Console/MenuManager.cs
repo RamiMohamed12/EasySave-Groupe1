@@ -1,26 +1,22 @@
 public class MenuManager
 {
-    private readonly ApplicationTextService _textService;
+    private const int MenuInnerWidth = 42;
+
+    private readonly Func<string?, ConsoleMenuRuntime> _runtimeFactory;
     private readonly BackupJobRegistry _jobRegistry;
-    private readonly ArgumentParser _argumentParser;
-    private readonly BackupController _backupController;
     private readonly StateService _stateService;
-    private readonly ConsoleApplicationView _view;
+
+    private ConsoleMenuRuntime _runtime;
 
     public MenuManager(
-        ApplicationTextService textService,
+        Func<string?, ConsoleMenuRuntime> runtimeFactory,
         BackupJobRegistry jobRegistry,
-        ArgumentParser argumentParser,
-        BackupController backupController,
-        StateService stateService,
-        ConsoleApplicationView view)
+        StateService stateService)
     {
-        _textService = textService;
+        _runtimeFactory = runtimeFactory;
         _jobRegistry = jobRegistry;
-        _argumentParser = argumentParser;
-        _backupController = backupController;
         _stateService = stateService;
-        _view = view;
+        _runtime = _runtimeFactory(null);
     }
 
     public void Start()
@@ -33,7 +29,7 @@ public class MenuManager
             Console.Write("\n> ");
             string? choice = Console.ReadLine();
 
-            switch (choice?.ToLower())
+            switch (choice?.Trim().ToLowerInvariant())
             {
                 case "1":
                     ViewJobs();
@@ -48,28 +44,37 @@ public class MenuManager
                     RunBackups();
                     break;
                 case "5":
+                    ChangeLanguage();
+                    break;
+                case "6":
                     return;
                 default:
-                    WriteError(_textService.GetInvalidCommandMessage());
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();
+                    WriteError(GetInvalidMenuChoiceMessage());
+                    Pause();
                     break;
             }
         }
     }
 
+    private ApplicationTextService TextService => _runtime.TextService;
+
+    private ArgumentParser ArgumentParser => _runtime.ArgumentParser;
+
+    private BackupController BackupController => _runtime.BackupController;
+
     private void DisplayMainMenu()
     {
-        string title = _textService.GetConfiguredJobsHeader();
-        Console.WriteLine("+------------------------------------+");
-        Console.WriteLine($"| {title.PadRight(34)} |");
-        Console.WriteLine("+------------------------------------+");
-        Console.WriteLine("| 1. View Jobs                       |");
-        Console.WriteLine("| 2. Configure Source Path           |");
-        Console.WriteLine("| 3. Configure Target Path           |");
-        Console.WriteLine("| 4. Run Backups                     |");
-        Console.WriteLine("| 5. Exit                            |");
-        Console.WriteLine("+------------------------------------+");
+        WriteMenuBorder();
+        WriteMenuLine(GetMainMenuTitle());
+        WriteMenuBorder();
+        WriteMenuLine(GetMenuOptionLabel(1, IsFrench() ? "Voir les taches" : "View jobs"));
+        WriteMenuLine(GetMenuOptionLabel(2, IsFrench() ? "Configurer la source" : "Configure source"));
+        WriteMenuLine(GetMenuOptionLabel(3, IsFrench() ? "Configurer la cible" : "Configure target"));
+        WriteMenuLine(GetMenuOptionLabel(4, IsFrench() ? "Lancer les sauvegardes" : "Run backups"));
+        WriteMenuLine(GetMenuOptionLabel(5, IsFrench() ? "Changer la langue" : "Change language"));
+        WriteMenuLine(GetMenuOptionLabel(6, IsFrench() ? "Quitter" : "Exit"));
+        WriteMenuBorder();
+        Console.WriteLine(GetCurrentLanguageLine());
     }
 
     private void ViewJobs()
@@ -77,15 +82,14 @@ public class MenuManager
         Console.Clear();
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
         RenderJobs(jobs);
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        Pause();
     }
 
     private void ConfigureJobSource()
     {
         Console.Clear();
-        Console.WriteLine("Configure Job Source");
-        Console.WriteLine("====================\n");
+        WriteSectionHeader(
+            IsFrench() ? "Configurer la source" : "Configure source");
 
         int jobNumber = GetJobNumber();
         if (jobNumber == -1)
@@ -93,14 +97,13 @@ public class MenuManager
             return;
         }
 
-        Console.Write("Enter source path: ");
+        Console.Write(GetSourcePathPrompt());
         string? sourcePath = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(sourcePath))
         {
-            WriteError("Invalid path!");
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
+            WriteError(TextService.GetPathValueRequiredMessage());
+            Pause();
             return;
         }
 
@@ -111,18 +114,17 @@ public class MenuManager
         }
         catch (Exception ex)
         {
-            WriteError($"Error: {ex.Message}");
+            WriteError(BuildErrorMessage(ex.Message));
         }
 
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        Pause();
     }
 
     private void ConfigureJobTarget()
     {
         Console.Clear();
-        Console.WriteLine("Configure Job Target");
-        Console.WriteLine("====================\n");
+        WriteSectionHeader(
+            IsFrench() ? "Configurer la cible" : "Configure target");
 
         int jobNumber = GetJobNumber();
         if (jobNumber == -1)
@@ -130,14 +132,13 @@ public class MenuManager
             return;
         }
 
-        Console.Write("Enter target path: ");
+        Console.Write(GetTargetPathPrompt());
         string? targetPath = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(targetPath))
         {
-            WriteError("Invalid path!");
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
+            WriteError(TextService.GetPathValueRequiredMessage());
+            Pause();
             return;
         }
 
@@ -148,22 +149,20 @@ public class MenuManager
         }
         catch (Exception ex)
         {
-            WriteError($"Error: {ex.Message}");
+            WriteError(BuildErrorMessage(ex.Message));
         }
 
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        Pause();
     }
 
     private void RunBackups()
     {
         Console.Clear();
-        Console.WriteLine("Run Backups");
-        Console.WriteLine("===========\n");
-        Console.WriteLine("Enter job selection:");
-        Console.WriteLine("  - Single job: 1");
-        Console.WriteLine("  - Range: 1-3");
-        Console.WriteLine("  - Multiple: 1;3;5");
+        WriteSectionHeader(IsFrench() ? "Lancer les sauvegardes" : "Run backups");
+        Console.WriteLine(GetSelectionInstructionsTitle());
+        Console.WriteLine(GetSingleSelectionExample());
+        Console.WriteLine(GetRangeSelectionExample());
+        Console.WriteLine(GetMultipleSelectionExample());
         Console.WriteLine();
 
         Console.Write("> ");
@@ -171,15 +170,14 @@ public class MenuManager
 
         if (string.IsNullOrWhiteSpace(selection))
         {
-            WriteError("No selection provided!");
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
+            WriteError(TextService.GetSelectionRequiredMessage());
+            Pause();
             return;
         }
 
         try
         {
-            var selectedJobNumbers = _argumentParser.ParseJobSelection(selection);
+            var selectedJobNumbers = ArgumentParser.ParseJobSelection(selection);
             IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
             _stateService.SynchronizeConfiguredJobs(jobs);
 
@@ -188,21 +186,26 @@ public class MenuManager
             {
                 if (jobNumber >= 1 && jobNumber <= jobs.Count)
                 {
-                    selectedJobs.Add(new SelectedBackupJob { JobNumber = jobNumber, Job = jobs[jobNumber - 1] });
+                    selectedJobs.Add(new SelectedBackupJob
+                    {
+                        JobNumber = jobNumber,
+                        Job = jobs[jobNumber - 1]
+                    });
                 }
             }
 
             if (selectedJobs.Count == 0)
             {
-                WriteError("No valid jobs selected!");
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                WriteError(GetNoValidJobsSelectedMessage());
+                Pause();
                 return;
             }
 
-            Console.WriteLine($"\nRunning {selectedJobs.Count} backup job(s)...\n");
+            Console.WriteLine();
+            Console.WriteLine(GetRunningJobsMessage(selectedJobs.Count));
+            Console.WriteLine();
 
-            IReadOnlyList<BackupResult> results = _backupController.StartBackups(selectedJobs);
+            IReadOnlyList<BackupResult> results = BackupController.StartBackups(selectedJobs);
 
             for (int index = 0; index < results.Count; index++)
             {
@@ -226,19 +229,60 @@ public class MenuManager
         }
         catch (Exception ex)
         {
-            WriteError($"Error: {ex.Message}");
+            WriteError(BuildErrorMessage(ex.Message));
         }
 
-        Console.WriteLine("\nPress any key to continue...");
-        Console.ReadKey();
+        Console.WriteLine();
+        Pause();
+    }
+
+    private void ChangeLanguage()
+    {
+        Console.Clear();
+        WriteSectionHeader(IsFrench() ? "Changer la langue" : "Change language");
+        Console.WriteLine(GetCurrentLanguageLine());
+        Console.WriteLine();
+        Console.WriteLine(GetLanguageOptionLabel(1, "English"));
+        Console.WriteLine(GetLanguageOptionLabel(2, "Francais"));
+        Console.WriteLine(GetLanguageOptionLabel(3, IsFrench() ? "Retour" : "Back"));
+        Console.WriteLine();
+        Console.Write(GetLanguageSelectionPrompt());
+
+        string? choice = Console.ReadLine();
+        string normalizedChoice = choice?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        if (normalizedChoice is "3" or "back" or "retour")
+        {
+            return;
+        }
+
+        string? languageCode = normalizedChoice switch
+        {
+            "1" or "en" or "english" or "anglais" => ApplicationTextService.EnglishLanguageCode,
+            "2" or "fr" or "french" or "francais" => ApplicationTextService.FrenchLanguageCode,
+            _ => null
+        };
+
+        if (languageCode == null)
+        {
+            WriteError(GetInvalidLanguageSelectionMessage());
+            Pause();
+            return;
+        }
+
+        RuntimeStoragePaths.SetLanguageCode(languageCode);
+        _runtime = _runtimeFactory(languageCode);
+
+        WriteSuccess(TextService.GetLanguageUpdatedMessage());
+        Pause();
     }
 
     private int GetJobNumber()
     {
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
 
-        Console.WriteLine($"Available jobs: 1-{jobs.Count}");
-        Console.Write("Enter job number: ");
+        Console.WriteLine(GetAvailableJobsLine(jobs.Count));
+        Console.Write(GetJobNumberPrompt());
 
         string? input = Console.ReadLine();
 
@@ -247,9 +291,8 @@ public class MenuManager
             return jobNumber;
         }
 
-        WriteError("Invalid job number!");
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        WriteError(GetInvalidJobNumberSelectionMessage(jobs.Count));
+        Pause();
 
         return -1;
     }
@@ -261,13 +304,13 @@ public class MenuManager
 
         WriteSuccess(GetConfigurationSuccessMessage(jobNumber, fieldName, pathValue));
         Console.WriteLine();
-        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        Console.WriteLine(TextService.GetConfiguredJobsHeader());
         RenderJob(jobNumber, updatedJob);
     }
 
     private void RenderJobs(IReadOnlyList<BackupJob> jobs)
     {
-        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        Console.WriteLine(TextService.GetConfiguredJobsHeader());
         Console.WriteLine();
 
         foreach ((BackupJob job, int index) in jobs.Select((job, index) => (job, index)))
@@ -278,18 +321,18 @@ public class MenuManager
 
     private void RenderJob(int jobNumber, BackupJob job)
     {
-        Console.WriteLine(_textService.GetJobSummaryLine(jobNumber, job));
+        Console.WriteLine(TextService.GetJobSummaryLine(jobNumber, job));
         Console.WriteLine($"{GetSourceLabel()}{FormatPath(job.Source)}");
-        Console.WriteLine($"{GetTargetLabel()}{FormatPath(job.Target, GetNotConfiguredLabel())}");
-        Console.WriteLine(_textService.GetJobTypeLine(job.Type));
-        Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
+        Console.WriteLine($"{GetTargetLabel()}{FormatPath(job.Target)}");
+        Console.WriteLine(TextService.GetJobTypeLine(job.Type));
+        Console.WriteLine(TextService.GetJobConfigurationStatusLine(job));
         Console.WriteLine();
     }
 
     private string BuildBackupSuccessMessage(BackupResult result, bool showHeader)
     {
-        string details = _textService.FormatBackupResult(result);
-        string successMessage = _textService.GetBackupSuccessMessage();
+        string details = TextService.FormatBackupResult(result);
+        string successMessage = TextService.GetBackupSuccessMessage();
 
         if (!showHeader)
         {
@@ -301,7 +344,7 @@ public class MenuManager
 
     private string BuildBackupErrorMessage(BackupResult result, bool showHeader)
     {
-        string details = _textService.FormatBackupResult(result);
+        string details = TextService.FormatBackupResult(result);
         return showHeader
             ? $"{GetJobHeader(result)}\n{details}"
             : details;
@@ -318,7 +361,7 @@ public class MenuManager
     {
         if (pathField == JobPathField.Source)
         {
-            return "source";
+            return IsFrench() ? "source" : "source";
         }
 
         return IsFrench() ? "cible" : "target";
@@ -341,24 +384,149 @@ public class MenuManager
         return IsFrench() ? "  Cible : " : "  Target: ";
     }
 
-    private string GetNotConfiguredLabel()
+    private string GetMainMenuTitle()
     {
-        return IsFrench() ? "<non configure>" : "<not configured>";
+        return IsFrench() ? "Menu principal" : "Main menu";
+    }
+
+    private string GetCurrentLanguageLine()
+    {
+        return IsFrench()
+            ? $"Langue actuelle : {GetCurrentLanguageDisplayName()}"
+            : $"Current language: {GetCurrentLanguageDisplayName()}";
+    }
+
+    private string GetCurrentLanguageDisplayName()
+    {
+        string languageCode = TextService.GetLanguageCode();
+
+        return languageCode == ApplicationTextService.FrenchLanguageCode
+            ? (IsFrench() ? "francais" : "French")
+            : (IsFrench() ? "anglais" : "English");
+    }
+
+    private string GetMenuOptionLabel(int optionNumber, string label)
+    {
+        return $"{optionNumber}. {label}";
+    }
+
+    private string GetLanguageOptionLabel(int optionNumber, string label)
+    {
+        return $"{optionNumber}. {label}";
+    }
+
+    private string GetSourcePathPrompt()
+    {
+        return IsFrench() ? "Entrez le chemin source : " : "Enter source path: ";
+    }
+
+    private string GetTargetPathPrompt()
+    {
+        return IsFrench() ? "Entrez le chemin cible : " : "Enter target path: ";
+    }
+
+    private string GetSelectionInstructionsTitle()
+    {
+        return IsFrench() ? "Entrez la selection des taches :" : "Enter job selection:";
+    }
+
+    private string GetSingleSelectionExample()
+    {
+        return IsFrench() ? "  - Tache unique : 1" : "  - Single job: 1";
+    }
+
+    private string GetRangeSelectionExample()
+    {
+        return IsFrench() ? "  - Plage : 1-3" : "  - Range: 1-3";
+    }
+
+    private string GetMultipleSelectionExample()
+    {
+        return IsFrench() ? "  - Multiple : 1;3;5" : "  - Multiple: 1;3;5";
+    }
+
+    private string GetRunningJobsMessage(int jobCount)
+    {
+        return IsFrench()
+            ? $"Execution de {jobCount} tache(s) de sauvegarde..."
+            : $"Running {jobCount} backup job(s)...";
+    }
+
+    private string GetNoValidJobsSelectedMessage()
+    {
+        return IsFrench() ? "Aucune tache valide selectionnee !" : "No valid jobs selected!";
+    }
+
+    private string GetAvailableJobsLine(int jobCount)
+    {
+        return IsFrench()
+            ? $"Taches disponibles : 1-{jobCount}"
+            : $"Available jobs: 1-{jobCount}";
+    }
+
+    private string GetJobNumberPrompt()
+    {
+        return IsFrench() ? "Entrez le numero de tache : " : "Enter job number: ";
+    }
+
+    private string GetInvalidJobNumberSelectionMessage(int jobCount)
+    {
+        return IsFrench()
+            ? $"Numero de tache invalide. Utilisez une valeur entre 1 et {jobCount}."
+            : $"Invalid job number. Use a value between 1 and {jobCount}.";
+    }
+
+    private string GetInvalidMenuChoiceMessage()
+    {
+        return IsFrench() ? "Choix invalide dans le menu." : "Invalid menu choice.";
+    }
+
+    private string GetInvalidLanguageSelectionMessage()
+    {
+        return IsFrench() ? "Choix de langue invalide." : "Invalid language selection.";
+    }
+
+    private string GetLanguageSelectionPrompt()
+    {
+        return IsFrench() ? "Choisissez une langue : " : "Choose a language: ";
+    }
+
+    private string GetPauseMessage()
+    {
+        return IsFrench()
+            ? "Appuyez sur une touche pour continuer..."
+            : "Press any key to continue...";
+    }
+
+    private string BuildErrorMessage(string details)
+    {
+        return IsFrench() ? $"Erreur : {details}" : $"Error: {details}";
     }
 
     private bool IsFrench()
     {
         return string.Equals(
-            _textService.GetLanguageCode(),
+            TextService.GetLanguageCode(),
             ApplicationTextService.FrenchLanguageCode,
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string FormatPath(string path, string emptyValue = "<non configure>")
+    private string FormatPath(string path)
     {
         return string.IsNullOrWhiteSpace(path)
-            ? emptyValue
+            ? GetNotConfiguredLabel()
             : $"<{path}>";
+    }
+
+    private string GetNotConfiguredLabel()
+    {
+        return IsFrench() ? "<non configure>" : "<not configured>";
+    }
+
+    private void Pause()
+    {
+        Console.WriteLine(GetPauseMessage());
+        Console.ReadKey();
     }
 
     private static void WriteSuccess(string message)
@@ -376,5 +544,26 @@ public class MenuManager
         Console.ForegroundColor = color;
         Console.WriteLine(message);
         Console.ResetColor();
+    }
+
+    private void WriteSectionHeader(string title)
+    {
+        Console.WriteLine(title);
+        Console.WriteLine(new string('=', title.Length));
+        Console.WriteLine();
+    }
+
+    private void WriteMenuBorder()
+    {
+        Console.WriteLine($"+{new string('-', MenuInnerWidth + 2)}+");
+    }
+
+    private void WriteMenuLine(string content)
+    {
+        string paddedContent = content.Length > MenuInnerWidth
+            ? content[..MenuInnerWidth]
+            : content.PadRight(MenuInnerWidth);
+
+        Console.WriteLine($"| {paddedContent} |");
     }
 }
