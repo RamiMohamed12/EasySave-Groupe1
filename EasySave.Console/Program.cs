@@ -3,7 +3,7 @@ var stateService = new StateService();
 var backupHistoryService = new BackupHistoryService();
 var jobRegistry = new BackupJobRegistry();
 
-var menuManager = new MenuManager(
+var menuManager = new ConsoleMenu(
     CreateRuntime,
     jobRegistry,
     stateService);
