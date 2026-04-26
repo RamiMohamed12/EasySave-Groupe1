@@ -50,7 +50,7 @@ public class MenuManager
                 case "5":
                     return;
                 default:
-                    Console.WriteLine(_textService.GetInvalidCommandMessage());
+                    WriteError(_textService.GetInvalidCommandMessage());
                     Console.WriteLine("Press any key to continue...");
                     Console.ReadKey();
                     break;
@@ -61,35 +61,22 @@ public class MenuManager
     private void DisplayMainMenu()
     {
         string title = _textService.GetConfiguredJobsHeader();
-        Console.WriteLine("╔════════════════════════════════════╗");
-        Console.WriteLine($"║ {title.PadRight(34)} ║");
-        Console.WriteLine("╠════════════════════════════════════╣");
-        Console.WriteLine("║ 1. View Jobs                       ║");
-        Console.WriteLine("║ 2. Configure Source Path           ║");
-        Console.WriteLine("║ 3. Configure Target Path           ║");
-        Console.WriteLine("║ 4. Run Backups                     ║");
-        Console.WriteLine("║ 5. Exit                            ║");
-        Console.WriteLine("╚════════════════════════════════════╝");
+        Console.WriteLine("+------------------------------------+");
+        Console.WriteLine($"| {title.PadRight(34)} |");
+        Console.WriteLine("+------------------------------------+");
+        Console.WriteLine("| 1. View Jobs                       |");
+        Console.WriteLine("| 2. Configure Source Path           |");
+        Console.WriteLine("| 3. Configure Target Path           |");
+        Console.WriteLine("| 4. Run Backups                     |");
+        Console.WriteLine("| 5. Exit                            |");
+        Console.WriteLine("+------------------------------------+");
     }
 
     private void ViewJobs()
     {
         Console.Clear();
-        var jobs = _jobRegistry.LoadJobs();
-
-        Console.WriteLine(_textService.GetConfiguredJobsHeader());
-        Console.WriteLine();
-
-        foreach ((BackupJob job, int index) in jobs.Select((job, index) => (job, index)))
-        {
-            Console.WriteLine($"Job {index + 1}:");
-            Console.WriteLine(_textService.GetJobSourceLine(job.Source));
-            Console.WriteLine(_textService.GetJobTargetLine(job.Target));
-            Console.WriteLine(_textService.GetJobTypeLine(job.Type));
-            Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
-            Console.WriteLine();
-        }
-
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        RenderJobs(jobs);
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey();
     }
@@ -101,14 +88,17 @@ public class MenuManager
         Console.WriteLine("====================\n");
 
         int jobNumber = GetJobNumber();
-        if (jobNumber == -1) return;
+        if (jobNumber == -1)
+        {
+            return;
+        }
 
         Console.Write("Enter source path: ");
         string? sourcePath = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(sourcePath))
         {
-            Console.WriteLine("Invalid path!");
+            WriteError("Invalid path!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
             return;
@@ -116,16 +106,12 @@ public class MenuManager
 
         try
         {
-            _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Source, sourcePath);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Source path updated successfully!");
-            Console.ResetColor();
+            BackupJob updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Source, sourcePath);
+            RenderConfigurationSuccess(jobNumber, updatedJob, JobPathField.Source);
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
+            WriteError($"Error: {ex.Message}");
         }
 
         Console.WriteLine("Press any key to continue...");
@@ -139,14 +125,17 @@ public class MenuManager
         Console.WriteLine("====================\n");
 
         int jobNumber = GetJobNumber();
-        if (jobNumber == -1) return;
+        if (jobNumber == -1)
+        {
+            return;
+        }
 
         Console.Write("Enter target path: ");
         string? targetPath = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(targetPath))
         {
-            Console.WriteLine("Invalid path!");
+            WriteError("Invalid path!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
             return;
@@ -154,16 +143,12 @@ public class MenuManager
 
         try
         {
-            _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Target, targetPath);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Target path updated successfully!");
-            Console.ResetColor();
+            BackupJob updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Target, targetPath);
+            RenderConfigurationSuccess(jobNumber, updatedJob, JobPathField.Target);
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
+            WriteError($"Error: {ex.Message}");
         }
 
         Console.WriteLine("Press any key to continue...");
@@ -186,7 +171,7 @@ public class MenuManager
 
         if (string.IsNullOrWhiteSpace(selection))
         {
-            Console.WriteLine("No selection provided!");
+            WriteError("No selection provided!");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
             return;
@@ -195,7 +180,7 @@ public class MenuManager
         try
         {
             var selectedJobNumbers = _argumentParser.ParseJobSelection(selection);
-            var jobs = _jobRegistry.LoadJobs();
+            IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
             _stateService.SynchronizeConfiguredJobs(jobs);
 
             var selectedJobs = new List<SelectedBackupJob>();
@@ -209,7 +194,7 @@ public class MenuManager
 
             if (selectedJobs.Count == 0)
             {
-                Console.WriteLine("No valid jobs selected!");
+                WriteError("No valid jobs selected!");
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey();
                 return;
@@ -217,29 +202,31 @@ public class MenuManager
 
             Console.WriteLine($"\nRunning {selectedJobs.Count} backup job(s)...\n");
 
-            var results = _backupController.StartBackups(selectedJobs);
+            IReadOnlyList<BackupResult> results = _backupController.StartBackups(selectedJobs);
 
-            foreach (var result in results)
+            for (int index = 0; index < results.Count; index++)
             {
+                BackupResult result = results[index];
+                bool showHeader = results.Count > 1;
+
                 if (result.Status == BackupExecutionStatus.Finished)
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($"✓ Job {result.JobNumber} ({result.BackupName}): Completed");
-                    Console.ResetColor();
+                    WriteSuccess(BuildBackupSuccessMessage(result, showHeader));
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"✗ Job {result.JobNumber} ({result.BackupName}): Failed - {result.ErrorMessage}");
-                    Console.ResetColor();
+                    WriteError(BuildBackupErrorMessage(result, showHeader));
+                }
+
+                if (index < results.Count - 1)
+                {
+                    Console.WriteLine();
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
+            WriteError($"Error: {ex.Message}");
         }
 
         Console.WriteLine("\nPress any key to continue...");
@@ -248,7 +235,7 @@ public class MenuManager
 
     private int GetJobNumber()
     {
-        var jobs = _jobRegistry.LoadJobs();
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
 
         Console.WriteLine($"Available jobs: 1-{jobs.Count}");
         Console.Write("Enter job number: ");
@@ -260,12 +247,134 @@ public class MenuManager
             return jobNumber;
         }
 
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Invalid job number!");
-        Console.ResetColor();
+        WriteError("Invalid job number!");
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey();
 
         return -1;
+    }
+
+    private void RenderConfigurationSuccess(int jobNumber, BackupJob updatedJob, JobPathField pathField)
+    {
+        string fieldName = GetConfigurationFieldName(pathField);
+        string pathValue = pathField == JobPathField.Source ? updatedJob.Source : updatedJob.Target;
+
+        WriteSuccess(GetConfigurationSuccessMessage(jobNumber, fieldName, pathValue));
+        Console.WriteLine();
+        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        RenderJob(jobNumber, updatedJob);
+    }
+
+    private void RenderJobs(IReadOnlyList<BackupJob> jobs)
+    {
+        Console.WriteLine(_textService.GetConfiguredJobsHeader());
+        Console.WriteLine();
+
+        foreach ((BackupJob job, int index) in jobs.Select((job, index) => (job, index)))
+        {
+            RenderJob(index + 1, job);
+        }
+    }
+
+    private void RenderJob(int jobNumber, BackupJob job)
+    {
+        Console.WriteLine(_textService.GetJobSummaryLine(jobNumber, job));
+        Console.WriteLine($"{GetSourceLabel()}{FormatPath(job.Source)}");
+        Console.WriteLine($"{GetTargetLabel()}{FormatPath(job.Target, GetNotConfiguredLabel())}");
+        Console.WriteLine(_textService.GetJobTypeLine(job.Type));
+        Console.WriteLine(_textService.GetJobConfigurationStatusLine(job));
+        Console.WriteLine();
+    }
+
+    private string BuildBackupSuccessMessage(BackupResult result, bool showHeader)
+    {
+        string details = _textService.FormatBackupResult(result);
+        string successMessage = _textService.GetBackupSuccessMessage();
+
+        if (!showHeader)
+        {
+            return $"{details}\n{successMessage}";
+        }
+
+        return $"{GetJobHeader(result)}\n{details}\n{successMessage}";
+    }
+
+    private string BuildBackupErrorMessage(BackupResult result, bool showHeader)
+    {
+        string details = _textService.FormatBackupResult(result);
+        return showHeader
+            ? $"{GetJobHeader(result)}\n{details}"
+            : details;
+    }
+
+    private string GetJobHeader(BackupResult result)
+    {
+        return IsFrench()
+            ? $"Tache {result.JobNumber} : {result.BackupName}"
+            : $"Job {result.JobNumber}: {result.BackupName}";
+    }
+
+    private string GetConfigurationFieldName(JobPathField pathField)
+    {
+        if (pathField == JobPathField.Source)
+        {
+            return "source";
+        }
+
+        return IsFrench() ? "cible" : "target";
+    }
+
+    private string GetConfigurationSuccessMessage(int jobNumber, string fieldName, string pathValue)
+    {
+        return IsFrench()
+            ? $"La tache {jobNumber} a ete mise a jour : {fieldName} = {FormatPath(pathValue)}"
+            : $"Job {jobNumber} was updated: {fieldName} = {FormatPath(pathValue)}";
+    }
+
+    private string GetSourceLabel()
+    {
+        return IsFrench() ? "  Source : " : "  Source: ";
+    }
+
+    private string GetTargetLabel()
+    {
+        return IsFrench() ? "  Cible : " : "  Target: ";
+    }
+
+    private string GetNotConfiguredLabel()
+    {
+        return IsFrench() ? "<non configure>" : "<not configured>";
+    }
+
+    private bool IsFrench()
+    {
+        return string.Equals(
+            _textService.GetLanguageCode(),
+            ApplicationTextService.FrenchLanguageCode,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatPath(string path, string emptyValue = "<non configure>")
+    {
+        return string.IsNullOrWhiteSpace(path)
+            ? emptyValue
+            : $"<{path}>";
+    }
+
+    private static void WriteSuccess(string message)
+    {
+        WriteColored(message, ConsoleColor.Green);
+    }
+
+    private static void WriteError(string message)
+    {
+        WriteColored(message, ConsoleColor.Red);
+    }
+
+    private static void WriteColored(string message, ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(message);
+        Console.ResetColor();
     }
 }
