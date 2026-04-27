@@ -41,6 +41,10 @@ public class FrenchConsoleTexts
     public string InvalidSearchRootMessage => "La racine de recherche n'existe pas.";
     public string DirectoryDoesNotExistMessage => "Le dossier n'existe pas.";
     public string ConfigurationCompletedMessage => "La configuration a reussi.";
+    public string NoConfigurationChangesMessage => "Aucune modification de configuration n'a ete effectuee.";
+    public string SelectedJobLabel => "Tache selectionnee :";
+    public string SourcePathKeepExistingPrompt => "Chemin source (laisser vide pour conserver la valeur actuelle) : ";
+    public string TargetPathKeepExistingPrompt => "Chemin cible (laisser vide pour conserver la valeur actuelle) : ";
     public string NoLogsFoundMessage => "Aucun fichier de log trouve.";
     public string AvailableLogsLine => "Logs disponibles :";
     public string LogSelectionPrompt => "Choisissez un numero de log : ";

@@ -41,6 +41,10 @@ public class EnglishConsoleTexts
     public string InvalidSearchRootMessage => "Search root does not exist.";
     public string DirectoryDoesNotExistMessage => "Directory does not exist.";
     public string ConfigurationCompletedMessage => "Configuration was successful.";
+    public string NoConfigurationChangesMessage => "No configuration changes were made.";
+    public string SelectedJobLabel => "Selected job:";
+    public string SourcePathKeepExistingPrompt => "Source path (leave empty to keep unchanged): ";
+    public string TargetPathKeepExistingPrompt => "Target path (leave empty to keep unchanged): ";
     public string NoLogsFoundMessage => "No log files were found.";
     public string AvailableLogsLine => "Available logs:";
     public string LogSelectionPrompt => "Choose a log number: ";

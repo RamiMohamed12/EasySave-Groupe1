@@ -174,6 +174,26 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.ConfigurationCompletedMessage : _englishTexts.ConfigurationCompletedMessage;
     }
 
+    public string GetNoConfigurationChangesMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NoConfigurationChangesMessage : _englishTexts.NoConfigurationChangesMessage;
+    }
+
+    public string GetSelectedJobLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SelectedJobLabel : _englishTexts.SelectedJobLabel;
+    }
+
+    public string GetSourcePathKeepExistingPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SourcePathKeepExistingPrompt : _englishTexts.SourcePathKeepExistingPrompt;
+    }
+
+    public string GetTargetPathKeepExistingPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.TargetPathKeepExistingPrompt : _englishTexts.TargetPathKeepExistingPrompt;
+    }
+
     public string GetNoLogsFoundMessage(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.NoLogsFoundMessage : _englishTexts.NoLogsFoundMessage;

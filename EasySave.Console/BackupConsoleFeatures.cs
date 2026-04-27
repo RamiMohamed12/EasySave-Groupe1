@@ -23,6 +23,7 @@ public class BackupConsoleFeatures
     public void ViewJobs()
     {
         Console.Clear();
+        WriteSectionHeader(_translationService.GetViewJobsLabel(TextService));
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
         RenderJobs(jobs);
         Pause();
@@ -45,23 +46,39 @@ public class BackupConsoleFeatures
         try
         {
             BackupJob updatedJob = jobs[jobNumber - 1];
+            Console.Clear();
+            WriteSectionHeader(_translationService.GetConfigureJobLabel(TextService));
+            Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
+            RenderJob(jobNumber, updatedJob);
+
+            bool hasChanges = false;
             string? sourcePath = ReadPath(JobPathField.Source);
             if (!string.IsNullOrWhiteSpace(sourcePath))
             {
                 updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Source, sourcePath);
+                hasChanges = true;
             }
 
             string? targetPath = ReadPath(JobPathField.Target);
             if (!string.IsNullOrWhiteSpace(targetPath))
             {
                 updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Target, targetPath);
+                hasChanges = true;
             }
 
             _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
             Console.WriteLine();
-            WriteSuccess(_translationService.GetConfigurationCompletedMessage(TextService));
+            if (hasChanges)
+            {
+                WriteSuccess(_translationService.GetConfigurationCompletedMessage(TextService));
+            }
+            else
+            {
+                WriteWarning(_translationService.GetNoConfigurationChangesMessage(TextService));
+            }
+
             Console.WriteLine();
-            Console.WriteLine(TextService.GetConfiguredJobsHeader());
+            Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
             RenderJob(jobNumber, updatedJob);
         }
         catch (Exception ex)
@@ -279,49 +296,30 @@ public class BackupConsoleFeatures
 
     private string? ReadPath(JobPathField pathField)
     {
-        Console.WriteLine();
-        Console.WriteLine(_translationService.GetLanguageOptionLabel(1, GetPathInputLabel(pathField)));
-        Console.WriteLine(_translationService.GetLanguageOptionLabel(2, _translationService.GetSkipLabel(TextService)));
-        Console.WriteLine();
-        Console.Write(_translationService.GetPathInputModePrompt(TextService));
-
-        string normalizedChoice = Console.ReadLine()?.Trim().ToLowerInvariant() ?? string.Empty;
-
-        return normalizedChoice switch
+        while (true)
         {
-            "1" or "paste" or "coller" => ReadPastedPath(pathField),
-            "2" or "skip" or "back" or "ignorer" or "retour" => null,
-            _ => null
-        };
+            Console.Write(GetPathPrompt(pathField));
+
+            string path = Console.ReadLine()?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            if (Directory.Exists(path))
+            {
+                return path;
+            }
+
+            WriteError(_translationService.BuildErrorMessage(TextService, _translationService.GetDirectoryDoesNotExistMessage(TextService)));
+        }
     }
 
-    private string GetPathInputLabel(JobPathField pathField)
+    private string GetPathPrompt(JobPathField pathField)
     {
         return pathField == JobPathField.Source
-            ? _translationService.GetPasteSourcePathLabel(TextService)
-            : _translationService.GetPasteTargetPathLabel(TextService);
-    }
-
-    private string? ReadPastedPath(JobPathField pathField)
-    {
-        Console.Write(pathField == JobPathField.Source
-            ? _translationService.GetSourcePathPrompt(TextService)
-            : _translationService.GetTargetPathPrompt(TextService));
-
-        string path = Console.ReadLine()?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            WriteError(TextService.GetPathValueRequiredMessage());
-            return null;
-        }
-
-        if (!Directory.Exists(path))
-        {
-            WriteError(_translationService.BuildErrorMessage(TextService, _translationService.GetDirectoryDoesNotExistMessage(TextService)));
-            return null;
-        }
-
-        return path;
+            ? _translationService.GetSourcePathKeepExistingPrompt(TextService)
+            : _translationService.GetTargetPathKeepExistingPrompt(TextService);
     }
 
     private string? SearchPath()
