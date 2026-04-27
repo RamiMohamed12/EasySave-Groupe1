@@ -8,7 +8,19 @@ var menuManager = new ConsoleMenu(
     jobRegistry,
     stateService);
 
-menuManager.Start();
+if (args.Length == 0)
+{
+    menuManager.Start();
+}
+else
+{
+    var commandLineBackupRunner = new CommandLineBackupRunner(
+        jobRegistry,
+        stateService,
+        CreateRuntime);
+
+    commandLineBackupRunner.Run(args);
+}
 
 ConsoleMenuRuntime CreateRuntime(string? languageCode)
 {
