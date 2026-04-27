@@ -38,7 +38,10 @@ public static class FastDirectorySearch
 
     public static bool IsNameMatch(string directoryPath, string query)
     {
-        string directoryName = Path.GetFileName(directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        string directoryName = directoryPath
+            .TrimEnd('\\', '/')
+            .Split('\\', '/')
+            .LastOrDefault() ?? string.Empty;
 
         return directoryName.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
