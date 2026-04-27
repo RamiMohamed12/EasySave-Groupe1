@@ -4,6 +4,7 @@ public class EnglishConsoleTexts
     public string ViewJobsLabel => "View jobs";
     public string ConfigureSourceLabel => "Configure source";
     public string ConfigureTargetLabel => "Configure target";
+    public string ConfigureJobLabel => "Configure job";
     public string RunBackupsLabel => "Run backups";
     public string ChangeLanguageLabel => "Change language";
     public string ExitLabel => "Exit";
@@ -23,6 +24,21 @@ public class EnglishConsoleTexts
     public string TargetPathPrompt => "Enter target path: ";
     public string JobNumberPrompt => "Enter job number: ";
     public string NotConfiguredLabel => "<not configured>";
+    public string PastePathLabel => "Paste path";
+    public string PasteSourcePathLabel => "Paste source path";
+    public string PasteTargetPathLabel => "Paste target path";
+    public string SearchDirectoryLabel => "Search directory";
+    public string SkipLabel => "Skip";
+    public string PathInputModePrompt => "Choose how to set this path: ";
+    public string SearchRootPrompt => "Enter search root (example C:\\ or D:\\Data): ";
+    public string SearchQueryPrompt => "Enter directory name to search: ";
+    public string NoSearchMatchesMessage => "No matching directories found.";
+    public string SearchResultSelectionPrompt => "Choose a result number: ";
+    public string InvalidSearchResultSelectionMessage => "Invalid result selection.";
+    public string SearchUnsupportedMessage => "Directory search is only supported on Windows. Paste a path instead.";
+    public string InvalidSearchRootMessage => "Search root does not exist.";
+    public string DirectoryDoesNotExistMessage => "Directory does not exist.";
+    public string ConfigurationCompletedMessage => "Configuration was successful.";
 
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {
@@ -66,6 +82,18 @@ public class EnglishConsoleTexts
         string fieldName = pathField == JobPathField.Source ? "source" : "target";
         string pathValue = pathField == JobPathField.Source ? updatedJob.Source : updatedJob.Target;
         return $"Job {jobNumber} was updated: {fieldName} = {FormatPath(pathValue)}";
+    }
+
+    public string GetConfigurePathTitle(JobPathField pathField)
+    {
+        return pathField == JobPathField.Source
+            ? "Configure source"
+            : "Configure target";
+    }
+
+    public string GetSearchStoppedMessage(int resultLimit)
+    {
+        return $"Search stopped after {resultLimit} results. Refine the query if needed.";
     }
 
     public string GetJobHeader(BackupResult result)

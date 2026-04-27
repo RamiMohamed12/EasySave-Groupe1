@@ -4,6 +4,7 @@ public class FrenchConsoleTexts
     public string ViewJobsLabel => "Voir les taches";
     public string ConfigureSourceLabel => "Configurer la source";
     public string ConfigureTargetLabel => "Configurer la cible";
+    public string ConfigureJobLabel => "Configurer une tache";
     public string RunBackupsLabel => "Lancer les sauvegardes";
     public string ChangeLanguageLabel => "Changer la langue";
     public string ExitLabel => "Quitter";
@@ -23,6 +24,21 @@ public class FrenchConsoleTexts
     public string TargetPathPrompt => "Entrez le chemin cible : ";
     public string JobNumberPrompt => "Entrez le numero de tache : ";
     public string NotConfiguredLabel => "<non configure>";
+    public string PastePathLabel => "Coller un chemin";
+    public string PasteSourcePathLabel => "Coller le chemin source";
+    public string PasteTargetPathLabel => "Coller le chemin cible";
+    public string SearchDirectoryLabel => "Rechercher un dossier";
+    public string SkipLabel => "Ignorer";
+    public string PathInputModePrompt => "Choisissez comment definir ce chemin : ";
+    public string SearchRootPrompt => "Entrez la racine de recherche (exemple C:\\ ou D:\\Data) : ";
+    public string SearchQueryPrompt => "Entrez le nom du dossier a rechercher : ";
+    public string NoSearchMatchesMessage => "Aucun dossier correspondant trouve.";
+    public string SearchResultSelectionPrompt => "Choisissez un numero de resultat : ";
+    public string InvalidSearchResultSelectionMessage => "Selection de resultat invalide.";
+    public string SearchUnsupportedMessage => "La recherche de dossiers est uniquement disponible sur Windows. Collez un chemin a la place.";
+    public string InvalidSearchRootMessage => "La racine de recherche n'existe pas.";
+    public string DirectoryDoesNotExistMessage => "Le dossier n'existe pas.";
+    public string ConfigurationCompletedMessage => "La configuration a reussi.";
 
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {
@@ -66,6 +82,18 @@ public class FrenchConsoleTexts
         string fieldName = pathField == JobPathField.Source ? "source" : "cible";
         string pathValue = pathField == JobPathField.Source ? updatedJob.Source : updatedJob.Target;
         return $"La tache {jobNumber} a ete mise a jour : {fieldName} = {FormatPath(pathValue)}";
+    }
+
+    public string GetConfigurePathTitle(JobPathField pathField)
+    {
+        return pathField == JobPathField.Source
+            ? "Configurer la source"
+            : "Configurer la cible";
+    }
+
+    public string GetSearchStoppedMessage(int resultLimit)
+    {
+        return $"La recherche s'est arretee apres {resultLimit} resultats. Affinez la recherche si necessaire.";
     }
 
     public string GetJobHeader(BackupResult result)

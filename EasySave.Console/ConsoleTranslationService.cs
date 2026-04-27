@@ -23,6 +23,11 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.ConfigureTargetLabel : _englishTexts.ConfigureTargetLabel;
     }
 
+    public string GetConfigureJobLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ConfigureJobLabel : _englishTexts.ConfigureJobLabel;
+    }
+
     public string GetRunBackupsLabel(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.RunBackupsLabel : _englishTexts.RunBackupsLabel;
@@ -80,6 +85,97 @@ public class ConsoleTranslationService
     public string GetTargetPathPrompt(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.TargetPathPrompt : _englishTexts.TargetPathPrompt;
+    }
+
+    public string GetPastePathLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.PastePathLabel : _englishTexts.PastePathLabel;
+    }
+
+    public string GetPasteSourcePathLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.PasteSourcePathLabel : _englishTexts.PasteSourcePathLabel;
+    }
+
+    public string GetPasteTargetPathLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.PasteTargetPathLabel : _englishTexts.PasteTargetPathLabel;
+    }
+
+    public string GetSearchDirectoryLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SearchDirectoryLabel : _englishTexts.SearchDirectoryLabel;
+    }
+
+    public string GetSkipLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SkipLabel : _englishTexts.SkipLabel;
+    }
+
+    public string GetPathInputModePrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.PathInputModePrompt : _englishTexts.PathInputModePrompt;
+    }
+
+    public string GetSearchRootPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SearchRootPrompt : _englishTexts.SearchRootPrompt;
+    }
+
+    public string GetSearchQueryPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SearchQueryPrompt : _englishTexts.SearchQueryPrompt;
+    }
+
+    public string GetNoSearchMatchesMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NoSearchMatchesMessage : _englishTexts.NoSearchMatchesMessage;
+    }
+
+    public string GetSearchResultSelectionPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SearchResultSelectionPrompt : _englishTexts.SearchResultSelectionPrompt;
+    }
+
+    public string GetInvalidSearchResultSelectionMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.InvalidSearchResultSelectionMessage
+            : _englishTexts.InvalidSearchResultSelectionMessage;
+    }
+
+    public string GetSearchUnsupportedMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SearchUnsupportedMessage : _englishTexts.SearchUnsupportedMessage;
+    }
+
+    public string GetInvalidSearchRootMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.InvalidSearchRootMessage : _englishTexts.InvalidSearchRootMessage;
+    }
+
+    public string GetDirectoryDoesNotExistMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.DirectoryDoesNotExistMessage : _englishTexts.DirectoryDoesNotExistMessage;
+    }
+
+    public string GetConfigurationCompletedMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ConfigurationCompletedMessage : _englishTexts.ConfigurationCompletedMessage;
+    }
+
+    public string GetConfigurePathTitle(ApplicationTextService textService, JobPathField pathField)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetConfigurePathTitle(pathField)
+            : _englishTexts.GetConfigurePathTitle(pathField);
+    }
+
+    public string GetSearchStoppedMessage(ApplicationTextService textService, int resultLimit)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetSearchStoppedMessage(resultLimit)
+            : _englishTexts.GetSearchStoppedMessage(resultLimit);
     }
 
     public string GetSelectionInstructionsTitle(ApplicationTextService textService)

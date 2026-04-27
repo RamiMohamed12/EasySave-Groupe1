@@ -38,18 +38,15 @@ public class ConsoleMenu
                     _backupFeatures.ViewJobs();
                     break;
                 case "2":
-                    _backupFeatures.ConfigureJobSource();
+                    _backupFeatures.ConfigureJob();
                     break;
                 case "3":
-                    _backupFeatures.ConfigureJobTarget();
-                    break;
-                case "4":
                     _backupFeatures.RunBackups();
                     break;
-                case "5":
+                case "4":
                     _backupFeatures.ChangeLanguage();
                     break;
-                case "6":
+                case "5":
                     return;
                 default:
                     WriteError(_translationService.GetInvalidMenuChoiceMessage(_runtime.TextService));
@@ -76,11 +73,10 @@ public class ConsoleMenu
         WriteMenuLine(_translationService.GetMainMenuTitle(_runtime.TextService));
         WriteMenuBorder();
         WriteMenuLine(_translationService.GetMenuOptionLabel(1, _translationService.GetViewJobsLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(2, _translationService.GetConfigureSourceLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(3, _translationService.GetConfigureTargetLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(4, _translationService.GetRunBackupsLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(5, _translationService.GetChangeLanguageLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(6, _translationService.GetExitLabel(_runtime.TextService)));
+        WriteMenuLine(_translationService.GetMenuOptionLabel(2, _translationService.GetConfigureJobLabel(_runtime.TextService)));
+        WriteMenuLine(_translationService.GetMenuOptionLabel(3, _translationService.GetRunBackupsLabel(_runtime.TextService)));
+        WriteMenuLine(_translationService.GetMenuOptionLabel(4, _translationService.GetChangeLanguageLabel(_runtime.TextService)));
+        WriteMenuLine(_translationService.GetMenuOptionLabel(5, _translationService.GetExitLabel(_runtime.TextService)));
         WriteMenuBorder();
         Console.WriteLine(_translationService.GetCurrentLanguageLine(_runtime.TextService));
     }
