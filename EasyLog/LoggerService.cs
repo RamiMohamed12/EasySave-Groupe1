@@ -4,7 +4,7 @@ public class LoggerService
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
-        WriteIndented = false
+        WriteIndented = true
     };
 
     public void WriteLog(LogEntry entry)

@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 public class BackupConsoleFeatures
 {
     private readonly BackupJobRegistry _jobRegistry;
@@ -278,7 +280,57 @@ public class BackupConsoleFeatures
             return;
         }
 
-        Console.WriteLine(content);
+        Console.WriteLine(IsDailyLogFile(displayName)
+            ? FormatJsonLogContent(content)
+            : content);
+    }
+
+    private static bool IsDailyLogFile(string displayName)
+    {
+        return displayName.Length == "yyyy-MM-dd.json".Length
+            && displayName.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatJsonLogContent(string content)
+    {
+        var formattedEntries = new List<string>();
+
+        foreach (string jsonBlock in ReadJsonBlocks(content))
+        {
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(jsonBlock);
+                formattedEntries.Add(JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                }));
+            }
+            catch (JsonException)
+            {
+                formattedEntries.Add(jsonBlock);
+            }
+        }
+
+        return string.Join(Environment.NewLine, formattedEntries);
+    }
+
+    private static IEnumerable<string> ReadJsonBlocks(string content)
+    {
+        var blockLines = new List<string>();
+        int depth = 0;
+
+        foreach (string line in content.Split(Environment.NewLine).Where(line => !string.IsNullOrWhiteSpace(line)))
+        {
+            blockLines.Add(line);
+            depth += line.Count(character => character == '{');
+            depth -= line.Count(character => character == '}');
+
+            if (depth == 0 && blockLines.Count > 0)
+            {
+                yield return string.Join(Environment.NewLine, blockLines);
+                blockLines.Clear();
+            }
+        }
     }
 
     private static IReadOnlyList<string> GetLogFilePathsToDisplay()

@@ -25,7 +25,11 @@ public class LoggerServiceTests
         string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(timestamp);
         Assert.True(File.Exists(logFilePath));
 
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(File.ReadAllText(logFilePath).Trim());
+        string logContent = File.ReadAllText(logFilePath).Trim();
+        Assert.Contains(Environment.NewLine, logContent);
+        Assert.Contains("  \"ActionType\": \"FileTransfer\"", logContent);
+
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(logContent);
         Assert.NotNull(entry);
         Assert.Equal("FileTransfer", entry.ActionType);
         Assert.Equal(42, entry.FileSizeBytes);
@@ -41,7 +45,14 @@ public class LoggerServiceTests
         logger.WriteLog(new LogEntry { Timestamp = timestamp, BackupName = "Job1", ActionType = "CreateDirectory" });
         logger.WriteLog(new LogEntry { Timestamp = timestamp, BackupName = "Job1", ActionType = "FileTransfer" });
 
-        string[] lines = File.ReadAllLines(RuntimeStoragePaths.GetDailyLogFilePath(timestamp));
-        Assert.Equal(2, lines.Length);
+        string logContent = File.ReadAllText(RuntimeStoragePaths.GetDailyLogFilePath(timestamp));
+        Assert.Equal(2, CountLogEntries(logContent));
+    }
+
+    private static int CountLogEntries(string logContent)
+    {
+        return logContent
+            .Split('}', StringSplitOptions.RemoveEmptyEntries)
+            .Count(entryBlock => entryBlock.Contains("\"ActionType\""));
     }
 }
