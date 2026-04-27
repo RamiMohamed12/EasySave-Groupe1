@@ -6,6 +6,8 @@ public class FrenchConsoleTexts
     public string ConfigureTargetLabel => "Configurer la cible";
     public string ConfigureJobLabel => "Configurer une tache";
     public string RunBackupsLabel => "Lancer les sauvegardes";
+    public string ViewStateLabel => "Voir l'etat";
+    public string ViewLogsLabel => "Voir les logs";
     public string ChangeLanguageLabel => "Changer la langue";
     public string ExitLabel => "Quitter";
     public string BackLabel => "Retour";
@@ -39,6 +41,25 @@ public class FrenchConsoleTexts
     public string InvalidSearchRootMessage => "La racine de recherche n'existe pas.";
     public string DirectoryDoesNotExistMessage => "Le dossier n'existe pas.";
     public string ConfigurationCompletedMessage => "La configuration a reussi.";
+    public string NoLogsFoundMessage => "Aucun fichier de log trouve.";
+    public string AvailableLogsLine => "Logs disponibles :";
+    public string LogSelectionPrompt => "Choisissez un numero de log : ";
+    public string InvalidLogSelectionMessage => "Selection de log invalide.";
+
+    public string GetFilePathLine(string filePath)
+    {
+        return $"Fichier : {filePath}";
+    }
+
+    public string GetFileNotFoundMessage(string displayName)
+    {
+        return $"{displayName} n'existe pas encore.";
+    }
+
+    public string GetFileEmptyMessage(string displayName)
+    {
+        return $"{displayName} est vide.";
+    }
 
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {

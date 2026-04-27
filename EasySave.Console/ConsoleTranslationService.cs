@@ -33,6 +33,16 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.RunBackupsLabel : _englishTexts.RunBackupsLabel;
     }
 
+    public string GetViewStateLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ViewStateLabel : _englishTexts.ViewStateLabel;
+    }
+
+    public string GetViewLogsLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ViewLogsLabel : _englishTexts.ViewLogsLabel;
+    }
+
     public string GetChangeLanguageLabel(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.ChangeLanguageLabel : _englishTexts.ChangeLanguageLabel;
@@ -162,6 +172,49 @@ public class ConsoleTranslationService
     public string GetConfigurationCompletedMessage(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.ConfigurationCompletedMessage : _englishTexts.ConfigurationCompletedMessage;
+    }
+
+    public string GetNoLogsFoundMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NoLogsFoundMessage : _englishTexts.NoLogsFoundMessage;
+    }
+
+    public string GetAvailableLogsLine(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.AvailableLogsLine : _englishTexts.AvailableLogsLine;
+    }
+
+    public string GetLogSelectionPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.LogSelectionPrompt : _englishTexts.LogSelectionPrompt;
+    }
+
+    public string GetInvalidLogSelectionMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.InvalidLogSelectionMessage
+            : _englishTexts.InvalidLogSelectionMessage;
+    }
+
+    public string GetFilePathLine(ApplicationTextService textService, string filePath)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetFilePathLine(filePath)
+            : _englishTexts.GetFilePathLine(filePath);
+    }
+
+    public string GetFileNotFoundMessage(ApplicationTextService textService, string displayName)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetFileNotFoundMessage(displayName)
+            : _englishTexts.GetFileNotFoundMessage(displayName);
+    }
+
+    public string GetFileEmptyMessage(ApplicationTextService textService, string displayName)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetFileEmptyMessage(displayName)
+            : _englishTexts.GetFileEmptyMessage(displayName);
     }
 
     public string GetConfigurePathTitle(ApplicationTextService textService, JobPathField pathField)

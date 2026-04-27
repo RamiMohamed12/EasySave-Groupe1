@@ -6,6 +6,8 @@ public class EnglishConsoleTexts
     public string ConfigureTargetLabel => "Configure target";
     public string ConfigureJobLabel => "Configure job";
     public string RunBackupsLabel => "Run backups";
+    public string ViewStateLabel => "View state";
+    public string ViewLogsLabel => "View logs";
     public string ChangeLanguageLabel => "Change language";
     public string ExitLabel => "Exit";
     public string BackLabel => "Back";
@@ -39,6 +41,25 @@ public class EnglishConsoleTexts
     public string InvalidSearchRootMessage => "Search root does not exist.";
     public string DirectoryDoesNotExistMessage => "Directory does not exist.";
     public string ConfigurationCompletedMessage => "Configuration was successful.";
+    public string NoLogsFoundMessage => "No log files were found.";
+    public string AvailableLogsLine => "Available logs:";
+    public string LogSelectionPrompt => "Choose a log number: ";
+    public string InvalidLogSelectionMessage => "Invalid log selection.";
+
+    public string GetFilePathLine(string filePath)
+    {
+        return $"File: {filePath}";
+    }
+
+    public string GetFileNotFoundMessage(string displayName)
+    {
+        return $"{displayName} does not exist yet.";
+    }
+
+    public string GetFileEmptyMessage(string displayName)
+    {
+        return $"{displayName} is empty.";
+    }
 
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {

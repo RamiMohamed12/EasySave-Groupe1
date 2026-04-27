@@ -153,6 +153,51 @@ public class BackupConsoleFeatures
         Pause();
     }
 
+    public void ViewState()
+    {
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetViewStateLabel(TextService));
+        RenderFile(RuntimeStoragePaths.StateFilePath, "state.json");
+        Pause();
+    }
+
+    public void ViewLogs()
+    {
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
+
+        IReadOnlyList<string> logFilePaths = GetLogFilePathsToDisplay();
+        if (logFilePaths.Count == 0)
+        {
+            WriteWarning(_translationService.GetNoLogsFoundMessage(TextService));
+            Pause();
+            return;
+        }
+
+        Console.WriteLine(_translationService.GetAvailableLogsLine(TextService));
+        foreach ((string logFilePath, int index) in logFilePaths.Select((logFilePath, index) => (logFilePath, index)))
+        {
+            Console.WriteLine(_translationService.GetMenuOptionLabel(index + 1, Path.GetFileName(logFilePath)));
+        }
+
+        Console.WriteLine();
+        Console.Write(_translationService.GetLogSelectionPrompt(TextService));
+        string selection = Console.ReadLine()?.Trim() ?? string.Empty;
+
+        if (!int.TryParse(selection, out int logNumber) || logNumber < 1 || logNumber > logFilePaths.Count)
+        {
+            WriteError(_translationService.GetInvalidLogSelectionMessage(TextService));
+            Pause();
+            return;
+        }
+
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
+        string selectedLogFilePath = logFilePaths[logNumber - 1];
+        RenderFile(selectedLogFilePath, Path.GetFileName(selectedLogFilePath));
+        Pause();
+    }
+
     public void ChangeLanguage()
     {
         Console.Clear();
@@ -197,6 +242,40 @@ public class BackupConsoleFeatures
     private ArgumentParser ArgumentParser => _runtimeAccessor().ArgumentParser;
 
     private BackupController BackupController => _runtimeAccessor().BackupController;
+
+    private void RenderFile(string filePath, string displayName)
+    {
+        Console.WriteLine(_translationService.GetFilePathLine(TextService, filePath));
+        Console.WriteLine();
+
+        if (!File.Exists(filePath))
+        {
+            WriteWarning(_translationService.GetFileNotFoundMessage(TextService, displayName));
+            return;
+        }
+
+        string content = File.ReadAllText(filePath);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            WriteWarning(_translationService.GetFileEmptyMessage(TextService, displayName));
+            return;
+        }
+
+        Console.WriteLine(content);
+    }
+
+    private static IReadOnlyList<string> GetLogFilePathsToDisplay()
+    {
+        if (!Directory.Exists(RuntimeStoragePaths.LogsDirectoryPath))
+        {
+            return Array.Empty<string>();
+        }
+
+        return Directory
+            .EnumerateFiles(RuntimeStoragePaths.LogsDirectoryPath, "????-??-??.json")
+            .OrderByDescending(File.GetLastWriteTime)
+            .ToList();
+    }
 
     private string? ReadPath(JobPathField pathField)
     {
@@ -385,6 +464,11 @@ public class BackupConsoleFeatures
     private static void WriteError(string message)
     {
         WriteColored(message, ConsoleColor.Red);
+    }
+
+    private static void WriteWarning(string message)
+    {
+        WriteColored(message, ConsoleColor.Yellow);
     }
 
     private static void WriteColored(string message, ConsoleColor color)
