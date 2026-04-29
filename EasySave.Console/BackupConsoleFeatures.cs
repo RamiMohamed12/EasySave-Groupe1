@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 
 public class BackupConsoleFeatures
 {
@@ -148,7 +149,7 @@ public class BackupConsoleFeatures
         }
 
         IReadOnlyList<string> options = logFilePaths
-            .Select(Path.GetFileName)
+            .Select(path => Path.GetFileName(path))
             .Append(_translationService.GetBackLabel(TextService))
             .ToArray();
 
@@ -209,6 +210,45 @@ public class BackupConsoleFeatures
         WriteSuccess(TextService.GetLanguageUpdatedMessage());
         Console.WriteLine();
         Console.WriteLine(_translationService.GetCurrentLanguageLine(TextService));
+        Pause();
+    }
+
+    public void ChangeLogFormat()
+    {
+        int initialIndex = RuntimeStoragePaths.GetLogFileFormat() == RuntimeStoragePaths.XmlLogFileFormat
+            ? 1
+            : 0;
+
+        IReadOnlyList<string> options =
+        [
+            "JSON",
+            "XML",
+            _translationService.GetBackLabel(TextService)
+        ];
+
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetChangeLogFormatLabel(TextService),
+            options,
+            [_translationService.GetCurrentLogFormatLine(TextService)],
+            _translationService.GetNavigationHelp(TextService),
+            initialIndex: initialIndex);
+
+        if (selection == null || selection.Value == 2)
+        {
+            return;
+        }
+
+        string logFileFormat = selection.Value == 0
+            ? RuntimeStoragePaths.JsonLogFileFormat
+            : RuntimeStoragePaths.XmlLogFileFormat;
+
+        RuntimeStoragePaths.SetLogFileFormat(logFileFormat);
+
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetChangeLogFormatLabel(TextService));
+        WriteSuccess(_translationService.GetLogFormatUpdatedMessage(TextService, logFileFormat));
+        Console.WriteLine();
+        Console.WriteLine(_translationService.GetCurrentLogFormatLine(TextService));
         Pause();
     }
 
@@ -286,14 +326,22 @@ public class BackupConsoleFeatures
         }
 
         Console.WriteLine(IsDailyLogFile(displayName)
-            ? FormatJsonLogContent(content)
+            ? FormatLogContent(filePath, content)
             : content);
     }
 
     private static bool IsDailyLogFile(string displayName)
     {
         return displayName.Length == "yyyy-MM-dd.json".Length
-            && displayName.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+            && (displayName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+                || displayName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string FormatLogContent(string filePath, string content)
+    {
+        return Path.GetExtension(filePath).Equals(".xml", StringComparison.OrdinalIgnoreCase)
+            ? FormatXmlLogContent(content)
+            : FormatJsonLogContent(content);
     }
 
     private static string FormatJsonLogContent(string content)
@@ -338,6 +386,18 @@ public class BackupConsoleFeatures
         }
     }
 
+    private static string FormatXmlLogContent(string content)
+    {
+        try
+        {
+            return XDocument.Parse(content).ToString();
+        }
+        catch
+        {
+            return content;
+        }
+    }
+
     private static IReadOnlyList<string> GetLogFilePathsToDisplay()
     {
         if (!Directory.Exists(RuntimeStoragePaths.LogsDirectoryPath))
@@ -345,8 +405,9 @@ public class BackupConsoleFeatures
             return Array.Empty<string>();
         }
 
-        return Directory
-            .EnumerateFiles(RuntimeStoragePaths.LogsDirectoryPath, "????-??-??.json")
+        return RuntimeStoragePaths.GetSupportedLogFilePatterns()
+            .SelectMany(pattern => Directory.EnumerateFiles(RuntimeStoragePaths.LogsDirectoryPath, pattern))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderByDescending(File.GetLastWriteTime)
             .ToList();
     }

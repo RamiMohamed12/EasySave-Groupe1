@@ -38,13 +38,15 @@ public class ConsoleMenu
                 _translationService.GetRunBackupsLabel(_runtime.TextService),
                 _translationService.GetViewStateLabel(_runtime.TextService),
                 _translationService.GetViewLogsLabel(_runtime.TextService),
+                _translationService.GetChangeLogFormatLabel(_runtime.TextService),
                 _translationService.GetChangeLanguageLabel(_runtime.TextService),
                 _translationService.GetExitLabel(_runtime.TextService)
             ];
 
             IReadOnlyList<string> contextLines =
             [
-                _translationService.GetCurrentLanguageLine(_runtime.TextService)
+                _translationService.GetCurrentLanguageLine(_runtime.TextService),
+                _translationService.GetCurrentLogFormatLine(_runtime.TextService)
             ];
 
             int selection = _interactiveConsole.SelectOption(
@@ -75,9 +77,12 @@ public class ConsoleMenu
                     _backupFeatures.ViewLogs();
                     break;
                 case 5:
-                    _backupFeatures.ChangeLanguage();
+                    _backupFeatures.ChangeLogFormat();
                     break;
                 case 6:
+                    _backupFeatures.ChangeLanguage();
+                    break;
+                case 7:
                     return;
             }
         }

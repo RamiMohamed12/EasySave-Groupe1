@@ -43,6 +43,11 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.ViewLogsLabel : _englishTexts.ViewLogsLabel;
     }
 
+    public string GetChangeLogFormatLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ChangeLogFormatLabel : _englishTexts.ChangeLogFormatLabel;
+    }
+
     public string GetChangeLanguageLabel(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.ChangeLanguageLabel : _englishTexts.ChangeLanguageLabel;
@@ -75,6 +80,15 @@ public class ConsoleTranslationService
         return IsFrench(textService)
             ? _frenchTexts.GetCurrentLanguageLine(_frenchTexts.GetCurrentLanguageDisplayName(languageCode))
             : _englishTexts.GetCurrentLanguageLine(_englishTexts.GetCurrentLanguageDisplayName(languageCode));
+    }
+
+    public string GetCurrentLogFormatLine(ApplicationTextService textService)
+    {
+        string logFileFormat = RuntimeStoragePaths.GetLogFileFormat();
+
+        return IsFrench(textService)
+            ? _frenchTexts.GetCurrentLogFormatLine(logFileFormat)
+            : _englishTexts.GetCurrentLogFormatLine(logFileFormat);
     }
 
     public string GetMenuOptionLabel(int optionNumber, string label)
@@ -235,6 +249,13 @@ public class ConsoleTranslationService
         return IsFrench(textService)
             ? _frenchTexts.GetFileEmptyMessage(displayName)
             : _englishTexts.GetFileEmptyMessage(displayName);
+    }
+
+    public string GetLogFormatUpdatedMessage(ApplicationTextService textService, string logFileFormat)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetLogFormatUpdatedMessage(logFileFormat)
+            : _englishTexts.GetLogFormatUpdatedMessage(logFileFormat);
     }
 
     public string GetConfigurePathTitle(ApplicationTextService textService, JobPathField pathField)

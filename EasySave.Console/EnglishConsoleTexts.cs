@@ -8,6 +8,7 @@ public class EnglishConsoleTexts
     public string RunBackupsLabel => "Run backups";
     public string ViewStateLabel => "View state";
     public string ViewLogsLabel => "View logs";
+    public string ChangeLogFormatLabel => "Change log format";
     public string ChangeLanguageLabel => "Change language";
     public string ExitLabel => "Exit";
     public string BackLabel => "Back";
@@ -75,6 +76,11 @@ public class EnglishConsoleTexts
         return $"Current language: {currentLanguageDisplayName}";
     }
 
+    public string GetCurrentLogFormatLine(string logFileFormat)
+    {
+        return $"Current log format: {GetLogFileFormatDisplayName(logFileFormat)}";
+    }
+
     public string GetCurrentValueLine(string value)
     {
         return $"Current value: {value}";
@@ -90,6 +96,13 @@ public class EnglishConsoleTexts
         return languageCode == ApplicationTextService.FrenchLanguageCode
             ? "French"
             : "English";
+    }
+
+    public string GetLogFileFormatDisplayName(string logFileFormat)
+    {
+        return logFileFormat == RuntimeStoragePaths.XmlLogFileFormat
+            ? "XML"
+            : "JSON";
     }
 
     public string GetMenuOptionLabel(int optionNumber, string label)
@@ -144,6 +157,11 @@ public class EnglishConsoleTexts
     public string BuildErrorMessage(string details)
     {
         return $"Error: {details}";
+    }
+
+    public string GetLogFormatUpdatedMessage(string logFileFormat)
+    {
+        return $"Log format switched to {GetLogFileFormatDisplayName(logFileFormat)} successfully.";
     }
 
     private string FormatPath(string path)

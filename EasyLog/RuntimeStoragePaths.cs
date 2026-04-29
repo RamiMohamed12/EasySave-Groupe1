@@ -2,6 +2,9 @@ using System.Text.Json;
 
 public static class RuntimeStoragePaths
 {
+    public const string JsonLogFileFormat = "json";
+    public const string XmlLogFileFormat = "xml";
+
     private static readonly object SyncRoot = new();
     private static RuntimeStorageSettings? _settings;
 
@@ -14,7 +17,16 @@ public static class RuntimeStoragePaths
 
     public static string GetDailyLogFilePath(DateTime timestamp)
     {
-        return Path.Combine(LogsDirectoryPath, $"{timestamp:yyyy-MM-dd}.json");
+        return Path.Combine(LogsDirectoryPath, $"{timestamp:yyyy-MM-dd}.{GetLogFileFormat()}");
+    }
+
+    public static IReadOnlyList<string> GetSupportedLogFilePatterns()
+    {
+        return
+        [
+            $"????-??-??.{JsonLogFileFormat}",
+            $"????-??-??.{XmlLogFileFormat}"
+        ];
     }
 
     public static void SetStorageDirectory(string storageDirectory)
@@ -28,10 +40,21 @@ public static class RuntimeStoragePaths
         return NormalizeLanguageCode(GetSettings().LanguageCode);
     }
 
+    public static string GetLogFileFormat()
+    {
+        return NormalizeLogFileFormat(GetSettings().LogFileFormat);
+    }
+
     public static void SetLanguageCode(string languageCode)
     {
         string normalizedLanguageCode = NormalizeLanguageCode(languageCode);
         UpdateSettings(settings => settings.LanguageCode = normalizedLanguageCode);
+    }
+
+    public static void SetLogFileFormat(string logFileFormat)
+    {
+        string normalizedLogFileFormat = NormalizeLogFileFormat(logFileFormat);
+        UpdateSettings(settings => settings.LogFileFormat = normalizedLogFileFormat);
     }
 
     public static void Reload()
@@ -111,5 +134,16 @@ public static class RuntimeStoragePaths
         return string.IsNullOrWhiteSpace(languageCode)
             ? string.Empty
             : languageCode.Trim().ToLowerInvariant();
+    }
+
+    private static string NormalizeLogFileFormat(string? logFileFormat)
+    {
+        string normalizedLogFileFormat = string.IsNullOrWhiteSpace(logFileFormat)
+            ? JsonLogFileFormat
+            : logFileFormat.Trim().ToLowerInvariant();
+
+        return normalizedLogFileFormat == XmlLogFileFormat
+            ? XmlLogFileFormat
+            : JsonLogFileFormat;
     }
 }

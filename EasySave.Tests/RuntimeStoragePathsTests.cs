@@ -15,6 +15,7 @@ public class RuntimeStoragePathsTests
         Assert.Equal(Path.Combine(baseDirectory, "jobs.json"), RuntimeStoragePaths.JobsFilePath);
         Assert.Equal(Path.Combine(baseDirectory, "state.json"), RuntimeStoragePaths.StateFilePath);
         Assert.Equal(Path.Combine(baseDirectory, "backup-history.json"), RuntimeStoragePaths.BackupHistoryFilePath);
+        Assert.Equal("json", RuntimeStoragePaths.GetLogFileFormat());
     }
 
     [Fact]
@@ -42,6 +43,18 @@ public class RuntimeStoragePathsTests
     }
 
     [Fact]
+    public void SetLogFileFormat_PersistsFormatAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLogFileFormat("xml");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal("xml", RuntimeStoragePaths.GetLogFileFormat());
+        Assert.EndsWith(".xml", RuntimeStoragePaths.GetDailyLogFilePath(new DateTime(2026, 04, 29)));
+    }
+
+    [Fact]
     public void SetStorageDirectory_PreservesConfiguredLanguage()
     {
         using var workspace = new TestWorkspace();
@@ -51,5 +64,16 @@ public class RuntimeStoragePathsTests
         RuntimeStoragePaths.SetStorageDirectory(externalPath);
 
         Assert.Equal("fr", RuntimeStoragePaths.GetLanguageCode());
+    }
+
+    [Fact]
+    public void SetLanguageCode_PreservesConfiguredLogFormat()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLogFileFormat("xml");
+        RuntimeStoragePaths.SetLanguageCode("fr");
+
+        Assert.Equal("xml", RuntimeStoragePaths.GetLogFileFormat());
     }
 }

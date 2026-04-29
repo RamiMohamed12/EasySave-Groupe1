@@ -38,6 +38,7 @@ Avec EasySave, vous pouvez :
 * Consulter un historique détaillé des opérations dans des fichiers journaux quotidiens
 * Bénéficier d’une interface disponible en français et en anglais
 * Définir un répertoire de stockage personnalisé pour vos fichiers d’exécution
+* Choisir si les fichiers de logs quotidiens sont générés en `JSON` ou en `XML`
 
 ---
 
@@ -163,6 +164,8 @@ Si vous souhaitez analyser en détail les opérations effectuées, les journaux 
 * `FileTransfer`
 * `CreateDirectory`
 * `Error`
+
+Si vous changez le format des logs depuis le menu interactif, ces fichiers peuvent aussi être générés au format `yyyy-MM-dd.xml`.
 
 ---
 

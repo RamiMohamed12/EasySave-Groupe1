@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace EasySave.Tests;
 
@@ -47,6 +48,38 @@ public class LoggerServiceTests
 
         string logContent = File.ReadAllText(RuntimeStoragePaths.GetDailyLogFilePath(timestamp));
         Assert.Equal(2, CountLogEntries(logContent));
+    }
+
+    [Fact]
+    public void WriteLog_WritesXmlWhenConfigured()
+    {
+        using var workspace = new TestWorkspace();
+        var logger = new LoggerService();
+        DateTime timestamp = new(2026, 04, 24, 10, 30, 00);
+
+        RuntimeStoragePaths.SetLogFileFormat("xml");
+
+        logger.WriteLog(new LogEntry
+        {
+            Timestamp = timestamp,
+            BackupName = "Job1",
+            SourcePath = @"C:\Source\a.txt",
+            DestinationPath = @"D:\Backup\a.txt",
+            ActionType = "FileTransfer",
+            FileSizeBytes = 42,
+            TransferTimeMilliseconds = 12
+        });
+
+        string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(timestamp);
+        Assert.EndsWith(".xml", logFilePath);
+        Assert.True(File.Exists(logFilePath));
+
+        XDocument document = XDocument.Load(logFilePath);
+        XElement? entry = document.Root?.Element("LogEntry");
+
+        Assert.NotNull(entry);
+        Assert.Equal("FileTransfer", entry?.Element(nameof(LogEntry.ActionType))?.Value);
+        Assert.Equal("42", entry?.Element(nameof(LogEntry.FileSizeBytes))?.Value);
     }
 
     private static int CountLogEntries(string logContent)
