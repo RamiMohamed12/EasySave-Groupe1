@@ -3,6 +3,7 @@ public class ConsoleMenu
     private readonly Func<string?, ConsoleMenuRuntime> _runtimeFactory;
     private readonly ConsoleTranslationService _translationService;
     private readonly BackupConsoleFeatures _backupFeatures;
+    private readonly InteractiveConsole _interactiveConsole;
 
     private ConsoleMenuRuntime _runtime;
 
@@ -14,50 +15,70 @@ public class ConsoleMenu
         _runtimeFactory = runtimeFactory;
         _runtime = _runtimeFactory(null);
         _translationService = new ConsoleTranslationService();
+        _interactiveConsole = new InteractiveConsole();
         _backupFeatures = new BackupConsoleFeatures(
             jobRegistry,
             stateService,
             _translationService,
+            _interactiveConsole,
             GetRuntime,
             SetLanguage);
     }
 
     public void Start()
     {
+        int selectedIndex = 0;
+
         while (true)
         {
-            Console.Clear();
-            DisplayMainMenu();
+            IReadOnlyList<string> options =
+            [
+                _translationService.GetViewJobsLabel(_runtime.TextService),
+                _translationService.GetConfigureJobLabel(_runtime.TextService),
+                _translationService.GetRunBackupsLabel(_runtime.TextService),
+                _translationService.GetViewStateLabel(_runtime.TextService),
+                _translationService.GetViewLogsLabel(_runtime.TextService),
+                _translationService.GetChangeLanguageLabel(_runtime.TextService),
+                _translationService.GetExitLabel(_runtime.TextService)
+            ];
 
-            Console.Write("\n> ");
-            string? choice = Console.ReadLine();
+            IReadOnlyList<string> contextLines =
+            [
+                _translationService.GetCurrentLanguageLine(_runtime.TextService)
+            ];
 
-            switch (choice?.Trim().ToLowerInvariant())
+            int selection = _interactiveConsole.SelectOption(
+                _translationService.GetMainMenuTitle(_runtime.TextService),
+                options,
+                contextLines,
+                _translationService.GetNavigationHelp(_runtime.TextService),
+                allowBack: false,
+                initialIndex: selectedIndex) ?? selectedIndex;
+
+            selectedIndex = selection;
+
+            switch (selection)
             {
-                case "1":
+                case 0:
                     _backupFeatures.ViewJobs();
                     break;
-                case "2":
+                case 1:
                     _backupFeatures.ConfigureJob();
                     break;
-                case "3":
+                case 2:
                     _backupFeatures.RunBackups();
                     break;
-                case "4":
+                case 3:
                     _backupFeatures.ViewState();
                     break;
-                case "5":
+                case 4:
                     _backupFeatures.ViewLogs();
                     break;
-                case "6":
+                case 5:
                     _backupFeatures.ChangeLanguage();
                     break;
-                case "7":
+                case 6:
                     return;
-                default:
-                    WriteError(_translationService.GetInvalidMenuChoiceMessage(_runtime.TextService));
-                    Pause();
-                    break;
             }
         }
     }
@@ -71,51 +92,5 @@ public class ConsoleMenu
     {
         RuntimeStoragePaths.SetLanguageCode(languageCode);
         _runtime = _runtimeFactory(languageCode);
-    }
-
-    private void DisplayMainMenu()
-    {
-        WriteMenuBorder();
-        WriteMenuLine(_translationService.GetMainMenuTitle(_runtime.TextService));
-        WriteMenuBorder();
-        WriteMenuLine(_translationService.GetMenuOptionLabel(1, _translationService.GetViewJobsLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(2, _translationService.GetConfigureJobLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(3, _translationService.GetRunBackupsLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(4, _translationService.GetViewStateLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(5, _translationService.GetViewLogsLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(6, _translationService.GetChangeLanguageLabel(_runtime.TextService)));
-        WriteMenuLine(_translationService.GetMenuOptionLabel(7, _translationService.GetExitLabel(_runtime.TextService)));
-        WriteMenuBorder();
-        Console.WriteLine(_translationService.GetCurrentLanguageLine(_runtime.TextService));
-    }
-
-    private void Pause()
-    {
-        Console.WriteLine(_translationService.GetPauseMessage(_runtime.TextService));
-        Console.ReadKey();
-    }
-
-    private static void WriteError(string message)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(message);
-        Console.ResetColor();
-    }
-
-    private static void WriteMenuBorder()
-    {
-        const int menuInnerWidth = 42;
-        Console.WriteLine($"+{new string('-', menuInnerWidth + 2)}+");
-    }
-
-    private static void WriteMenuLine(string content)
-    {
-        const int menuInnerWidth = 42;
-
-        string paddedContent = content.Length > menuInnerWidth
-            ? content[..menuInnerWidth]
-            : content.PadRight(menuInnerWidth);
-
-        Console.WriteLine($"| {paddedContent} |");
     }
 }

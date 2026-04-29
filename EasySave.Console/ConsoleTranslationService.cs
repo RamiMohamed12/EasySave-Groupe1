@@ -322,11 +322,50 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.PauseMessage : _englishTexts.PauseMessage;
     }
 
+    public string GetNavigationHelp(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NavigationHelp : _englishTexts.NavigationHelp;
+    }
+
+    public string GetMultiSelectNavigationHelp(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.MultiSelectNavigationHelp : _englishTexts.MultiSelectNavigationHelp;
+    }
+
+    public string GetLeaveEmptyToGoBackMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.LeaveEmptyToGoBackMessage : _englishTexts.LeaveEmptyToGoBackMessage;
+    }
+
     public string BuildErrorMessage(ApplicationTextService textService, string details)
     {
         return IsFrench(textService)
             ? _frenchTexts.BuildErrorMessage(details)
             : _englishTexts.BuildErrorMessage(details);
+    }
+
+    public string GetConfiguredLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ConfiguredLabel : _englishTexts.ConfiguredLabel;
+    }
+
+    public string GetIncompleteLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.IncompleteLabel : _englishTexts.IncompleteLabel;
+    }
+
+    public string GetCurrentValueLine(ApplicationTextService textService, string value)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetCurrentValueLine(value)
+            : _englishTexts.GetCurrentValueLine(value);
+    }
+
+    public string GetSelectedCountLine(ApplicationTextService textService, int count)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetSelectedCountLine(count)
+            : _englishTexts.GetSelectedCountLine(count);
     }
 
     public string GetNotConfiguredLabel(ApplicationTextService textService)

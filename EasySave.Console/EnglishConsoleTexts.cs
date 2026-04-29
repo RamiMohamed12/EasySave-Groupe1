@@ -22,10 +22,15 @@ public class EnglishConsoleTexts
     public string InvalidLanguageSelectionMessage => "Invalid language selection.";
     public string LanguageSelectionPrompt => "Choose a language: ";
     public string PauseMessage => "Press any key to continue...";
+    public string NavigationHelp => "Use Up/Down to move, Enter to select, Esc to go back.";
+    public string MultiSelectNavigationHelp => "Use Up/Down to move, Space to toggle, Enter to confirm, Esc to go back.";
+    public string LeaveEmptyToGoBackMessage => "Leave the field empty to go back.";
     public string SourcePathPrompt => "Enter source path: ";
     public string TargetPathPrompt => "Enter target path: ";
     public string JobNumberPrompt => "Enter job number: ";
     public string NotConfiguredLabel => "<not configured>";
+    public string ConfiguredLabel => "Configured";
+    public string IncompleteLabel => "Incomplete";
     public string PastePathLabel => "Paste path";
     public string PasteSourcePathLabel => "Paste source path";
     public string PasteTargetPathLabel => "Paste target path";
@@ -68,6 +73,16 @@ public class EnglishConsoleTexts
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {
         return $"Current language: {currentLanguageDisplayName}";
+    }
+
+    public string GetCurrentValueLine(string value)
+    {
+        return $"Current value: {value}";
+    }
+
+    public string GetSelectedCountLine(int count)
+    {
+        return $"Selected jobs: {count}";
     }
 
     public string GetCurrentLanguageDisplayName(string languageCode)

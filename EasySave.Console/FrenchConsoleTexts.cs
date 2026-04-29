@@ -22,10 +22,15 @@ public class FrenchConsoleTexts
     public string InvalidLanguageSelectionMessage => "Choix de langue invalide.";
     public string LanguageSelectionPrompt => "Choisissez une langue : ";
     public string PauseMessage => "Appuyez sur une touche pour continuer...";
+    public string NavigationHelp => "Utilisez Haut/Bas pour vous deplacer, Entree pour selectionner et Echap pour revenir.";
+    public string MultiSelectNavigationHelp => "Utilisez Haut/Bas pour vous deplacer, Espace pour cocher, Entree pour confirmer et Echap pour revenir.";
+    public string LeaveEmptyToGoBackMessage => "Laissez le champ vide pour revenir.";
     public string SourcePathPrompt => "Entrez le chemin source : ";
     public string TargetPathPrompt => "Entrez le chemin cible : ";
     public string JobNumberPrompt => "Entrez le numero de tache : ";
     public string NotConfiguredLabel => "<non configure>";
+    public string ConfiguredLabel => "Configure";
+    public string IncompleteLabel => "Incomplet";
     public string PastePathLabel => "Coller un chemin";
     public string PasteSourcePathLabel => "Coller le chemin source";
     public string PasteTargetPathLabel => "Coller le chemin cible";
@@ -68,6 +73,16 @@ public class FrenchConsoleTexts
     public string GetCurrentLanguageLine(string currentLanguageDisplayName)
     {
         return $"Langue actuelle : {currentLanguageDisplayName}";
+    }
+
+    public string GetCurrentValueLine(string value)
+    {
+        return $"Valeur actuelle : {value}";
+    }
+
+    public string GetSelectedCountLine(int count)
+    {
+        return $"Taches selectionnees : {count}";
     }
 
     public string GetCurrentLanguageDisplayName(string languageCode)

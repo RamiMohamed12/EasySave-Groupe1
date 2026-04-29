@@ -5,6 +5,7 @@ public class BackupConsoleFeatures
     private readonly BackupJobRegistry _jobRegistry;
     private readonly StateService _stateService;
     private readonly ConsoleTranslationService _translationService;
+    private readonly InteractiveConsole _interactiveConsole;
     private readonly Func<ConsoleMenuRuntime> _runtimeAccessor;
     private readonly Action<string> _setLanguage;
 
@@ -12,12 +13,14 @@ public class BackupConsoleFeatures
         BackupJobRegistry jobRegistry,
         StateService stateService,
         ConsoleTranslationService translationService,
+        InteractiveConsole interactiveConsole,
         Func<ConsoleMenuRuntime> runtimeAccessor,
         Action<string> setLanguage)
     {
         _jobRegistry = jobRegistry;
         _stateService = stateService;
         _translationService = translationService;
+        _interactiveConsole = interactiveConsole;
         _runtimeAccessor = runtimeAccessor;
         _setLanguage = setLanguage;
     }
@@ -33,114 +36,66 @@ public class BackupConsoleFeatures
 
     public void ConfigureJob()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetConfigureJobLabel(TextService));
+        int selectedIndex = 0;
 
-        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-        RenderJobs(jobs);
-
-        int jobNumber = GetJobNumber();
-        if (jobNumber == -1)
+        while (true)
         {
-            return;
+            IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+            IReadOnlyList<string> options = jobs
+                .Select(BuildJobOptionLabel)
+                .Append(_translationService.GetBackLabel(TextService))
+                .ToArray();
+
+            int? selection = _interactiveConsole.SelectOption(
+                _translationService.GetConfigureJobLabel(TextService),
+                options,
+                [TextService.GetConfiguredJobsHeader()],
+                _translationService.GetNavigationHelp(TextService),
+                initialIndex: selectedIndex);
+
+            if (selection == null || selection.Value == jobs.Count)
+            {
+                return;
+            }
+
+            selectedIndex = selection.Value;
+            ConfigureSelectedJob(selection.Value + 1, jobs[selection.Value]);
         }
-
-        try
-        {
-            BackupJob updatedJob = jobs[jobNumber - 1];
-            Console.Clear();
-            WriteSectionHeader(_translationService.GetConfigureJobLabel(TextService));
-            Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
-            RenderJob(jobNumber, updatedJob);
-
-            bool hasChanges = false;
-            string? sourcePath = ReadPath(JobPathField.Source);
-            if (!string.IsNullOrWhiteSpace(sourcePath))
-            {
-                updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Source, sourcePath);
-                hasChanges = true;
-            }
-
-            string? targetPath = ReadPath(JobPathField.Target);
-            if (!string.IsNullOrWhiteSpace(targetPath))
-            {
-                updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Target, targetPath);
-                hasChanges = true;
-            }
-
-            _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
-            Console.WriteLine();
-            if (hasChanges)
-            {
-                WriteSuccess(_translationService.GetConfigurationCompletedMessage(TextService));
-            }
-            else
-            {
-                WriteWarning(_translationService.GetNoConfigurationChangesMessage(TextService));
-            }
-
-            Console.WriteLine();
-            Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
-            RenderJob(jobNumber, updatedJob);
-        }
-        catch (Exception ex)
-        {
-            WriteError(_translationService.BuildErrorMessage(TextService, ex.Message));
-        }
-
-        Pause();
     }
 
     public void RunBackups()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetRunBackupsLabel(TextService));
-        Console.WriteLine(_translationService.GetSelectionInstructionsTitle(TextService));
-        Console.WriteLine(_translationService.GetSingleSelectionExample(TextService));
-        Console.WriteLine(_translationService.GetRangeSelectionExample(TextService));
-        Console.WriteLine(_translationService.GetMultipleSelectionExample(TextService));
-        Console.WriteLine();
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        _stateService.SynchronizeConfiguredJobs(jobs);
 
-        Console.Write("> ");
-        string? selection = Console.ReadLine();
+        IReadOnlyList<string> options = jobs.Select(BuildJobOptionLabel).ToArray();
+        IReadOnlyList<int>? selectedIndices = _interactiveConsole.SelectMultipleOptions(
+            _translationService.GetRunBackupsLabel(TextService),
+            options,
+            [TextService.GetConfiguredJobsHeader()],
+            _translationService.GetMultiSelectNavigationHelp(TextService),
+            _translationService.GetNoValidJobsSelectedMessage(TextService));
 
-        if (string.IsNullOrWhiteSpace(selection))
+        if (selectedIndices == null)
         {
-            WriteError(TextService.GetSelectionRequiredMessage());
-            Pause();
             return;
         }
 
+        var selectedJobs = selectedIndices
+            .Select(index => new SelectedBackupJob
+            {
+                JobNumber = index + 1,
+                Job = jobs[index]
+            })
+            .ToList();
+
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetRunBackupsLabel(TextService));
+        Console.WriteLine(_translationService.GetRunningJobsMessage(TextService, selectedJobs.Count));
+        Console.WriteLine();
+
         try
         {
-            var selectedJobNumbers = ArgumentParser.ParseJobSelection(selection);
-            IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-            _stateService.SynchronizeConfiguredJobs(jobs);
-
-            var selectedJobs = new List<SelectedBackupJob>();
-            foreach (int jobNumber in selectedJobNumbers)
-            {
-                if (jobNumber >= 1 && jobNumber <= jobs.Count)
-                {
-                    selectedJobs.Add(new SelectedBackupJob
-                    {
-                        JobNumber = jobNumber,
-                        Job = jobs[jobNumber - 1]
-                    });
-                }
-            }
-
-            if (selectedJobs.Count == 0)
-            {
-                WriteError(_translationService.GetNoValidJobsSelectedMessage(TextService));
-                Pause();
-                return;
-            }
-
-            Console.WriteLine();
-            Console.WriteLine(_translationService.GetRunningJobsMessage(TextService, selectedJobs.Count));
-            Console.WriteLine();
-
             IReadOnlyList<BackupResult> results = BackupController.StartBackups(selectedJobs);
 
             for (int index = 0; index < results.Count; index++)
@@ -182,85 +137,135 @@ public class BackupConsoleFeatures
 
     public void ViewLogs()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
-
         IReadOnlyList<string> logFilePaths = GetLogFilePathsToDisplay();
         if (logFilePaths.Count == 0)
         {
+            Console.Clear();
+            WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
             WriteWarning(_translationService.GetNoLogsFoundMessage(TextService));
             Pause();
             return;
         }
 
-        Console.WriteLine(_translationService.GetAvailableLogsLine(TextService));
-        foreach ((string logFilePath, int index) in logFilePaths.Select((logFilePath, index) => (logFilePath, index)))
-        {
-            Console.WriteLine(_translationService.GetMenuOptionLabel(index + 1, Path.GetFileName(logFilePath)));
-        }
+        IReadOnlyList<string> options = logFilePaths
+            .Select(Path.GetFileName)
+            .Append(_translationService.GetBackLabel(TextService))
+            .ToArray();
 
-        Console.WriteLine();
-        Console.Write(_translationService.GetLogSelectionPrompt(TextService));
-        string selection = Console.ReadLine()?.Trim() ?? string.Empty;
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetViewLogsLabel(TextService),
+            options,
+            [_translationService.GetAvailableLogsLine(TextService)],
+            _translationService.GetNavigationHelp(TextService));
 
-        if (!int.TryParse(selection, out int logNumber) || logNumber < 1 || logNumber > logFilePaths.Count)
+        if (selection == null || selection.Value == logFilePaths.Count)
         {
-            WriteError(_translationService.GetInvalidLogSelectionMessage(TextService));
-            Pause();
             return;
         }
 
         Console.Clear();
         WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
-        string selectedLogFilePath = logFilePaths[logNumber - 1];
+        string selectedLogFilePath = logFilePaths[selection.Value];
         RenderFile(selectedLogFilePath, Path.GetFileName(selectedLogFilePath));
         Pause();
     }
 
     public void ChangeLanguage()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetChangeLanguageLabel(TextService));
-        Console.WriteLine(_translationService.GetCurrentLanguageLine(TextService));
-        Console.WriteLine();
-        Console.WriteLine(_translationService.GetLanguageOptionLabel(1, "English"));
-        Console.WriteLine(_translationService.GetLanguageOptionLabel(2, "Francais"));
-        Console.WriteLine(_translationService.GetLanguageOptionLabel(3, _translationService.GetBackLabel(TextService)));
-        Console.WriteLine();
-        Console.Write(_translationService.GetLanguageSelectionPrompt(TextService));
+        int initialIndex = string.Equals(
+            TextService.GetLanguageCode(),
+            ApplicationTextService.FrenchLanguageCode,
+            StringComparison.OrdinalIgnoreCase)
+            ? 1
+            : 0;
 
-        string? choice = Console.ReadLine();
-        string normalizedChoice = choice?.Trim().ToLowerInvariant() ?? string.Empty;
+        IReadOnlyList<string> options =
+        [
+            "English",
+            "Francais",
+            _translationService.GetBackLabel(TextService)
+        ];
 
-        if (normalizedChoice is "3" or "back" or "retour")
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetChangeLanguageLabel(TextService),
+            options,
+            [_translationService.GetCurrentLanguageLine(TextService)],
+            _translationService.GetNavigationHelp(TextService),
+            initialIndex: initialIndex);
+
+        if (selection == null || selection.Value == 2)
         {
             return;
         }
 
-        string? languageCode = normalizedChoice switch
-        {
-            "1" or "en" or "english" or "anglais" => ApplicationTextService.EnglishLanguageCode,
-            "2" or "fr" or "french" or "francais" => ApplicationTextService.FrenchLanguageCode,
-            _ => null
-        };
-
-        if (languageCode == null)
-        {
-            WriteError(_translationService.GetInvalidLanguageSelectionMessage(TextService));
-            Pause();
-            return;
-        }
+        string languageCode = selection.Value == 0
+            ? ApplicationTextService.EnglishLanguageCode
+            : ApplicationTextService.FrenchLanguageCode;
 
         _setLanguage(languageCode);
+
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetChangeLanguageLabel(TextService));
         WriteSuccess(TextService.GetLanguageUpdatedMessage());
+        Console.WriteLine();
+        Console.WriteLine(_translationService.GetCurrentLanguageLine(TextService));
         Pause();
     }
 
     private ApplicationTextService TextService => _runtimeAccessor().TextService;
 
-    private ArgumentParser ArgumentParser => _runtimeAccessor().ArgumentParser;
-
     private BackupController BackupController => _runtimeAccessor().BackupController;
+
+    private void ConfigureSelectedJob(int jobNumber, BackupJob job)
+    {
+        PathSelectionResult sourceSelection = ReadPath(JobPathField.Source, job.Source);
+        if (sourceSelection.Action == PathSelectionAction.Back)
+        {
+            return;
+        }
+
+        PathSelectionResult targetSelection = ReadPath(JobPathField.Target, job.Target);
+        if (targetSelection.Action == PathSelectionAction.Back)
+        {
+            return;
+        }
+
+        bool hasChanges = false;
+        BackupJob updatedJob = job;
+
+        if (sourceSelection.Action == PathSelectionAction.UsePath
+            && !PathsAreEqual(job.Source, sourceSelection.Path!))
+        {
+            updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Source, sourceSelection.Path!);
+            hasChanges = true;
+        }
+
+        if (targetSelection.Action == PathSelectionAction.UsePath
+            && !PathsAreEqual(updatedJob.Target, targetSelection.Path!))
+        {
+            updatedJob = _jobRegistry.UpdateJobPath(jobNumber, JobPathField.Target, targetSelection.Path!);
+            hasChanges = true;
+        }
+
+        _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+
+        Console.Clear();
+        WriteSectionHeader(_translationService.GetConfigureJobLabel(TextService));
+
+        if (hasChanges)
+        {
+            WriteSuccess(_translationService.GetConfigurationCompletedMessage(TextService));
+        }
+        else
+        {
+            WriteWarning(_translationService.GetNoConfigurationChangesMessage(TextService));
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
+        RenderJob(jobNumber, updatedJob);
+        Pause();
+    }
 
     private void RenderFile(string filePath, string displayName)
     {
@@ -346,109 +351,146 @@ public class BackupConsoleFeatures
             .ToList();
     }
 
-    private string? ReadPath(JobPathField pathField)
+    private PathSelectionResult ReadPath(JobPathField pathField, string currentPath)
     {
         while (true)
         {
-            Console.Write(GetPathPrompt(pathField));
+            IReadOnlyList<string> options =
+            [
+                pathField == JobPathField.Source
+                    ? _translationService.GetPasteSourcePathLabel(TextService)
+                    : _translationService.GetPasteTargetPathLabel(TextService),
+                _translationService.GetSearchDirectoryLabel(TextService),
+                _translationService.GetSkipLabel(TextService),
+                _translationService.GetBackLabel(TextService)
+            ];
 
-            string path = Console.ReadLine()?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(path))
+            int? selection = _interactiveConsole.SelectOption(
+                _translationService.GetConfigurePathTitle(TextService, pathField),
+                options,
+                [_translationService.GetCurrentValueLine(TextService, FormatPath(currentPath))],
+                _translationService.GetNavigationHelp(TextService));
+
+            if (selection == null || selection.Value == 3)
+            {
+                return PathSelectionResult.Back();
+            }
+
+            if (selection.Value == 2)
+            {
+                return PathSelectionResult.KeepCurrent();
+            }
+
+            if (selection.Value == 0)
+            {
+                string? pastedPath = PromptDirectoryPath(pathField, currentPath);
+                if (!string.IsNullOrWhiteSpace(pastedPath))
+                {
+                    return PathSelectionResult.UsePath(pastedPath);
+                }
+
+                continue;
+            }
+
+            string? searchedPath = SearchPath(pathField, currentPath);
+            if (!string.IsNullOrWhiteSpace(searchedPath))
+            {
+                return PathSelectionResult.UsePath(searchedPath);
+            }
+        }
+    }
+
+    private string? PromptDirectoryPath(JobPathField pathField, string currentPath)
+    {
+        return _interactiveConsole.PromptLine(
+            _translationService.GetConfigurePathTitle(TextService, pathField),
+            pathField == JobPathField.Source
+                ? _translationService.GetSourcePathPrompt(TextService)
+                : _translationService.GetTargetPathPrompt(TextService),
+            [_translationService.GetCurrentValueLine(TextService, FormatPath(currentPath))],
+            _translationService.GetLeaveEmptyToGoBackMessage(TextService),
+            path => Directory.Exists(path)
+                ? null
+                : _translationService.BuildErrorMessage(TextService, _translationService.GetDirectoryDoesNotExistMessage(TextService)));
+    }
+
+    private string? SearchPath(JobPathField pathField, string currentPath)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Console.Clear();
+            WriteSectionHeader(_translationService.GetConfigurePathTitle(TextService, pathField));
+            WriteError(_translationService.GetSearchUnsupportedMessage(TextService));
+            Pause();
+            return null;
+        }
+
+        while (true)
+        {
+            IReadOnlyList<string> currentValueContext =
+            [
+                _translationService.GetCurrentValueLine(TextService, FormatPath(currentPath))
+            ];
+
+            string? rootDirectory = _interactiveConsole.PromptLine(
+                _translationService.GetConfigurePathTitle(TextService, pathField),
+                _translationService.GetSearchRootPrompt(TextService),
+                currentValueContext,
+                _translationService.GetLeaveEmptyToGoBackMessage(TextService),
+                path => Directory.Exists(path)
+                    ? null
+                    : _translationService.BuildErrorMessage(TextService, _translationService.GetInvalidSearchRootMessage(TextService)));
+
+            if (string.IsNullOrWhiteSpace(rootDirectory))
             {
                 return null;
             }
 
-            if (Directory.Exists(path))
+            string? query = _interactiveConsole.PromptLine(
+                _translationService.GetConfigurePathTitle(TextService, pathField),
+                _translationService.GetSearchQueryPrompt(TextService),
+                currentValueContext,
+                _translationService.GetLeaveEmptyToGoBackMessage(TextService));
+
+            if (string.IsNullOrWhiteSpace(query))
             {
-                return path;
+                return null;
             }
 
-            WriteError(_translationService.BuildErrorMessage(TextService, _translationService.GetDirectoryDoesNotExistMessage(TextService)));
+            DirectorySearchResult searchResult = FastDirectorySearch.Search(rootDirectory, query);
+            if (searchResult.Directories.Count == 0)
+            {
+                Console.Clear();
+                WriteSectionHeader(_translationService.GetConfigurePathTitle(TextService, pathField));
+                WriteError(_translationService.GetNoSearchMatchesMessage(TextService));
+                Console.WriteLine();
+                Pause();
+                continue;
+            }
+
+            var contextLines = new List<string>(currentValueContext);
+            if (searchResult.WasLimitReached)
+            {
+                contextLines.Add(_translationService.GetSearchStoppedMessage(TextService, FastDirectorySearch.DefaultResultLimit));
+            }
+
+            IReadOnlyList<string> options = searchResult.Directories
+                .Append(_translationService.GetBackLabel(TextService))
+                .ToArray();
+
+            int? selection = _interactiveConsole.SelectOption(
+                _translationService.GetSearchDirectoryLabel(TextService),
+                options,
+                contextLines,
+                _translationService.GetNavigationHelp(TextService));
+
+            if (selection == null || selection.Value == searchResult.Directories.Count)
+            {
+                return null;
+            }
+
+            return searchResult.Directories[selection.Value];
         }
-    }
-
-    private string GetPathPrompt(JobPathField pathField)
-    {
-        return pathField == JobPathField.Source
-            ? _translationService.GetSourcePathKeepExistingPrompt(TextService)
-            : _translationService.GetTargetPathKeepExistingPrompt(TextService);
-    }
-
-    private string? SearchPath()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            WriteError(_translationService.GetSearchUnsupportedMessage(TextService));
-            return null;
-        }
-
-        Console.Write(_translationService.GetSearchRootPrompt(TextService));
-        string rootDirectory = Console.ReadLine()?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(rootDirectory) || !Directory.Exists(rootDirectory))
-        {
-            WriteError(_translationService.GetInvalidSearchRootMessage(TextService));
-            return null;
-        }
-
-        Console.Write(_translationService.GetSearchQueryPrompt(TextService));
-        string query = Console.ReadLine()?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            WriteError(TextService.GetPathValueRequiredMessage());
-            return null;
-        }
-
-        DirectorySearchResult searchResult = FastDirectorySearch.Search(rootDirectory, query);
-        if (searchResult.Directories.Count == 0)
-        {
-            WriteError(_translationService.GetNoSearchMatchesMessage(TextService));
-            return null;
-        }
-
-        Console.WriteLine();
-        foreach ((string path, int index) in searchResult.Directories.Select((path, index) => (path, index)))
-        {
-            Console.WriteLine(_translationService.GetMenuOptionLabel(index + 1, path));
-        }
-
-        if (searchResult.WasLimitReached)
-        {
-            Console.WriteLine(_translationService.GetSearchStoppedMessage(TextService, FastDirectorySearch.DefaultResultLimit));
-        }
-
-        Console.WriteLine();
-        Console.Write(_translationService.GetSearchResultSelectionPrompt(TextService));
-        string selection = Console.ReadLine()?.Trim() ?? string.Empty;
-
-        if (!int.TryParse(selection, out int resultNumber)
-            || resultNumber < 1
-            || resultNumber > searchResult.Directories.Count)
-        {
-            WriteError(_translationService.GetInvalidSearchResultSelectionMessage(TextService));
-            return null;
-        }
-
-        return searchResult.Directories[resultNumber - 1];
-    }
-
-    private int GetJobNumber()
-    {
-        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-
-        Console.WriteLine(_translationService.GetAvailableJobsLine(TextService, jobs.Count));
-        Console.Write(_translationService.GetJobNumberPrompt(TextService));
-
-        string? input = Console.ReadLine();
-
-        if (int.TryParse(input, out int jobNumber) && jobNumber >= 1 && jobNumber <= jobs.Count)
-        {
-            return jobNumber;
-        }
-
-        WriteError(_translationService.GetInvalidJobNumberSelectionMessage(TextService, jobs.Count));
-        Pause();
-
-        return -1;
     }
 
     private void RenderJobs(IReadOnlyList<BackupJob> jobs)
@@ -493,6 +535,15 @@ public class BackupConsoleFeatures
             : details;
     }
 
+    private string BuildJobOptionLabel(BackupJob job)
+    {
+        string status = IsConfigured(job)
+            ? _translationService.GetConfiguredLabel(TextService)
+            : _translationService.GetIncompleteLabel(TextService);
+
+        return $"{job.Name} ({TextService.GetBackupTypeDisplayName(job.Type)}) - {status}";
+    }
+
     private string FormatPath(string path)
     {
         return string.IsNullOrWhiteSpace(path)
@@ -503,7 +554,22 @@ public class BackupConsoleFeatures
     private void Pause()
     {
         Console.WriteLine(_translationService.GetPauseMessage(TextService));
-        Console.ReadKey();
+        Console.ReadKey(true);
+    }
+
+    private static bool IsConfigured(BackupJob job)
+    {
+        return !string.IsNullOrWhiteSpace(job.Source)
+            && !string.IsNullOrWhiteSpace(job.Target);
+    }
+
+    private static bool PathsAreEqual(string left, string right)
+    {
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        return string.Equals(left, right, comparison);
     }
 
     private static void WriteSuccess(string message)
@@ -533,5 +599,40 @@ public class BackupConsoleFeatures
         Console.WriteLine(title);
         Console.WriteLine(new string('=', title.Length));
         Console.WriteLine();
+    }
+
+    private enum PathSelectionAction
+    {
+        Back,
+        KeepCurrent,
+        UsePath
+    }
+
+    private sealed class PathSelectionResult
+    {
+        private PathSelectionResult(PathSelectionAction action, string? path)
+        {
+            Action = action;
+            Path = path;
+        }
+
+        public PathSelectionAction Action { get; }
+
+        public string? Path { get; }
+
+        public static PathSelectionResult Back()
+        {
+            return new PathSelectionResult(PathSelectionAction.Back, null);
+        }
+
+        public static PathSelectionResult KeepCurrent()
+        {
+            return new PathSelectionResult(PathSelectionAction.KeepCurrent, null);
+        }
+
+        public static PathSelectionResult UsePath(string path)
+        {
+            return new PathSelectionResult(PathSelectionAction.UsePath, path);
+        }
     }
 }
