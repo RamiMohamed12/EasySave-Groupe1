@@ -16,15 +16,15 @@ public sealed class InteractiveConsole
         return WithHiddenCursor(() =>
         {
             int selectedIndex = Math.Clamp(initialIndex, 0, options.Count - 1);
-            int? menuTop = null;
+            MenuLayout? menuLayout = null;
             int lastSelectedIndex = selectedIndex;
 
             while (true)
             {
-                menuTop ??= RenderMenu(title, contextLines, options, helpText, selectedIndex);
+                menuLayout ??= RenderMenu(title, contextLines, options, helpText, selectedIndex);
                 if (lastSelectedIndex != selectedIndex)
                 {
-                    UpdateMenuSelection(menuTop.Value, options, lastSelectedIndex, selectedIndex);
+                    UpdateMenuSelection(menuLayout.Value, options, lastSelectedIndex, selectedIndex);
                     lastSelectedIndex = selectedIndex;
                 }
 
@@ -63,21 +63,21 @@ public sealed class InteractiveConsole
             int selectedIndex = 0;
             string? errorMessage = null;
             var selectedIndices = new HashSet<int>();
-            int? menuTop = null;
+            MenuLayout? menuLayout = null;
             int lastSelectedIndex = selectedIndex;
             bool needsFullRender = true;
 
             while (true)
             {
-                if (needsFullRender || menuTop == null)
+                if (needsFullRender || menuLayout == null)
                 {
-                    menuTop = RenderMultiSelectMenu(title, contextLines, options, helpText, selectedIndex, selectedIndices, errorMessage);
+                    menuLayout = RenderMultiSelectMenu(title, contextLines, options, helpText, selectedIndex, selectedIndices, errorMessage);
                     lastSelectedIndex = selectedIndex;
                     needsFullRender = false;
                 }
                 else if (lastSelectedIndex != selectedIndex)
                 {
-                    UpdateMultiSelectMenuSelection(menuTop.Value, options, selectedIndices, lastSelectedIndex, selectedIndex);
+                    UpdateMultiSelectMenuSelection(menuLayout.Value, options, selectedIndices, lastSelectedIndex, selectedIndex);
                     lastSelectedIndex = selectedIndex;
                 }
 
@@ -99,7 +99,10 @@ public sealed class InteractiveConsole
                         }
 
                         errorMessage = null;
-                        RewriteConsoleLine(menuTop.Value + selectedIndex, FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, selectedIndex));
+                        RewriteConsoleLine(
+                            menuLayout.Value.Left,
+                            menuLayout.Value.MenuTop + selectedIndex,
+                            FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, selectedIndex));
                         break;
                     case ConsoleKey.Enter:
                         if (selectedIndices.Count == 0)
@@ -193,7 +196,7 @@ public sealed class InteractiveConsole
         }
     }
 
-    private static int RenderMenu(
+    private static MenuLayout RenderMenu(
         string title,
         IReadOnlyList<string>? contextLines,
         IReadOnlyList<string> options,
@@ -201,21 +204,24 @@ public sealed class InteractiveConsole
         int selectedIndex)
     {
         Console.Clear();
-        WriteSectionHeader(title);
-        WriteContextLines(contextLines);
-        int menuTop = Console.CursorTop;
+        var lines = new List<string>();
+        AddSectionHeader(lines, title);
+        AddContextLines(lines, contextLines);
+        int menuTopOffset = lines.Count;
 
         for (int index = 0; index < options.Count; index++)
         {
-            Console.WriteLine(FormatMenuOption(options, selectedIndex, index));
+            lines.Add(FormatMenuOption(options, selectedIndex, index));
         }
 
-        Console.WriteLine();
-        Console.WriteLine(helpText);
-        return menuTop;
+        lines.Add(string.Empty);
+        lines.Add(helpText);
+        MenuLayout layout = CreateCenteredLayout(lines, menuTopOffset);
+        WriteLines(layout.Left, layout.Top, lines);
+        return layout;
     }
 
-    private static int RenderMultiSelectMenu(
+    private static MenuLayout RenderMultiSelectMenu(
         string title,
         IReadOnlyList<string>? contextLines,
         IReadOnlyList<string> options,
@@ -225,46 +231,49 @@ public sealed class InteractiveConsole
         string? errorMessage)
     {
         Console.Clear();
-        WriteSectionHeader(title);
-        WriteContextLines(contextLines);
-        int menuTop = Console.CursorTop;
+        var lines = new List<string>();
+        AddSectionHeader(lines, title);
+        AddContextLines(lines, contextLines);
+        int menuTopOffset = lines.Count;
 
         for (int index = 0; index < options.Count; index++)
         {
-            Console.WriteLine(FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, index));
+            lines.Add(FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, index));
         }
 
-        Console.WriteLine();
-        Console.WriteLine(helpText);
+        lines.Add(string.Empty);
+        lines.Add(helpText);
 
         if (!string.IsNullOrWhiteSpace(errorMessage))
         {
-            Console.WriteLine();
-            WriteError(errorMessage);
+            lines.Add(string.Empty);
+            lines.Add(errorMessage);
         }
 
-        return menuTop;
+        MenuLayout layout = CreateCenteredLayout(lines, menuTopOffset);
+        WriteLines(layout.Left, layout.Top, lines, errorMessage);
+        return layout;
     }
 
     private static void UpdateMenuSelection(
-        int menuTop,
+        MenuLayout layout,
         IReadOnlyList<string> options,
         int lastSelectedIndex,
         int selectedIndex)
     {
-        RewriteConsoleLine(menuTop + lastSelectedIndex, FormatMenuOption(options, selectedIndex, lastSelectedIndex));
-        RewriteConsoleLine(menuTop + selectedIndex, FormatMenuOption(options, selectedIndex, selectedIndex));
+        RewriteConsoleLine(layout.Left, layout.MenuTop + lastSelectedIndex, FormatMenuOption(options, selectedIndex, lastSelectedIndex));
+        RewriteConsoleLine(layout.Left, layout.MenuTop + selectedIndex, FormatMenuOption(options, selectedIndex, selectedIndex));
     }
 
     private static void UpdateMultiSelectMenuSelection(
-        int menuTop,
+        MenuLayout layout,
         IReadOnlyList<string> options,
         IReadOnlySet<int> selectedIndices,
         int lastSelectedIndex,
         int selectedIndex)
     {
-        RewriteConsoleLine(menuTop + lastSelectedIndex, FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, lastSelectedIndex));
-        RewriteConsoleLine(menuTop + selectedIndex, FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, selectedIndex));
+        RewriteConsoleLine(layout.Left, layout.MenuTop + lastSelectedIndex, FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, lastSelectedIndex));
+        RewriteConsoleLine(layout.Left, layout.MenuTop + selectedIndex, FormatMultiSelectMenuOption(options, selectedIndices, selectedIndex, selectedIndex));
     }
 
     private static string FormatMenuOption(IReadOnlyList<string> options, int selectedIndex, int index)
@@ -284,15 +293,63 @@ public sealed class InteractiveConsole
         return $"{pointer}{marker} {options[index]}";
     }
 
-    private static void RewriteConsoleLine(int top, string text)
+    private static MenuLayout CreateCenteredLayout(IReadOnlyList<string> lines, int menuTopOffset)
     {
-        int left = Console.CursorLeft;
-        int currentTop = Console.CursorTop;
-        int clearWidth = Math.Max(0, Console.BufferWidth - 1);
+        int width = lines.Count == 0 ? 0 : lines.Max(line => line.Length);
+        int left = Math.Max(0, (Console.WindowWidth - width) / 2);
+        int top = Math.Max(0, (Console.WindowHeight - lines.Count) / 2);
 
-        Console.SetCursorPosition(0, top);
+        return new MenuLayout(left, top, top + menuTopOffset);
+    }
+
+    private static void WriteLines(int left, int top, IReadOnlyList<string> lines, string? errorMessage = null)
+    {
+        for (int index = 0; index < lines.Count; index++)
+        {
+            Console.SetCursorPosition(left, top + index);
+
+            if (!string.IsNullOrWhiteSpace(errorMessage) && lines[index] == errorMessage)
+            {
+                WriteError(errorMessage);
+            }
+            else
+            {
+                Console.WriteLine(lines[index]);
+            }
+        }
+    }
+
+    private static void RewriteConsoleLine(int left, int top, string text)
+    {
+        int currentLeft = Console.CursorLeft;
+        int currentTop = Console.CursorTop;
+        int clearWidth = Math.Max(0, Console.BufferWidth - left - 1);
+
+        Console.SetCursorPosition(left, top);
         Console.Write(text.PadRight(clearWidth));
-        Console.SetCursorPosition(left, currentTop);
+        Console.SetCursorPosition(currentLeft, currentTop);
+    }
+
+    private static void AddContextLines(ICollection<string> lines, IReadOnlyList<string>? contextLines)
+    {
+        if (contextLines == null || contextLines.Count == 0)
+        {
+            return;
+        }
+
+        foreach (string line in contextLines.Where(line => !string.IsNullOrWhiteSpace(line)))
+        {
+            lines.Add(line);
+        }
+
+        lines.Add(string.Empty);
+    }
+
+    private static void AddSectionHeader(ICollection<string> lines, string title)
+    {
+        lines.Add(title);
+        lines.Add(new string('=', title.Length));
+        lines.Add(string.Empty);
     }
 
     private static void WriteContextLines(IReadOnlyList<string>? contextLines)
@@ -323,4 +380,6 @@ public sealed class InteractiveConsole
         Console.WriteLine(message);
         Console.ResetColor();
     }
+
+    private readonly record struct MenuLayout(int Left, int Top, int MenuTop);
 }
