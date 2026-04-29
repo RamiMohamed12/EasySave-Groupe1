@@ -217,6 +217,73 @@ public sealed class InteractiveConsole
         string? footer = null,
         IReadOnlyList<string>? contextLines = null)
     {
+        RenderOutputScreen(title, lines, footer, contextLines, scrollOffset: 0, showOverflow: true);
+    }
+
+    public void BrowseOutputScreen(
+        string title,
+        IReadOnlyList<ScreenLine> lines,
+        IReadOnlyList<string>? contextLines = null)
+    {
+        WithHiddenCursor(() =>
+        {
+            int scrollOffset = 0;
+            OutputLayout layout = RenderOutputScreen(
+                title,
+                lines,
+                "[Up/Down->Scroll] [PgUp/PgDn->Page] [Home/End->Jump] [Esc->Back]",
+                contextLines,
+                scrollOffset,
+                showOverflow: false);
+
+            while (true)
+            {
+                int maximumScrollOffset = Math.Max(0, lines.Count - layout.VisibleRows);
+                scrollOffset = Math.Min(scrollOffset, maximumScrollOffset);
+
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                int previousScrollOffset = scrollOffset;
+                switch (keyInfo.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        scrollOffset = Math.Max(0, scrollOffset - 1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        scrollOffset = Math.Min(maximumScrollOffset, scrollOffset + 1);
+                        break;
+                    case ConsoleKey.PageUp:
+                        scrollOffset = Math.Max(0, scrollOffset - layout.VisibleRows);
+                        break;
+                    case ConsoleKey.PageDown:
+                        scrollOffset = Math.Min(maximumScrollOffset, scrollOffset + layout.VisibleRows);
+                        break;
+                    case ConsoleKey.Home:
+                        scrollOffset = 0;
+                        break;
+                    case ConsoleKey.End:
+                        scrollOffset = maximumScrollOffset;
+                        break;
+                    case ConsoleKey.Escape:
+                        ResetColors();
+                        return;
+                }
+
+                if (scrollOffset != previousScrollOffset)
+                {
+                    RewriteOutputLines(layout, lines, scrollOffset);
+                }
+            }
+        });
+    }
+
+    private static OutputLayout RenderOutputScreen(
+        string title,
+        IReadOnlyList<ScreenLine> lines,
+        string? footer,
+        IReadOnlyList<string>? contextLines,
+        int scrollOffset,
+        bool showOverflow)
+    {
         Console.Clear();
         LayoutBox box = CreateLayoutBox(
             lines.Select(line => line.Text).DefaultIfEmpty(string.Empty).ToArray(),
@@ -229,14 +296,15 @@ public sealed class InteractiveConsole
         int footerRows = string.IsNullOrWhiteSpace(footer) ? 1 : 2;
         int maxRows = Math.Max(1, box.Bottom - row - footerRows);
         int visibleRows = Math.Min(lines.Count, maxRows);
+        int safeScrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, lines.Count - visibleRows));
 
         for (int index = 0; index < visibleRows; index++)
         {
-            ScreenLine line = lines[index];
+            ScreenLine line = lines[safeScrollOffset + index];
             WriteAt(box.ContentLeft, row + index, Truncate(line.Text, box.ContentWidth).PadRight(box.ContentWidth), GetColor(line.Kind));
         }
 
-        if (visibleRows < lines.Count)
+        if (showOverflow && visibleRows < lines.Count)
         {
             string overflow = $"... {lines.Count - visibleRows} more line(s) not shown";
             WriteAt(box.ContentLeft, row + visibleRows, Truncate(overflow, box.ContentWidth).PadRight(box.ContentWidth), Theme.Accent);
@@ -246,6 +314,8 @@ public sealed class InteractiveConsole
         {
             WriteAt(box.ContentLeft, box.Bottom - 1, Truncate(footer, box.ContentWidth).PadRight(box.ContentWidth), Theme.Accent);
         }
+
+        return new OutputLayout(box.ContentLeft, row, box.ContentWidth, visibleRows);
     }
 
     public void WaitForKey()
@@ -288,6 +358,15 @@ public sealed class InteractiveConsole
                 }
             }
         }
+    }
+
+    private static void WithHiddenCursor(Action action)
+    {
+        WithHiddenCursor(() =>
+        {
+            action();
+            return true;
+        });
     }
 
     private static MenuLayout RenderMenu(
@@ -494,6 +573,26 @@ public sealed class InteractiveConsole
         WriteOptionLine(layout.Left, layout.MenuTop + optionIndex, layout.Width, text, selected);
     }
 
+    private static void RewriteOutputLines(
+        OutputLayout layout,
+        IReadOnlyList<ScreenLine> lines,
+        int scrollOffset)
+    {
+        for (int index = 0; index < layout.VisibleRows; index++)
+        {
+            int lineIndex = scrollOffset + index;
+            ScreenLine line = lineIndex < lines.Count
+                ? lines[lineIndex]
+                : new ScreenLine(string.Empty);
+
+            WriteAt(
+                layout.Left,
+                layout.Top + index,
+                Truncate(line.Text, layout.Width).PadRight(layout.Width),
+                GetColor(line.Kind));
+        }
+    }
+
     private static void WriteOptionLine(int left, int top, int width, string text, bool selected)
     {
         ConsoleColor color = selected ? Theme.Accent : Theme.Primary;
@@ -658,6 +757,8 @@ public sealed class InteractiveConsole
     }
 
     private readonly record struct MenuLayout(int Left, int MenuTop, int Width);
+
+    private readonly record struct OutputLayout(int Left, int Top, int Width, int VisibleRows);
 
     private readonly record struct PromptLayout(int InputLeft, int InputTop);
 }
