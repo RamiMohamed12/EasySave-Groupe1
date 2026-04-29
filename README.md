@@ -1,25 +1,18 @@
 # EasySave - Groupe 1
 
-EasySave est une application console .NET 8 conçue pour vous permettre de gérer efficacement jusqu’à cinq tâches de sauvegarde.
-Elle prend en charge les sauvegardes complètes et différentielles, conserve l’état d’exécution au format JSON et génère des journaux de transfert quotidiens via une bibliothèque de journalisation réutilisable nommée `EasyLog`.
+EasySave est une application console .NET 8 qui permet de gérer jusqu'à cinq tâches de sauvegarde.
+Elle prend en charge les sauvegardes complètes et différentielles, conserve l'état d'exécution au format JSON et génère des journaux de transfert quotidiens avec la bibliothèque `EasyLog`.
+
+La version `1.1.0` introduit une nouvelle interface TUI plus graphique, basée sur des menus interactifs au clavier.
 
 ---
 
 ## Sommaire
 
 * [Fonctionnalités](#fonctionnalités)
+* [Mode TUI graphique](#mode-tui-graphique)
 * [Utilisation en ligne de commande](#utilisation-en-ligne-de-commande)
-
-  * [Afficher les tâches configurées](#afficher-les-tâches-configurées)
-  * [Afficher l’aide](#afficher-laide)
-  * [Exécuter une tâche](#exécuter-une-tâche)
-  * [Exécuter une plage de tâches](#exécuter-une-plage-de-tâches)
-  * [Exécuter une liste personnalisée](#exécuter-une-liste-personnalisée)
-  * [Configurer un chemin source](#configurer-un-chemin-source)
-  * [Configurer un chemin cible](#configurer-un-chemin-cible)
-  * [Changer la langue de l’application](#changer-la-langue-de-lapplication)
-  * [Modifier le répertoire de stockage](#modifier-le-répertoire-de-stockage-à-lexécution)
-* [Fichiers d’exécution](#fichiers-dexécution)
+* [Fichiers d'exécution](#fichiers-dexécution)
 * [Support des langues](#support-des-langues)
 * [Documentation](#documentation)
 * [Contributeurs](#contributeurs)
@@ -31,36 +24,57 @@ Elle prend en charge les sauvegardes complètes et différentielles, conserve l�
 
 Avec EasySave, vous pouvez :
 
-* Gérer jusqu’à 5 tâches de sauvegarde de manière centralisée
-* Lancer facilement une tâche unique, plusieurs tâches consécutives ou une sélection personnalisée
-* Choisir entre une sauvegarde complète (`Full`) ou différentielle (`Differential`) selon vos besoins
-* Suivre en temps réel l’état de vos sauvegardes grâce au fichier `state.json`
-* Consulter un historique détaillé des opérations dans des fichiers journaux quotidiens
-* Bénéficier d’une interface disponible en français et en anglais
-* Définir un répertoire de stockage personnalisé pour vos fichiers d’exécution
-* Choisir si les fichiers de logs quotidiens sont générés en `JSON` ou en `XML`
+* Gérer jusqu'à 5 tâches de sauvegarde.
+* Configurer les chemins source et cible de chaque tâche.
+* Lancer une tâche unique, une plage de tâches ou une sélection personnalisée.
+* Choisir entre une sauvegarde complète (`Full`) ou différentielle (`Differential`).
+* Utiliser une interface TUI avec navigation au clavier.
+* Voir les tâches, l'état des sauvegardes et les logs depuis l'application.
+* Choisir si les logs quotidiens sont générés en `JSON` ou en `XML`.
+* Utiliser l'application en français ou en anglais.
+* Définir un répertoire de stockage personnalisé pour les fichiers d'exécution.
+
+---
+
+## Mode TUI graphique
+
+Quand `EasySave.exe` est lancé sans argument, l'application ouvre le nouveau menu interactif.
+
+![EasySave TUI main menu](docs/easysave-tui.png)
+
+Le mode TUI permet de piloter l'application sans retenir les commandes :
+
+* `View jobs` affiche les cinq tâches configurées.
+* `Configure job` permet de modifier les chemins source et cible d'une tâche.
+* `Run backups` lance une ou plusieurs sauvegardes.
+* `View state` affiche l'état d'exécution des sauvegardes.
+* `View logs` consulte les journaux générés.
+* `Change log format` bascule entre les logs `JSON` et `XML`.
+* `Change language` bascule l'interface entre français et anglais.
+
+Navigation :
+
+* `Up` / `Down` : déplacer la sélection.
+* `Enter` : valider.
+* `Esc` : revenir en arrière.
 
 ---
 
 ## Utilisation en ligne de commande
 
-Les commandes suivantes vous permettent d’interagir simplement avec l’application selon votre besoin.
+Les commandes suivantes permettent d'utiliser EasySave directement depuis un terminal.
 
-### Afficher les tâches configurées
+### Lancer le mode TUI
 
 ```powershell
 .\EasySave.exe
 ```
 
----
-
-### Afficher l’aide
+### Afficher l'aide
 
 ```powershell
 .\EasySave.exe --help
 ```
-
----
 
 ### Exécuter une tâche
 
@@ -68,15 +82,11 @@ Les commandes suivantes vous permettent d’interagir simplement avec l’applic
 .\EasySave.exe 2
 ```
 
----
-
 ### Exécuter une plage de tâches
 
 ```powershell
 .\EasySave.exe 1-3
 ```
-
----
 
 ### Exécuter une liste personnalisée
 
@@ -84,15 +94,11 @@ Les commandes suivantes vous permettent d’interagir simplement avec l’applic
 .\EasySave.exe "1;3;5"
 ```
 
----
-
 ### Configurer un chemin source
 
 ```powershell
 .\EasySave.exe --configure 1 source "C:\SourceFolder"
 ```
-
----
 
 ### Configurer un chemin cible
 
@@ -100,78 +106,61 @@ Les commandes suivantes vous permettent d’interagir simplement avec l’applic
 .\EasySave.exe --configure 1 target "D:\BackupFolder"
 ```
 
----
-
-### Changer la langue de l’application
+### Changer la langue
 
 ```powershell
 .\EasySave.exe --lang fr
 ```
 
-Utilisez `fr` pour le français ou `en` pour l’anglais.
-
+Utilisez `fr` pour le français ou `en` pour l'anglais.
 Le choix est enregistré et réutilisé au prochain lancement.
 
----
-
-### Modifier le répertoire de stockage à l’exécution
+### Modifier le répertoire de stockage
 
 ```powershell
 .\EasySave.exe --storage-dir "C:\EasySaveData"
 ```
 
-Cette commande permet de déplacer automatiquement les fichiers suivants :
+Cette commande déplace automatiquement les fichiers d'exécution :
 
 * `jobs.json`
 * `state.json`
 * `backup-history.json`
-* les fichiers journaux quotidiens (ex : `2026-04-25.json`)
+* les logs quotidiens, par exemple `2026-04-29.json` ou `2026-04-29.xml`
 
 ---
 
-## Fichiers d’exécution
+## Fichiers d'exécution
 
-Par défaut, les fichiers sont stockés dans le répertoire de base de l’application. Vous pouvez toutefois modifier cet emplacement comme indiqué précédemment.
+Par défaut, les fichiers sont stockés dans le dossier de l'application.
 
 ### `jobs.json`
 
-Si vous souhaitez consulter ou modifier la configuration des tâches, ce fichier contient les cinq emplacements de sauvegarde ainsi que leurs paramètres.
-
----
+Contient la configuration des cinq tâches de sauvegarde : nom, chemin source, chemin cible et type de sauvegarde.
 
 ### `state.json`
 
-Si vous souhaitez suivre l’avancement d’une sauvegarde en cours ou consulter le dernier état connu, ce fichier inclut :
+Contient le dernier état connu des sauvegardes :
 
-* le nom de la tâche
-* les chemins source et destination
-* le statut de la sauvegarde
-* le nombre de fichiers et d’octets transférés/restants
-* les horodatages associés
-
----
+* nom de la tâche
+* chemins source et destination
+* statut
+* nombre de fichiers et d'octets transférés/restants
+* horodatages associés
 
 ### `backup-history.json`
 
-Si vous utilisez des sauvegardes différentielles, ce fichier vous permet d’identifier la dernière sauvegarde complète réussie.
+Utilisé par les sauvegardes différentielles pour retrouver la dernière sauvegarde complète réussie.
 
----
+### `yyyy-MM-dd.json` / `yyyy-MM-dd.xml`
 
-### `yyyy-MM-dd.json`
-
-Si vous souhaitez analyser en détail les opérations effectuées, les journaux quotidiens enregistrent chaque action sous forme de lignes JSON, par exemple :
-
-* `FileTransfer`
-* `CreateDirectory`
-* `Error`
-
-Si vous changez le format des logs depuis le menu interactif, ces fichiers peuvent aussi être générés au format `yyyy-MM-dd.xml`.
+Contient les journaux quotidiens. Selon le format choisi, EasySave écrit les logs en JSON ou en XML.
 
 ---
 
 ## Support des langues
 
-Le changement de langue peut maintenant se faire directement en ligne de commande :
+Le changement de langue peut se faire depuis le menu TUI ou directement en ligne de commande :
 
 ```powershell
 .\EasySave.exe --lang en
@@ -183,34 +172,31 @@ ou
 .\EasySave.exe --lang fr
 ```
 
-Le dernier choix est stocké dans `storage-settings.json` et conservé entre les exécutions.
+Ordre de priorité utilisé par l'application :
 
-Ordre de priorité utilisé par l’application :
+1. variable d'environnement `EASYSAVE_LANGUAGE`
+2. langue enregistrée via `--lang` ou le menu TUI
+3. langue du système
 
-1. variable d’environnement `EASYSAVE_LANGUAGE`
-2. langue enregistrée via `--lang`
-3. langue du système (fallback)
-
-Si vous souhaitez forcer une langue spécifique :
+Pour forcer une langue pendant le développement :
 
 ```powershell
 $env:EASYSAVE_LANGUAGE = "fr"
-dotnet run --project .\EasySave
+dotnet run --project .\EasySave.Console
 ```
-
-Utilisez `"en"` pour l’anglais ou `"fr"` pour le français.
 
 ---
 
 ## Documentation
 
-Si vous souhaitez approfondir votre compréhension du projet, des ressources complémentaires sont disponibles dans le dossier [`docs`](./docs) :
+Des ressources complémentaires sont disponibles dans le dossier [`docs`](./docs) :
 
 * `PROJECT.md`
 * `PROJECTSTRUCT.md`
 * `LOGS.md`
 * `Diagrammes UML.pdf`
 * `Manuel Utilisateur.pdf`
+* `Documentation Technique.pdf`
 
 ---
 
@@ -223,8 +209,7 @@ Si vous souhaitez approfondir votre compréhension du projet, des ressources com
 
 ## Remarques
 
-* Si vous souhaitez tester rapidement l’application, un exemple de sortie est déjà disponible dans `publish/EasySave/`.
-* Vous pouvez utiliser des chemins locaux, des disques externes ou des emplacements réseau, à condition de disposer des droits d’accès nécessaires.
+* La version publiée contient une application en état neutre, sans logs personnels ni anciens états de sauvegarde.
+* Vous pouvez utiliser des chemins locaux, des disques externes ou des emplacements réseau si vous disposez des droits d'accès nécessaires.
 * Les tâches sont actuellement exécutées de manière séquentielle.
 
----
