@@ -40,7 +40,8 @@ Avec EasySave, vous pouvez :
 
 Quand `EasySave.exe` est lancé sans argument, l'application ouvre le nouveau menu interactif.
 
-![EasySave TUI main menu](docs/easysave-tui.png)
+<img width="1092" height="697" alt="image" src="https://github.com/user-attachments/assets/fde90f36-74c1-4eb4-a81c-fc7dc4971f70" />
+
 
 Le mode TUI permet de piloter l'application sans retenir les commandes :
 
