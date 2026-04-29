@@ -137,11 +137,9 @@ public class BackupConsoleFeatures
 
     public void ViewState()
     {
-        _interactiveConsole.RenderOutputScreen(
+        _interactiveConsole.BrowseOutputScreen(
             _translationService.GetViewStateLabel(TextService),
-            BuildFileScreenLines(RuntimeStoragePaths.StateFilePath, "state.json"),
-            _translationService.GetPauseMessage(TextService));
-        Pause();
+            BuildFileScreenLines(RuntimeStoragePaths.StateFilePath, "state.json"));
     }
 
     public void ViewLogs()
@@ -174,11 +172,9 @@ public class BackupConsoleFeatures
         }
 
         string selectedLogFilePath = logFilePaths[selection.Value];
-        _interactiveConsole.RenderOutputScreen(
+        _interactiveConsole.BrowseOutputScreen(
             _translationService.GetViewLogsLabel(TextService),
-            BuildFileScreenLines(selectedLogFilePath, Path.GetFileName(selectedLogFilePath)),
-            _translationService.GetPauseMessage(TextService));
-        Pause();
+            BuildFileScreenLines(selectedLogFilePath, Path.GetFileName(selectedLogFilePath)));
     }
 
     public void ChangeLanguage()
