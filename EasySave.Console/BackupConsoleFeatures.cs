@@ -28,10 +28,11 @@ public class BackupConsoleFeatures
 
     public void ViewJobs()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetViewJobsLabel(TextService));
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-        RenderJobs(jobs);
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetViewJobsLabel(TextService),
+            BuildJobsScreenLines(jobs),
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
@@ -90,10 +91,11 @@ public class BackupConsoleFeatures
             })
             .ToList();
 
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetRunBackupsLabel(TextService));
-        Console.WriteLine(_translationService.GetRunningJobsMessage(TextService, selectedJobs.Count));
-        Console.WriteLine();
+        var outputLines = new List<InteractiveConsole.ScreenLine>
+        {
+            AccentLine(_translationService.GetRunningJobsMessage(TextService, selectedJobs.Count)),
+            BlankLine()
+        };
 
         try
         {
@@ -106,33 +108,39 @@ public class BackupConsoleFeatures
 
                 if (result.Status == BackupExecutionStatus.Finished)
                 {
-                    WriteSuccess(BuildBackupSuccessMessage(result, showHeader));
+                    outputLines.AddRange(BuildMessageLines(BuildBackupSuccessMessage(result, showHeader), InteractiveConsole.ScreenLineKind.Success));
                 }
                 else
                 {
-                    WriteError(BuildBackupErrorMessage(result, showHeader));
+                    outputLines.AddRange(BuildMessageLines(BuildBackupErrorMessage(result, showHeader), InteractiveConsole.ScreenLineKind.Error));
                 }
 
                 if (index < results.Count - 1)
                 {
-                    Console.WriteLine();
+                    outputLines.Add(BlankLine());
                 }
             }
         }
         catch (Exception ex)
         {
-            WriteError(_translationService.BuildErrorMessage(TextService, ex.Message));
+            outputLines.AddRange(BuildMessageLines(
+                _translationService.BuildErrorMessage(TextService, ex.Message),
+                InteractiveConsole.ScreenLineKind.Error));
         }
 
-        Console.WriteLine();
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetRunBackupsLabel(TextService),
+            outputLines,
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
     public void ViewState()
     {
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetViewStateLabel(TextService));
-        RenderFile(RuntimeStoragePaths.StateFilePath, "state.json");
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetViewStateLabel(TextService),
+            BuildFileScreenLines(RuntimeStoragePaths.StateFilePath, "state.json"),
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
@@ -141,9 +149,10 @@ public class BackupConsoleFeatures
         IReadOnlyList<string> logFilePaths = GetLogFilePathsToDisplay();
         if (logFilePaths.Count == 0)
         {
-            Console.Clear();
-            WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
-            WriteWarning(_translationService.GetNoLogsFoundMessage(TextService));
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetViewLogsLabel(TextService),
+                [WarningLine(_translationService.GetNoLogsFoundMessage(TextService))],
+                _translationService.GetPauseMessage(TextService));
             Pause();
             return;
         }
@@ -164,10 +173,11 @@ public class BackupConsoleFeatures
             return;
         }
 
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetViewLogsLabel(TextService));
         string selectedLogFilePath = logFilePaths[selection.Value];
-        RenderFile(selectedLogFilePath, Path.GetFileName(selectedLogFilePath));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetViewLogsLabel(TextService),
+            BuildFileScreenLines(selectedLogFilePath, Path.GetFileName(selectedLogFilePath)),
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
@@ -205,11 +215,14 @@ public class BackupConsoleFeatures
 
         _setLanguage(languageCode);
 
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetChangeLanguageLabel(TextService));
-        WriteSuccess(TextService.GetLanguageUpdatedMessage());
-        Console.WriteLine();
-        Console.WriteLine(_translationService.GetCurrentLanguageLine(TextService));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetChangeLanguageLabel(TextService),
+            [
+                SuccessLine(TextService.GetLanguageUpdatedMessage()),
+                BlankLine(),
+                NormalLine(_translationService.GetCurrentLanguageLine(TextService))
+            ],
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
@@ -244,11 +257,14 @@ public class BackupConsoleFeatures
 
         RuntimeStoragePaths.SetLogFileFormat(logFileFormat);
 
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetChangeLogFormatLabel(TextService));
-        WriteSuccess(_translationService.GetLogFormatUpdatedMessage(TextService, logFileFormat));
-        Console.WriteLine();
-        Console.WriteLine(_translationService.GetCurrentLogFormatLine(TextService));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetChangeLogFormatLabel(TextService),
+            [
+                SuccessLine(_translationService.GetLogFormatUpdatedMessage(TextService, logFileFormat)),
+                BlankLine(),
+                NormalLine(_translationService.GetCurrentLogFormatLine(TextService))
+            ],
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
@@ -289,45 +305,57 @@ public class BackupConsoleFeatures
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
 
-        Console.Clear();
-        WriteSectionHeader(_translationService.GetConfigureJobLabel(TextService));
+        var lines = new List<InteractiveConsole.ScreenLine>();
 
         if (hasChanges)
         {
-            WriteSuccess(_translationService.GetConfigurationCompletedMessage(TextService));
+            lines.Add(SuccessLine(_translationService.GetConfigurationCompletedMessage(TextService)));
         }
         else
         {
-            WriteWarning(_translationService.GetNoConfigurationChangesMessage(TextService));
+            lines.Add(WarningLine(_translationService.GetNoConfigurationChangesMessage(TextService)));
         }
 
-        Console.WriteLine();
-        Console.WriteLine(_translationService.GetSelectedJobLabel(TextService));
-        RenderJob(jobNumber, updatedJob);
+        lines.Add(BlankLine());
+        lines.Add(AccentLine(_translationService.GetSelectedJobLabel(TextService)));
+        lines.AddRange(BuildJobScreenLines(jobNumber, updatedJob));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetConfigureJobLabel(TextService),
+            lines,
+            _translationService.GetPauseMessage(TextService));
         Pause();
     }
 
-    private void RenderFile(string filePath, string displayName)
+    private IReadOnlyList<InteractiveConsole.ScreenLine> BuildFileScreenLines(string filePath, string displayName)
     {
-        Console.WriteLine(_translationService.GetFilePathLine(TextService, filePath));
-        Console.WriteLine();
+        var lines = new List<InteractiveConsole.ScreenLine>
+        {
+            AccentLine(_translationService.GetFilePathLine(TextService, filePath)),
+            BlankLine()
+        };
 
         if (!File.Exists(filePath))
         {
-            WriteWarning(_translationService.GetFileNotFoundMessage(TextService, displayName));
-            return;
+            lines.Add(WarningLine(_translationService.GetFileNotFoundMessage(TextService, displayName)));
+            return lines;
         }
 
         string content = File.ReadAllText(filePath);
         if (string.IsNullOrWhiteSpace(content))
         {
-            WriteWarning(_translationService.GetFileEmptyMessage(TextService, displayName));
-            return;
+            lines.Add(WarningLine(_translationService.GetFileEmptyMessage(TextService, displayName)));
+            return lines;
         }
 
-        Console.WriteLine(IsDailyLogFile(displayName)
+        string formattedContent = IsDailyLogFile(displayName)
             ? FormatLogContent(filePath, content)
-            : content);
+            : content;
+
+        lines.AddRange(formattedContent
+            .ReplaceLineEndings()
+            .Split(Environment.NewLine)
+            .Select(NormalLine));
+        return lines;
     }
 
     private static bool IsDailyLogFile(string displayName)
@@ -479,9 +507,10 @@ public class BackupConsoleFeatures
     {
         if (!OperatingSystem.IsWindows())
         {
-            Console.Clear();
-            WriteSectionHeader(_translationService.GetConfigurePathTitle(TextService, pathField));
-            WriteError(_translationService.GetSearchUnsupportedMessage(TextService));
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetConfigurePathTitle(TextService, pathField),
+                [ErrorLine(_translationService.GetSearchUnsupportedMessage(TextService))],
+                _translationService.GetPauseMessage(TextService));
             Pause();
             return null;
         }
@@ -521,10 +550,10 @@ public class BackupConsoleFeatures
             DirectorySearchResult searchResult = FastDirectorySearch.Search(rootDirectory, query);
             if (searchResult.Directories.Count == 0)
             {
-                Console.Clear();
-                WriteSectionHeader(_translationService.GetConfigurePathTitle(TextService, pathField));
-                WriteError(_translationService.GetNoSearchMatchesMessage(TextService));
-                Console.WriteLine();
+                _interactiveConsole.RenderOutputScreen(
+                    _translationService.GetConfigurePathTitle(TextService, pathField),
+                    [ErrorLine(_translationService.GetNoSearchMatchesMessage(TextService))],
+                    _translationService.GetPauseMessage(TextService));
                 Pause();
                 continue;
             }
@@ -554,25 +583,33 @@ public class BackupConsoleFeatures
         }
     }
 
-    private void RenderJobs(IReadOnlyList<BackupJob> jobs)
+    private IReadOnlyList<InteractiveConsole.ScreenLine> BuildJobsScreenLines(IReadOnlyList<BackupJob> jobs)
     {
-        Console.WriteLine(TextService.GetConfiguredJobsHeader());
-        Console.WriteLine();
+        var lines = new List<InteractiveConsole.ScreenLine>
+        {
+            AccentLine(TextService.GetConfiguredJobsHeader()),
+            BlankLine()
+        };
 
         foreach ((BackupJob job, int index) in jobs.Select((job, index) => (job, index)))
         {
-            RenderJob(index + 1, job);
+            lines.AddRange(BuildJobScreenLines(index + 1, job));
         }
+
+        return lines;
     }
 
-    private void RenderJob(int jobNumber, BackupJob job)
+    private IReadOnlyList<InteractiveConsole.ScreenLine> BuildJobScreenLines(int jobNumber, BackupJob job)
     {
-        Console.WriteLine(TextService.GetJobSummaryLine(jobNumber, job));
-        Console.WriteLine($"{_translationService.GetSourceLabel(TextService)}{FormatPath(job.Source)}");
-        Console.WriteLine($"{_translationService.GetTargetLabel(TextService)}{FormatPath(job.Target)}");
-        Console.WriteLine(TextService.GetJobTypeLine(job.Type));
-        Console.WriteLine(TextService.GetJobConfigurationStatusLine(job));
-        Console.WriteLine();
+        return
+        [
+            AccentLine(TextService.GetJobSummaryLine(jobNumber, job)),
+            NormalLine($"{_translationService.GetSourceLabel(TextService)}{FormatPath(job.Source)}"),
+            NormalLine($"{_translationService.GetTargetLabel(TextService)}{FormatPath(job.Target)}"),
+            NormalLine(TextService.GetJobTypeLine(job.Type)),
+            NormalLine(TextService.GetJobConfigurationStatusLine(job)),
+            BlankLine()
+        ];
     }
 
     private string BuildBackupSuccessMessage(BackupResult result, bool showHeader)
@@ -614,8 +651,7 @@ public class BackupConsoleFeatures
 
     private void Pause()
     {
-        Console.WriteLine(_translationService.GetPauseMessage(TextService));
-        Console.ReadKey(true);
+        _interactiveConsole.WaitForKey();
     }
 
     private static bool IsConfigured(BackupJob job)
@@ -633,33 +669,41 @@ public class BackupConsoleFeatures
         return string.Equals(left, right, comparison);
     }
 
-    private static void WriteSuccess(string message)
+    private static IEnumerable<InteractiveConsole.ScreenLine> BuildMessageLines(
+        string message,
+        InteractiveConsole.ScreenLineKind kind)
     {
-        WriteColored(message, ConsoleColor.Green);
+        return message.ReplaceLineEndings().Split(Environment.NewLine).Select(line => new InteractiveConsole.ScreenLine(line, kind));
     }
 
-    private static void WriteError(string message)
+    private static InteractiveConsole.ScreenLine NormalLine(string text)
     {
-        WriteColored(message, ConsoleColor.Red);
+        return new InteractiveConsole.ScreenLine(text);
     }
 
-    private static void WriteWarning(string message)
+    private static InteractiveConsole.ScreenLine AccentLine(string text)
     {
-        WriteColored(message, ConsoleColor.Yellow);
+        return new InteractiveConsole.ScreenLine(text, InteractiveConsole.ScreenLineKind.Accent);
     }
 
-    private static void WriteColored(string message, ConsoleColor color)
+    private static InteractiveConsole.ScreenLine SuccessLine(string text)
     {
-        Console.ForegroundColor = color;
-        Console.WriteLine(message);
-        Console.ResetColor();
+        return new InteractiveConsole.ScreenLine(text, InteractiveConsole.ScreenLineKind.Success);
     }
 
-    private static void WriteSectionHeader(string title)
+    private static InteractiveConsole.ScreenLine WarningLine(string text)
     {
-        Console.WriteLine(title);
-        Console.WriteLine(new string('=', title.Length));
-        Console.WriteLine();
+        return new InteractiveConsole.ScreenLine(text, InteractiveConsole.ScreenLineKind.Warning);
+    }
+
+    private static InteractiveConsole.ScreenLine ErrorLine(string text)
+    {
+        return new InteractiveConsole.ScreenLine(text, InteractiveConsole.ScreenLineKind.Error);
+    }
+
+    private static InteractiveConsole.ScreenLine BlankLine()
+    {
+        return new InteractiveConsole.ScreenLine(string.Empty);
     }
 
     private enum PathSelectionAction

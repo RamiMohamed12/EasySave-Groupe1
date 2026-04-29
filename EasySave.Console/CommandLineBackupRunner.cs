@@ -3,6 +3,7 @@ public class CommandLineBackupRunner
     private readonly BackupJobRegistry _jobRegistry;
     private readonly StateService _stateService;
     private readonly Func<string?, ConsoleMenuRuntime> _runtimeFactory;
+    private readonly InteractiveConsole _interactiveConsole = new();
 
     public CommandLineBackupRunner(
         BackupJobRegistry jobRegistry,
@@ -40,11 +41,14 @@ public class CommandLineBackupRunner
 
             if (selectedJobs.Count == 0)
             {
-                WriteError(runtime.TextService.GetNoConfiguredJobsMessage());
+                _interactiveConsole.RenderOutputScreen(
+                    "EasySave",
+                    [ErrorLine(runtime.TextService.GetNoConfiguredJobsMessage())]);
                 return;
             }
 
             IReadOnlyList<BackupResult> results = runtime.BackupController.StartBackups(selectedJobs);
+            var outputLines = new List<InteractiveConsole.ScreenLine>();
 
             for (int index = 0; index < results.Count; index++)
             {
@@ -53,22 +57,30 @@ public class CommandLineBackupRunner
 
                 if (result.Status == BackupExecutionStatus.Finished)
                 {
-                    WriteSuccess(BuildBackupSuccessMessage(runtime.TextService, result, showHeader));
+                    outputLines.AddRange(BuildMessageLines(
+                        BuildBackupSuccessMessage(runtime.TextService, result, showHeader),
+                        InteractiveConsole.ScreenLineKind.Success));
                 }
                 else
                 {
-                    WriteError(BuildBackupErrorMessage(runtime.TextService, result, showHeader));
+                    outputLines.AddRange(BuildMessageLines(
+                        BuildBackupErrorMessage(runtime.TextService, result, showHeader),
+                        InteractiveConsole.ScreenLineKind.Error));
                 }
 
                 if (index < results.Count - 1)
                 {
-                    Console.WriteLine();
+                    outputLines.Add(BlankLine());
                 }
             }
+
+            _interactiveConsole.RenderOutputScreen("Run backups", outputLines);
         }
         catch (Exception ex)
         {
-            WriteError(BuildErrorMessage(runtime.TextService, ex.Message));
+            _interactiveConsole.RenderOutputScreen(
+                "EasySave",
+                [ErrorLine(BuildErrorMessage(runtime.TextService, ex.Message))]);
         }
     }
 
@@ -122,20 +134,20 @@ public class CommandLineBackupRunner
             : $"Error: {details}";
     }
 
-    private static void WriteSuccess(string message)
+    private static IEnumerable<InteractiveConsole.ScreenLine> BuildMessageLines(
+        string message,
+        InteractiveConsole.ScreenLineKind kind)
     {
-        WriteColored(message, ConsoleColor.Green);
+        return message.ReplaceLineEndings().Split(Environment.NewLine).Select(line => new InteractiveConsole.ScreenLine(line, kind));
     }
 
-    private static void WriteError(string message)
+    private static InteractiveConsole.ScreenLine ErrorLine(string text)
     {
-        WriteColored(message, ConsoleColor.Red);
+        return new InteractiveConsole.ScreenLine(text, InteractiveConsole.ScreenLineKind.Error);
     }
 
-    private static void WriteColored(string message, ConsoleColor color)
+    private static InteractiveConsole.ScreenLine BlankLine()
     {
-        Console.ForegroundColor = color;
-        Console.WriteLine(message);
-        Console.ResetColor();
+        return new InteractiveConsole.ScreenLine(string.Empty);
     }
 }
