@@ -134,10 +134,28 @@ public class BackupServiceTests
     private static List<LogEntry> LoadLogEntries()
     {
         string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
-        return File.ReadAllLines(logFilePath)
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .Select(line => JsonSerializer.Deserialize<LogEntry>(line)!)
+        return ReadJsonBlocks(File.ReadAllLines(logFilePath))
+            .Select(json => JsonSerializer.Deserialize<LogEntry>(json)!)
             .ToList();
+    }
+
+    private static IEnumerable<string> ReadJsonBlocks(IEnumerable<string> lines)
+    {
+        var blockLines = new List<string>();
+        int depth = 0;
+
+        foreach (string line in lines.Where(line => !string.IsNullOrWhiteSpace(line)))
+        {
+            blockLines.Add(line);
+            depth += line.Count(character => character == '{');
+            depth -= line.Count(character => character == '}');
+
+            if (depth == 0 && blockLines.Count > 0)
+            {
+                yield return string.Join(Environment.NewLine, blockLines);
+                blockLines.Clear();
+            }
+        }
     }
 
     private static List<BackupState> LoadStates()
