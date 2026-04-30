@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="EasySave - Interface basique"
+        Title="EasySave"
         Height="720"
         Width="1100"
         MinHeight="650"
@@ -18,10 +18,11 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
+                   Name="HeadingTextBlock"
                    Margin="0,0,0,8"
                    FontSize="18"
                    FontWeight="Bold"
-                   Text="EasySave - Version WPF basique (proche console)" />
+                   Text="EasySave" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -29,7 +30,7 @@
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
 
-            <GroupBox Grid.Column="0" Header="Jobs configurés (1 à 5)" Margin="0,0,8,8">
+            <GroupBox Grid.Column="0" Name="ConfiguredJobsGroupBox" Margin="0,0,8,8">
                 <DataGrid Name="JobsDataGrid"
                           AutoGenerateColumns="False"
                           IsReadOnly="False"
@@ -38,17 +39,17 @@
                           SelectionMode="Single"
                           SelectionChanged="JobsDataGrid_SelectionChanged">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="Run" Binding="{Binding IsSelected}" Width="60" />
-                        <DataGridTextColumn Header="N°" Binding="{Binding JobNumber}" IsReadOnly="True" Width="55" />
-                        <DataGridTextColumn Header="Nom" Binding="{Binding Name}" IsReadOnly="True" Width="120" />
-                        <DataGridTextColumn Header="Type" Binding="{Binding Type}" IsReadOnly="True" Width="110" />
-                        <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*" />
-                        <DataGridTextColumn Header="Cible" Binding="{Binding Target}" Width="*" />
+                        <DataGridCheckBoxColumn x:Name="RunColumn" Binding="{Binding IsSelected}" Width="60" />
+                        <DataGridTextColumn x:Name="NumberColumn" Binding="{Binding JobNumber}" IsReadOnly="True" Width="55" />
+                        <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="120" />
+                        <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="110" />
+                        <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" Width="*" />
+                        <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" Width="*" />
                     </DataGrid.Columns>
                 </DataGrid>
             </GroupBox>
 
-            <GroupBox Grid.Column="1" Header="Edition job sélectionné" Margin="8,0,0,8">
+            <GroupBox Grid.Column="1" Name="EditSelectedJobGroupBox" Margin="8,0,0,8">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -59,17 +60,17 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBlock Name="SelectedJobLabel" Text="Aucun job sélectionné" Margin="0,0,0,10" FontWeight="Bold" />
-                    <TextBlock Grid.Row="1" Text="Source" />
+                    <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
+                    <TextBlock Grid.Row="1" Name="SourceLabel" />
                     <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,8" />
-                    <TextBlock Grid.Row="3" Text="Cible" />
+                    <TextBlock Grid.Row="3" Name="TargetLabel" />
                     <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
-                    <Button Grid.Row="5" Content="Enregistrer chemins du job" Height="30" Click="SaveSelectedJobButton_Click" />
+                    <Button Grid.Row="5" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
                     <TextBlock Grid.Row="6"
+                               Name="EditHintTextBlock"
                                Margin="0,8,0,0"
                                TextWrapping="Wrap"
-                               Foreground="DimGray"
-                               Text="Edition simple: modifie Source/Cible puis clique Enregistrer." />
+                               Foreground="DimGray" />
                 </Grid>
             </GroupBox>
         </Grid>
@@ -79,7 +80,7 @@
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <GroupBox Grid.Column="0" Header="Etat (state.json)" Margin="0,0,8,8">
+            <GroupBox Grid.Column="0" Name="StateGroupBox" Margin="0,0,8,8">
                 <TextBox Name="StateTextBox"
                          Margin="8"
                          FontFamily="Consolas"
@@ -89,7 +90,7 @@
                          IsReadOnly="True"
                          TextWrapping="NoWrap" />
             </GroupBox>
-            <GroupBox Grid.Column="1" Header="Log du jour" Margin="8,0,0,8">
+            <GroupBox Grid.Column="1" Name="LogGroupBox" Margin="8,0,0,8">
                 <TextBox Name="LogTextBox"
                          Margin="8"
                          FontFamily="Consolas"
@@ -102,13 +103,17 @@
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
-            <Button Name="RefreshButton" Content="Actualiser" Width="110" Margin="0,0,8,0" Click="RefreshButton_Click" />
-            <Button Name="RunSelectedButton" Content="Lancer sélection" Width="130" Margin="0,0,8,0" Click="RunSelectedButton_Click" />
-            <Button Name="RunAllButton" Content="Lancer tous" Width="110" Margin="0,0,8,0" Click="RunAllButton_Click" />
-            <Button Name="SaveAllButton" Content="Enregistrer tableau" Width="140" Click="SaveAllButton_Click" />
+            <TextBlock Name="LanguageLabel" Margin="0,7,6,0" />
+            <ComboBox Name="LanguageComboBox"
+                      Width="110"
+                      Margin="0,0,12,0"
+                      SelectionChanged="LanguageComboBox_SelectionChanged" />
+            <Button Name="RefreshButton" Width="110" Margin="0,0,8,0" Click="RefreshButton_Click" />
+            <Button Name="RunSelectedButton" Width="130" Margin="0,0,8,0" Click="RunSelectedButton_Click" />
+            <Button Name="RunAllButton" Width="110" Margin="0,0,8,0" Click="RunAllButton_Click" />
+            <Button Name="SaveAllButton" Width="140" Click="SaveAllButton_Click" />
             <TextBlock Name="StatusTextBlock"
                        Margin="16,7,0,0"
-                       Text="Prêt"
                        FontWeight="SemiBold" />
         </StackPanel>
     </Grid>

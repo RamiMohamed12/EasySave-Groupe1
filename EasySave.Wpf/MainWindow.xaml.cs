@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Text.Json;
 using System.IO;
 
@@ -8,9 +9,11 @@ public partial class MainWindow : Window
 {
     private readonly BackupJobRegistry _jobRegistry;
     private readonly StateService _stateService;
-    private readonly BackupController _backupController;
+    private BackupController _backupController;
     private readonly List<JobRow> _jobRows;
+    private ApplicationTextService _textService;
     private bool _isBusy;
+    private bool _isApplyingLanguage;
 
     public MainWindow()
     {
@@ -18,17 +21,24 @@ public partial class MainWindow : Window
         _jobRegistry = new BackupJobRegistry();
         _stateService = new StateService();
 
-        var textService = ApplicationTextService.Create();
+        _textService = ApplicationTextService.Create();
+        _backupController = CreateBackupController();
+
+        _jobRows = new List<JobRow>();
+        ConfigureLanguageSelector();
+        ApplyTexts();
+        LoadJobsIntoGrid();
+        RefreshStateAndLog();
+    }
+
+    private BackupController CreateBackupController()
+    {
         var backupService = new BackupService(
             new LoggerService(),
             _stateService,
             new BackupHistoryService(),
-            textService);
-        _backupController = new BackupController(backupService);
-
-        _jobRows = new List<JobRow>();
-        LoadJobsIntoGrid();
-        RefreshStateAndLog();
+            _textService);
+        return new BackupController(backupService);
     }
 
     private void LoadJobsIntoGrid()
@@ -44,7 +54,7 @@ public partial class MainWindow : Window
                 IsSelected = false,
                 JobNumber = index + 1,
                 Name = job.Name,
-                Type = job.Type.ToString(),
+                Type = _textService.GetBackupTypeDisplayName(job.Type),
                 Source = job.Source,
                 Target = job.Target
             });
@@ -65,13 +75,13 @@ public partial class MainWindow : Window
         List<JobRow> selectedRows = _jobRows.Where(row => row.IsSelected).ToList();
         if (selectedRows.Count == 0)
         {
-            StatusTextBlock.Text = "Aucun job coché.";
+            StatusTextBlock.Text = Text("Wpf.NoCheckedJobStatus");
             return;
         }
 
         try
         {
-            SetBusy(true, "Execution des jobs selectionnes...");
+            SetBusy(true, Text("Wpf.RunningSelectedStatus"));
             SaveAllRowsToRegistry();
 
             IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
@@ -86,11 +96,11 @@ public partial class MainWindow : Window
             IReadOnlyList<BackupResult> results = await Task.Run(() => _backupController.StartBackups(selectedJobs));
             int successCount = results.Count(result => result.Status == BackupExecutionStatus.Finished);
             int errorCount = results.Count - successCount;
-            StatusTextBlock.Text = $"Execution terminee - Succès: {successCount}, Erreurs: {errorCount}";
+            StatusTextBlock.Text = Format("Wpf.ExecutionCompleteStatus", successCount, errorCount);
         }
         catch (Exception exception)
         {
-            StatusTextBlock.Text = $"Erreur: {exception.Message}";
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
         }
         finally
         {
@@ -108,7 +118,7 @@ public partial class MainWindow : Window
 
         try
         {
-            SetBusy(true, "Execution de tous les jobs...");
+            SetBusy(true, Text("Wpf.RunningAllStatus"));
             SaveAllRowsToRegistry();
 
             IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
@@ -121,11 +131,11 @@ public partial class MainWindow : Window
             IReadOnlyList<BackupResult> results = await Task.Run(() => _backupController.StartBackups(all));
             int successCount = results.Count(result => result.Status == BackupExecutionStatus.Finished);
             int errorCount = results.Count - successCount;
-            StatusTextBlock.Text = $"Execution terminee - Succès: {successCount}, Erreurs: {errorCount}";
+            StatusTextBlock.Text = Format("Wpf.ExecutionCompleteStatus", successCount, errorCount);
         }
         catch (Exception exception)
         {
-            StatusTextBlock.Text = $"Erreur: {exception.Message}";
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
         }
         finally
         {
@@ -138,7 +148,7 @@ public partial class MainWindow : Window
     {
         if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
         {
-            StatusTextBlock.Text = "Selectionne un job d'abord.";
+            StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
             return;
         }
 
@@ -149,14 +159,14 @@ public partial class MainWindow : Window
         _jobRegistry.UpdateJobPath(selectedRow.JobNumber, JobPathField.Source, selectedRow.Source);
         _jobRegistry.UpdateJobPath(selectedRow.JobNumber, JobPathField.Target, selectedRow.Target);
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
-        StatusTextBlock.Text = $"Job {selectedRow.Name} mis a jour.";
+        StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.Name);
         RefreshStateAndLog();
     }
 
     private void SaveAllButton_Click(object sender, RoutedEventArgs e)
     {
         SaveAllRowsToRegistry();
-        StatusTextBlock.Text = "Tableau enregistre dans jobs.json.";
+        StatusTextBlock.Text = Text("Wpf.TableSavedStatus");
         RefreshStateAndLog();
     }
 
@@ -180,7 +190,7 @@ public partial class MainWindow : Window
 
         LoadJobsIntoGrid();
         RefreshStateAndLog();
-        StatusTextBlock.Text = "Actualise.";
+        StatusTextBlock.Text = Text("Wpf.RefreshedStatus");
     }
 
     private void RefreshStateAndLog()
@@ -190,17 +200,17 @@ public partial class MainWindow : Window
         LogTextBox.Text = ReadFileSafely(todayLogPath);
     }
 
-    private static string ReadFileSafely(string path)
+    private string ReadFileSafely(string path)
     {
         if (!File.Exists(path))
         {
-            return $"Fichier introuvable: {path}";
+            return Format("Wpf.FileNotFound", path);
         }
 
         string content = File.ReadAllText(path);
         if (string.IsNullOrWhiteSpace(content))
         {
-            return "(fichier vide)";
+            return Text("Wpf.EmptyFile");
         }
 
         if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
@@ -228,13 +238,13 @@ public partial class MainWindow : Window
     {
         if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
         {
-            SelectedJobLabel.Text = "Aucun job sélectionné";
+            SelectedJobLabel.Text = Text("Wpf.NoSelectedJob");
             SourceTextBox.Text = string.Empty;
             TargetTextBox.Text = string.Empty;
             return;
         }
 
-        SelectedJobLabel.Text = $"Job {selectedRow.JobNumber} - {selectedRow.Name} ({selectedRow.Type})";
+        SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", selectedRow.JobNumber, selectedRow.Name, selectedRow.Type);
         SourceTextBox.Text = selectedRow.Source;
         TargetTextBox.Text = selectedRow.Target;
     }
@@ -249,4 +259,83 @@ public partial class MainWindow : Window
         JobsDataGrid.IsEnabled = !busy;
         StatusTextBlock.Text = message;
     }
+
+    private void ConfigureLanguageSelector()
+    {
+        _isApplyingLanguage = true;
+        LanguageComboBox.ItemsSource = new[]
+        {
+            new LanguageOption(ApplicationTextService.EnglishLanguageCode, "English"),
+            new LanguageOption(ApplicationTextService.FrenchLanguageCode, "Français")
+        };
+        LanguageComboBox.DisplayMemberPath = nameof(LanguageOption.DisplayName);
+        LanguageComboBox.SelectedValuePath = nameof(LanguageOption.LanguageCode);
+        LanguageComboBox.SelectedValue = _textService.GetLanguageCode();
+        _isApplyingLanguage = false;
+    }
+
+    private void ApplyTexts()
+    {
+        Title = Text("Wpf.WindowTitle");
+        HeadingTextBlock.Text = Text("Wpf.Heading");
+        ConfiguredJobsGroupBox.Header = Text("Wpf.ConfiguredJobsHeader");
+        RunColumn.Header = Text("Wpf.RunColumnHeader");
+        NumberColumn.Header = Text("Wpf.NumberColumnHeader");
+        NameColumn.Header = Text("Wpf.NameColumnHeader");
+        TypeColumn.Header = Text("Wpf.TypeColumnHeader");
+        SourceColumn.Header = Text("Wpf.SourceColumnHeader");
+        TargetColumn.Header = Text("Wpf.TargetColumnHeader");
+        EditSelectedJobGroupBox.Header = Text("Wpf.EditSelectedJobHeader");
+        SourceLabel.Text = Text("Wpf.SourceColumnHeader");
+        TargetLabel.Text = Text("Wpf.TargetColumnHeader");
+        SaveSelectedJobButton.Content = Text("Wpf.SaveSelectedJobButton");
+        EditHintTextBlock.Text = Text("Wpf.EditHint");
+        StateGroupBox.Header = Text("Wpf.StateHeader");
+        LogGroupBox.Header = Text("Wpf.LogHeader");
+        LanguageLabel.Text = Text("Wpf.LanguageLabel");
+        RefreshButton.Content = Text("Wpf.RefreshButton");
+        RunSelectedButton.Content = Text("Wpf.RunSelectedButton");
+        RunAllButton.Content = Text("Wpf.RunAllButton");
+        SaveAllButton.Content = Text("Wpf.SaveAllButton");
+
+        if (string.IsNullOrWhiteSpace(StatusTextBlock.Text))
+        {
+            StatusTextBlock.Text = Text("Wpf.ReadyStatus");
+        }
+
+        UpdateSelectedJobLabel();
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingLanguage || LanguageComboBox.SelectedValue is not string languageCode)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetLanguageCode(languageCode);
+        _textService = ApplicationTextService.Create(languageCode);
+        _backupController = CreateBackupController();
+        LoadJobsIntoGrid();
+        ApplyTexts();
+        StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
+        RefreshStateAndLog();
+    }
+
+    private void UpdateSelectedJobLabel()
+    {
+        if (JobsDataGrid.SelectedItem is JobRow selectedRow)
+        {
+            SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", selectedRow.JobNumber, selectedRow.Name, selectedRow.Type);
+            return;
+        }
+
+        SelectedJobLabel.Text = Text("Wpf.NoSelectedJob");
+    }
+
+    private string Text(string key) => _textService.GetText(key);
+
+    private string Format(string key, params object[] args) => _textService.FormatText(key, args);
+
+    private sealed record LanguageOption(string LanguageCode, string DisplayName);
 }

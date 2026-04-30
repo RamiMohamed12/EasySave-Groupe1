@@ -112,26 +112,12 @@ public class CommandLineBackupRunner
 
     private static string GetJobHeader(ApplicationTextService textService, BackupResult result)
     {
-        bool isFrench = string.Equals(
-            textService.GetLanguageCode(),
-            ApplicationTextService.FrenchLanguageCode,
-            StringComparison.OrdinalIgnoreCase);
-
-        return isFrench
-            ? $"Tache {result.JobNumber} : {result.BackupName}"
-            : $"Job {result.JobNumber}: {result.BackupName}";
+        return textService.FormatText("Console.JobHeader", result.JobNumber, result.BackupName);
     }
 
     private static string BuildErrorMessage(ApplicationTextService textService, string details)
     {
-        bool isFrench = string.Equals(
-            textService.GetLanguageCode(),
-            ApplicationTextService.FrenchLanguageCode,
-            StringComparison.OrdinalIgnoreCase);
-
-        return isFrench
-            ? $"Erreur : {details}"
-            : $"Error: {details}";
+        return textService.FormatText("Console.ErrorMessage", details);
     }
 
     private static IEnumerable<InteractiveConsole.ScreenLine> BuildMessageLines(

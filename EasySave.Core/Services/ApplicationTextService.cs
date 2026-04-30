@@ -1,15 +1,19 @@
 using System.Globalization;
+using System.Resources;
 
 public class ApplicationTextService
 {
     public const string EnglishLanguageCode = "en";
     public const string FrenchLanguageCode = "fr";
 
-    private readonly bool _useFrench;
+    private const string ResourceBaseName = "EasySave.Core.Resources.EasySaveStrings";
+    private static readonly ResourceManager Resources = new(ResourceBaseName, typeof(ApplicationTextService).Assembly);
 
-    private ApplicationTextService(bool useFrench)
+    private readonly CultureInfo _culture;
+
+    private ApplicationTextService(string languageCode)
     {
-        _useFrench = useFrench;
+        _culture = CultureInfo.GetCultureInfo(languageCode);
     }
 
     public static ApplicationTextService Create()
@@ -22,403 +26,221 @@ public class ApplicationTextService
 
     public static ApplicationTextService Create(string? languageCode)
     {
+        return new ApplicationTextService(ResolveLanguageCode(languageCode));
+    }
+
+    public static string ResolveLanguageCode(string? languageCode)
+    {
         if (!string.IsNullOrWhiteSpace(languageCode))
         {
-            return new ApplicationTextService(
-                languageCode.StartsWith(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase));
+            return languageCode.StartsWith(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase)
+                ? FrenchLanguageCode
+                : EnglishLanguageCode;
         }
 
-        return new ApplicationTextService(
-            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase));
+        return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals(FrenchLanguageCode, StringComparison.OrdinalIgnoreCase)
+            ? FrenchLanguageCode
+            : EnglishLanguageCode;
     }
 
-    public string GetUsageMessage()
+    public string GetText(string key)
     {
-        return _useFrench
-            ? "Utilisation : EasySave | EasySave --help | EasySave <selection-des-taches> | EasySave --configure <job> source|target <chemin> | EasySave --storage-dir <chemin> | EasySave --lang en|fr"
-            : "Usage: EasySave | EasySave --help | EasySave <job-selection> | EasySave --configure <job> source|target <path> | EasySave --storage-dir <path> | EasySave --lang en|fr";
+        return Resources.GetString(key, _culture) ?? $"[[{key}]]";
     }
 
-    public string GetUsageExamples()
+    public string FormatText(string key, params object[] args)
     {
-        return _useFrench
-            ? "Exemples : EasySave 1-3 | EasySave 1;3 | EasySave 2"
-            : "Examples: EasySave 1-3 | EasySave 1;3 | EasySave 2";
+        return string.Format(CultureInfo.InvariantCulture, GetText(key), args);
     }
 
-    public string GetNoConfiguredJobsMessage()
-    {
-        return _useFrench
-            ? "Aucune tache de sauvegarde n'est configuree."
-            : "No backup jobs are configured.";
-    }
+    public string GetUsageMessage() => GetText("UsageMessage");
 
-    public string GetJobNotConfiguredMessage(int jobNumber)
-    {
-        return _useFrench
-            ? $"La tache {jobNumber} n'est pas configuree dans jobs.json."
-            : $"Job {jobNumber} is not configured in jobs.json.";
-    }
+    public string GetUsageExamples() => GetText("UsageExamples");
 
-    public string GetSourceDirectoryMissingMessage()
-    {
-        return _useFrench
-            ? "Le dossier source n'existe pas."
-            : "Source directory does not exist.";
-    }
+    public string GetNoConfiguredJobsMessage() => GetText("NoConfiguredJobsMessage");
+
+    public string GetJobNotConfiguredMessage(int jobNumber) => FormatText("JobNotConfiguredMessage", jobNumber);
+
+    public string GetSourceDirectoryMissingMessage() => GetText("SourceDirectoryMissingMessage");
 
     public string GetSourceDirectoryMissingMessage(SelectedBackupJob selectedBackupJob)
     {
-        return _useFrench
-            ? $"Echec de la tache {selectedBackupJob.JobNumber} ({selectedBackupJob.Job.Name}) : le dossier source n'existe pas : {selectedBackupJob.Job.Source}"
-            : $"Job {selectedBackupJob.JobNumber} ({selectedBackupJob.Job.Name}) failed: source directory does not exist: {selectedBackupJob.Job.Source}";
+        return FormatText(
+            "SourceDirectoryMissingForJobMessage",
+            selectedBackupJob.JobNumber,
+            selectedBackupJob.Job.Name,
+            selectedBackupJob.Job.Source);
     }
 
-    public string GetSourcePathRequiredMessage()
-    {
-        return _useFrench
-            ? "Le chemin source doit etre configure avant l'execution."
-            : "Source path must be configured before execution.";
-    }
+    public string GetSourcePathRequiredMessage() => GetText("SourcePathRequiredMessage");
 
-    public string GetTargetPathRequiredMessage()
-    {
-        return _useFrench
-            ? "Le chemin cible doit etre configure avant l'execution."
-            : "Target path must be configured before execution.";
-    }
+    public string GetTargetPathRequiredMessage() => GetText("TargetPathRequiredMessage");
 
-    public string GetSelectionRequiredMessage()
-    {
-        return _useFrench
-            ? "Une selection de tache est requise."
-            : "A job selection is required.";
-    }
+    public string GetSelectionRequiredMessage() => GetText("SelectionRequiredMessage");
 
-    public string GetInvalidRangeFormatMessage()
-    {
-        return _useFrench
-            ? "Format de plage invalide. Utilisez des valeurs comme 1-3."
-            : "Invalid range format. Use values like 1-3.";
-    }
+    public string GetInvalidRangeFormatMessage() => GetText("InvalidRangeFormatMessage");
 
-    public string GetInvalidRangeOrderMessage()
-    {
-        return _useFrench
-            ? "Le debut de la plage doit etre inferieur ou egal a la fin."
-            : "Range start must be less than or equal to range end.";
-    }
+    public string GetInvalidRangeOrderMessage() => GetText("InvalidRangeOrderMessage");
 
-    public string GetInvalidJobNumberMessage()
-    {
-        return _useFrench
-            ? "Les numeros de tache doivent etre compris entre 1 et 5."
-            : "Job numbers must be between 1 and 5.";
-    }
+    public string GetInvalidJobNumberMessage() => GetText("InvalidJobNumberMessage");
 
-    public string GetSingleArgumentExpectedMessage()
-    {
-        return _useFrench
-            ? "Un seul argument est attendu. Utilisez --help pour afficher l'aide."
-            : "Expected a single argument. Use --help to display help.";
-    }
+    public string GetSingleArgumentExpectedMessage() => GetText("SingleArgumentExpectedMessage");
 
-    public string GetInvalidCommandMessage()
-    {
-        return _useFrench
-            ? "Commande invalide. Utilisez --help pour afficher l'aide."
-            : "Invalid command. Use --help to display help.";
-    }
+    public string GetInvalidCommandMessage() => GetText("InvalidCommandMessage");
 
-    public string GetInvalidConfigureCommandMessage()
-    {
-        return _useFrench
-            ? "Commande de configuration invalide. Utilisez : EasySave --configure <job> source|target <chemin>."
-            : "Invalid configure command. Use: EasySave --configure <job> source|target <path>.";
-    }
+    public string GetInvalidConfigureCommandMessage() => GetText("InvalidConfigureCommandMessage");
 
-    public string GetInvalidConfigureFieldMessage()
-    {
-        return _useFrench
-            ? "Le champ de configuration doit etre source ou target."
-            : "Configuration field must be source or target.";
-    }
+    public string GetInvalidConfigureFieldMessage() => GetText("InvalidConfigureFieldMessage");
 
-    public string GetPathValueRequiredMessage()
-    {
-        return _useFrench
-            ? "Un chemin non vide est requis."
-            : "A non-empty path is required.";
-    }
+    public string GetPathValueRequiredMessage() => GetText("PathValueRequiredMessage");
 
-    public string GetInvalidStorageDirectoryCommandMessage()
-    {
-        return _useFrench
-            ? "Commande storage-dir invalide. Utilisez : EasySave --storage-dir <chemin>."
-            : "Invalid storage-dir command. Use: EasySave --storage-dir <path>.";
-    }
+    public string GetInvalidStorageDirectoryCommandMessage() => GetText("InvalidStorageDirectoryCommandMessage");
 
-    public string GetInvalidLanguageCommandMessage()
-    {
-        return _useFrench
-            ? "Commande lang invalide. Utilisez : EasySave --lang en|fr."
-            : "Invalid lang command. Use: EasySave --lang en|fr.";
-    }
+    public string GetInvalidLanguageCommandMessage() => GetText("InvalidLanguageCommandMessage");
 
-    public string GetInvalidLanguageCodeMessage()
-    {
-        return _useFrench
-            ? "Code de langue invalide. Utilisez en ou fr."
-            : "Invalid language code. Use en or fr.";
-    }
+    public string GetInvalidLanguageCodeMessage() => GetText("InvalidLanguageCodeMessage");
 
     public IReadOnlyList<string> GetHelpLines()
     {
-        return new[]
-        {
+        return
+        [
             GetUsageMessage(),
             string.Empty,
-            _useFrench
-                ? "EasySave sans argument affiche les 5 taches configurees."
-                : "EasySave without arguments displays the 5 configured jobs.",
-            _useFrench
-                ? "Utilisez --help pour afficher cette aide."
-                : "Use --help to display this help.",
-            _useFrench
-                ? "Les numeros de tache vont de 1 a 5."
-                : "Job numbers range from 1 to 5.",
-            _useFrench
-                ? "Vous pouvez lancer une seule tache, une plage ou une liste separee par des points-virgules."
-                : "You can run a single job, a range, or a semicolon-separated list.",
-            _useFrench
-                ? "Utilisez --configure <job> source <chemin> ou --configure <job> target <chemin> pour modifier un slot."
-                : "Use --configure <job> source <path> or --configure <job> target <path> to update a slot.",
-            _useFrench
-                ? "Utilisez --storage-dir <chemin> pour deplacer jobs.json, state.json, backup-history.json et les logs."
-                : "Use --storage-dir <path> to relocate jobs.json, state.json, backup-history.json, and the logs.",
-            _useFrench
-                ? "Utilisez --lang fr ou --lang en pour changer la langue de l'application."
-                : "Use --lang fr or --lang en to switch the application language.",
+            GetText("HelpNoArgumentLine"),
+            GetText("HelpDisplayLine"),
+            GetText("HelpJobNumbersLine"),
+            GetText("HelpSelectionLine"),
+            GetText("HelpConfigureLine"),
+            GetText("HelpStorageLine"),
+            GetText("HelpLanguageLine"),
             GetUsageExamples(),
-            _useFrench
-                ? "Exemple invalide : EasySave 2-1, car le debut de plage doit etre inferieur ou egal a la fin."
-                : "Invalid example: EasySave 2-1, because the range start must be less than or equal to the end."
-        };
+            GetText("HelpInvalidExampleLine")
+        ];
     }
 
-    public string GetConfiguredJobsHeader()
-    {
-        return _useFrench
-            ? "Taches configurees :"
-            : "Configured jobs:";
-    }
+    public string GetConfiguredJobsHeader() => GetText("ConfiguredJobsHeader");
 
-    public string GetJobSummaryLine(int jobNumber, BackupJob job)
-    {
-        return _useFrench
-            ? $"[{jobNumber}] {job.Name}"
-            : $"[{jobNumber}] {job.Name}";
-    }
+    public string GetJobSummaryLine(int jobNumber, BackupJob job) => FormatText("JobSummaryLine", jobNumber, job.Name);
 
-    public string GetJobSourceLine(string sourcePath)
-    {
-        return _useFrench
-            ? $"  Source : {FormatConfiguredPath(sourcePath)}"
-            : $"  Source: {FormatConfiguredPath(sourcePath)}";
-    }
+    public string GetJobSourceLine(string sourcePath) => FormatText("JobSourceLine", FormatConfiguredPath(sourcePath));
 
-    public string GetJobTargetLine(string targetPath)
-    {
-        return _useFrench
-            ? $"  Cible : {FormatConfiguredPath(targetPath)}"
-            : $"  Target: {FormatConfiguredPath(targetPath)}";
-    }
+    public string GetJobTargetLine(string targetPath) => FormatText("JobTargetLine", FormatConfiguredPath(targetPath));
 
-    public string GetJobTypeLine(BackupType backupType)
-    {
-        return _useFrench
-            ? $"  Type : {GetBackupTypeDisplayName(backupType)}"
-            : $"  Type: {GetBackupTypeDisplayName(backupType)}";
-    }
+    public string GetJobTypeLine(BackupType backupType) => FormatText("JobTypeLine", GetBackupTypeDisplayName(backupType));
 
     public string GetJobConfigurationStatusLine(BackupJob job)
     {
-        string status = IsConfigured(job)
-            ? (_useFrench ? "Configure" : "Configured")
-            : (_useFrench ? "Incomplet" : "Incomplete");
-
-        return _useFrench
-            ? $"  Statut : {status}"
-            : $"  Status: {status}";
+        string status = IsConfigured(job) ? GetText("ConfiguredLabel") : GetText("IncompleteLabel");
+        return FormatText("JobConfigurationStatusLine", status);
     }
 
     public string GetJobPathUpdatedMessage(int jobNumber, BackupJob job, JobPathField pathField)
     {
-        string fieldName = pathField == JobPathField.Source
-            ? (_useFrench ? "source" : "source")
-            : (_useFrench ? "cible" : "target");
+        string fieldName = GetPathFieldDisplayName(pathField);
         string pathValue = pathField == JobPathField.Source ? job.Source : job.Target;
-
-        return _useFrench
-            ? $"La tache {jobNumber} a ete mise a jour : {fieldName} = {pathValue}"
-            : $"Job {jobNumber} was updated: {fieldName} = {pathValue}";
+        return FormatText("JobPathUpdatedMessage", jobNumber, fieldName, pathValue);
     }
 
-    public string GetStorageDirectoryUpdatedMessage(string path)
-    {
-        return _useFrench
-            ? $"Le dossier de stockage runtime a ete mis a jour : {path}"
-            : $"Runtime storage directory was updated: {path}";
-    }
+    public string GetStorageDirectoryUpdatedMessage(string path) => FormatText("StorageDirectoryUpdatedMessage", path);
 
-    public string GetLanguageUpdatedMessage()
-    {
-        return _useFrench
-            ? "La langue a ete changee en francais avec succes."
-            : "Language switched to English successfully.";
-    }
+    public string GetLanguageUpdatedMessage() => GetText("LanguageUpdatedMessage");
 
     public string FormatBackupResult(BackupResult result)
     {
         if (result.Status == BackupExecutionStatus.Finished)
         {
-            string readableBytes = FormatBytes(result.TransferredBytes);
-            string elapsedTime = FormatDuration(result.ElapsedTime);
-            return _useFrench
-                ? $"Fichiers transferes : {result.TransferredFileCount}\nOctets transferes : {readableBytes}\nTemps ecoule : {elapsedTime}"
-                : $"Transferred files: {result.TransferredFileCount}\nTransferred bytes: {readableBytes}\nElapsed time: {elapsedTime}";
+            return FormatText(
+                "BackupResultFinished",
+                result.TransferredFileCount,
+                FormatBytes(result.TransferredBytes),
+                FormatDuration(result.ElapsedTime));
         }
 
-        return _useFrench
-            ? $"Tache {result.JobNumber} en erreur : {result.BackupName} | {result.ErrorMessage}"
-            : $"Job {result.JobNumber} failed: {result.BackupName} | {result.ErrorMessage}";
+        return FormatText("BackupResultFailed", result.JobNumber, result.BackupName, result.ErrorMessage);
     }
 
-    public string GetBackupSuccessMessage()
-    {
-        return _useFrench
-            ? "Sauvegarde completee avec succes !"
-            : "Backup completed successfully!";
-    }
+    public string GetBackupSuccessMessage() => GetText("BackupSuccessMessage");
 
     public string GetBackupTypeDisplayName(BackupType backupType)
     {
         return backupType switch
         {
-            BackupType.Full => _useFrench ? "Complete" : "Full",
-            BackupType.Differential => _useFrench ? "Differentielle" : "Differential",
+            BackupType.Full => GetText("BackupTypeFull"),
+            BackupType.Differential => GetText("BackupTypeDifferential"),
             _ => backupType.ToString()
         };
     }
 
     public string GetJobStartedTitle(SelectedBackupJob selectedBackupJob)
     {
-        return _useFrench
-            ? $"Demarrage de la tache {selectedBackupJob.JobNumber} : {selectedBackupJob.Job.Name}"
-            : $"Starting job {selectedBackupJob.JobNumber}: {selectedBackupJob.Job.Name}";
+        return FormatText("JobStartedTitle", selectedBackupJob.JobNumber, selectedBackupJob.Job.Name);
     }
 
     public string GetJobCompletedTitle(SelectedBackupJob selectedBackupJob)
     {
-        return _useFrench
-            ? $"Tache {selectedBackupJob.JobNumber} terminee : {selectedBackupJob.Job.Name}"
-            : $"Completed job {selectedBackupJob.JobNumber}: {selectedBackupJob.Job.Name}";
+        return FormatText("JobCompletedTitle", selectedBackupJob.JobNumber, selectedBackupJob.Job.Name);
     }
 
     public string GetJobProgressTitle(SelectedBackupJob selectedBackupJob)
     {
-        return _useFrench
-            ? $"Progression de la tache {selectedBackupJob.JobNumber} : {selectedBackupJob.Job.Name}"
-            : $"Job {selectedBackupJob.JobNumber} progress: {selectedBackupJob.Job.Name}";
+        return FormatText("JobProgressTitle", selectedBackupJob.JobNumber, selectedBackupJob.Job.Name);
     }
 
-    public string GetEligibleFilesLine(long totalEligibleFileCount)
-    {
-        return _useFrench
-            ? $"Fichiers eligibles : {totalEligibleFileCount}"
-            : $"Eligible files: {totalEligibleFileCount}";
-    }
+    public string GetEligibleFilesLine(long totalEligibleFileCount) => FormatText("EligibleFilesLine", totalEligibleFileCount);
 
-    public string GetTotalBytesLine(long totalBytes)
-    {
-        return _useFrench
-            ? $"Taille totale a transferer : {FormatBytes(totalBytes)}"
-            : $"Total size to transfer: {FormatBytes(totalBytes)}";
-    }
+    public string GetTotalBytesLine(long totalBytes) => FormatText("TotalBytesLine", FormatBytes(totalBytes));
 
     public string GetTransferredFilesLine(long transferredFileCount, long totalEligibleFileCount)
     {
-        return _useFrench
-            ? $"Fichiers transferes : {transferredFileCount}/{totalEligibleFileCount}"
-            : $"Transferred files: {transferredFileCount}/{totalEligibleFileCount}";
+        return FormatText("TransferredFilesLine", transferredFileCount, totalEligibleFileCount);
     }
 
     public string GetTransferredBytesLine(long transferredBytes, long totalEligibleBytes)
     {
-        return _useFrench
-            ? $"Taille transferee : {FormatBytes(transferredBytes)} / {FormatBytes(totalEligibleBytes)}"
-            : $"Transferred size: {FormatBytes(transferredBytes)} / {FormatBytes(totalEligibleBytes)}";
+        return FormatText("TransferredBytesLine", FormatBytes(transferredBytes), FormatBytes(totalEligibleBytes));
     }
 
-    public string GetProgressLine(double progress)
-    {
-        return _useFrench
-            ? $"Progression : {progress:F2}%"
-            : $"Progress: {progress:F2}%";
-    }
+    public string GetProgressLine(double progress) => FormatText("ProgressLine", progress);
 
-    public string GetCurrentFileLine(string sourcePath)
-    {
-        return _useFrench
-            ? $"Fichier courant : {sourcePath}"
-            : $"Current file: {sourcePath}";
-    }
+    public string GetCurrentFileLine(string sourcePath) => FormatText("CurrentFileLine", sourcePath);
 
-    public string GetCurrentDestinationLine(string destinationPath)
-    {
-        return _useFrench
-            ? $"Destination : {destinationPath}"
-            : $"Destination: {destinationPath}";
-    }
+    public string GetCurrentDestinationLine(string destinationPath) => FormatText("CurrentDestinationLine", destinationPath);
 
-    public string GetCompletionStatusLine()
-    {
-        return _useFrench
-            ? "Statut : termine"
-            : "Status: completed";
-    }
+    public string GetCompletionStatusLine() => GetText("CompletionStatusLine");
 
     public string GetSkippedFileMessage(SelectedBackupJob selectedBackupJob, string filePath, string reason)
     {
-        return _useFrench
-            ? $"Tache {selectedBackupJob.JobNumber} ({selectedBackupJob.Job.Name}) : fichier ignore : {filePath} | Raison : {reason}"
-            : $"Job {selectedBackupJob.JobNumber} ({selectedBackupJob.Job.Name}) skipped file: {filePath} | Reason: {reason}";
+        return FormatText(
+            "SkippedFileMessage",
+            selectedBackupJob.JobNumber,
+            selectedBackupJob.Job.Name,
+            filePath,
+            reason);
     }
 
-    public string GetEmptyFileSkipReason()
+    public string GetEmptyFileSkipReason() => GetText("EmptyFileSkipReason");
+
+    public string GetSuspiciousExtensionSkipReason(string extension) => FormatText("SuspiciousExtensionSkipReason", extension);
+
+    public string GetElapsedTimeLine(TimeSpan elapsedTime) => FormatText("ElapsedTimeLine", FormatDuration(elapsedTime));
+
+    public string GetLanguageCode() => _culture.TwoLetterISOLanguageName;
+
+    public string GetPathFieldDisplayName(JobPathField pathField)
     {
-        return _useFrench
-            ? "fichier vide"
-            : "empty file";
+        return pathField == JobPathField.Source ? GetText("SourceFieldName") : GetText("TargetFieldName");
     }
 
-    public string GetSuspiciousExtensionSkipReason(string extension)
+    public string GetLanguageDisplayName(string languageCode)
     {
-        return _useFrench
-            ? $"extension suspecte '{extension}'"
-            : $"suspicious extension '{extension}'";
+        return ResolveLanguageCode(languageCode) == FrenchLanguageCode
+            ? GetText("FrenchLanguageDisplayName")
+            : GetText("EnglishLanguageDisplayName");
     }
 
-    public string GetElapsedTimeLine(TimeSpan elapsedTime)
+    public string GetLogFileFormatDisplayName(string logFileFormat)
     {
-        return _useFrench
-            ? $"Temps ecoule : {FormatDuration(elapsedTime)}"
-            : $"Elapsed time: {FormatDuration(elapsedTime)}";
-    }
-
-    public string GetLanguageCode()
-    {
-        return _useFrench ? FrenchLanguageCode : EnglishLanguageCode;
+        return logFileFormat == RuntimeStoragePaths.XmlLogFileFormat ? GetText("XmlLogFormat") : GetText("JsonLogFormat");
     }
 
     private static string FormatBytes(long bytes)
@@ -458,12 +280,7 @@ public class ApplicationTextService
 
     private string FormatConfiguredPath(string path)
     {
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            return path;
-        }
-
-        return _useFrench ? "<non configure>" : "<not configured>";
+        return string.IsNullOrWhiteSpace(path) ? GetText("NotConfiguredLabel") : path;
     }
 
     private static bool IsConfigured(BackupJob job)
