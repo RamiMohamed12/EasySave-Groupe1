@@ -3,13 +3,16 @@ namespace EasySave.Tests;
 public class RuntimeStoragePathsTests
 {
     [Fact]
-    public void RuntimeStoragePaths_UsesBaseDirectoryByDefault_WhenNoConfigurationExists()
+    public void RuntimeStoragePaths_UsesSharedStorageByDefault_WhenNoConfigurationExists()
     {
         using var workspace = new TestWorkspace();
         File.Delete(RuntimeStoragePaths.ConfigurationFilePath);
         RuntimeStoragePaths.Reload();
 
-        string baseDirectory = Path.GetFullPath(RuntimeStoragePaths.GetBaseDirectory());
+        string sharedRootDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "EasySave");
+        string baseDirectory = Path.GetFullPath(Path.Combine(sharedRootDirectory, "runtime"));
 
         Assert.Equal(baseDirectory, RuntimeStoragePaths.BackupStateDirectory);
         Assert.Equal(Path.Combine(baseDirectory, "jobs.json"), RuntimeStoragePaths.JobsFilePath);

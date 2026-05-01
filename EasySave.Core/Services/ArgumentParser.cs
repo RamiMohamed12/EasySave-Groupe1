@@ -94,7 +94,7 @@ public class ArgumentParser
 
     private int ParseSingleIndex(string value)
     {
-        if (!int.TryParse(value, out int index) || index < 1 || index > 5)
+        if (!int.TryParse(value, out int index) || index < 1)
         {
             throw new ArgumentException(_textService.GetInvalidJobNumberMessage());
         }

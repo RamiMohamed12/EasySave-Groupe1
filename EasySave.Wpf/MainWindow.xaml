@@ -50,28 +50,35 @@
             </GroupBox>
 
             <GroupBox Grid.Column="1" Name="EditSelectedJobGroupBox" Margin="8,0,0,8">
-                <Grid Margin="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
-                    <TextBlock Grid.Row="1" Name="SourceLabel" />
-                    <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,8" />
-                    <TextBlock Grid.Row="3" Name="TargetLabel" />
-                    <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
-                    <Button Grid.Row="5" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
-                    <TextBlock Grid.Row="6"
-                               Name="EditHintTextBlock"
-                               Margin="0,8,0,0"
-                               TextWrapping="Wrap"
-                               Foreground="DimGray" />
-                </Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
+                        <TextBlock Grid.Row="1" Name="SourceLabel" />
+                        <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,8" />
+                        <TextBlock Grid.Row="3" Name="TargetLabel" />
+                        <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
+                        <TextBlock Grid.Row="5" Name="TypeLabel" />
+                        <ComboBox Grid.Row="6" Name="TypeComboBox" Margin="0,4,0,10" />
+                        <Button Grid.Row="7" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
+                        <TextBlock Grid.Row="8"
+                                   Name="EditHintTextBlock"
+                                   Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Foreground="DimGray" />
+                    </Grid>
+                </ScrollViewer>
             </GroupBox>
         </Grid>
 
@@ -108,6 +115,8 @@
                       Width="110"
                       Margin="0,0,12,0"
                       SelectionChanged="LanguageComboBox_SelectionChanged" />
+            <Button Name="AddJobButton" Width="120" Margin="0,0,8,0" Click="AddJobButton_Click" />
+            <Button Name="DeleteJobButton" Width="130" Margin="0,0,8,0" Click="DeleteJobButton_Click" />
             <Button Name="RefreshButton" Width="110" Margin="0,0,8,0" Click="RefreshButton_Click" />
             <Button Name="RunSelectedButton" Width="130" Margin="0,0,8,0" Click="RunSelectedButton_Click" />
             <Button Name="RunAllButton" Width="110" Margin="0,0,8,0" Click="RunAllButton_Click" />

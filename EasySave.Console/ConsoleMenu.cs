@@ -34,7 +34,7 @@ public class ConsoleMenu
             IReadOnlyList<string> options =
             [
                 _translationService.GetViewJobsLabel(_runtime.TextService),
-                _translationService.GetConfigureJobLabel(_runtime.TextService),
+                _translationService.GetManageJobsLabel(_runtime.TextService),
                 _translationService.GetRunBackupsLabel(_runtime.TextService),
                 _translationService.GetViewStateLabel(_runtime.TextService),
                 _translationService.GetViewLogsLabel(_runtime.TextService),
@@ -65,7 +65,7 @@ public class ConsoleMenu
                     _backupFeatures.ViewJobs();
                     break;
                 case 1:
-                    _backupFeatures.ConfigureJob();
+                    _backupFeatures.ManageJobs();
                     break;
                 case 2:
                     _backupFeatures.RunBackups();

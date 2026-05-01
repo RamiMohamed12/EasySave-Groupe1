@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private ApplicationTextService _textService;
     private bool _isBusy;
     private bool _isApplyingLanguage;
+    private List<BackupTypeOption> _backupTypeOptions = new();
 
     public MainWindow()
     {
@@ -152,14 +153,27 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (TypeComboBox.SelectedValue is not BackupType selectedType)
+        {
+            StatusTextBlock.Text = Text("Wpf.SelectTypeFirstStatus");
+            return;
+        }
+
         selectedRow.Source = SourceTextBox.Text.Trim();
         selectedRow.Target = TargetTextBox.Text.Trim();
+        selectedRow.Type = _textService.GetBackupTypeDisplayName(selectedType);
         JobsDataGrid.Items.Refresh();
 
-        _jobRegistry.UpdateJobPath(selectedRow.JobNumber, JobPathField.Source, selectedRow.Source);
-        _jobRegistry.UpdateJobPath(selectedRow.JobNumber, JobPathField.Target, selectedRow.Target);
+        _jobRegistry.UpdateJob(selectedRow.JobNumber, new BackupJob
+        {
+            Name = selectedRow.Name,
+            Source = selectedRow.Source,
+            Target = selectedRow.Target,
+            Type = selectedType
+        });
+
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
-        StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.Name);
+        StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
         RefreshStateAndLog();
     }
 
@@ -172,10 +186,17 @@ public partial class MainWindow : Window
 
     private void SaveAllRowsToRegistry()
     {
-        foreach (JobRow row in _jobRows)
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        foreach (JobRow row in _jobRows.OrderBy(row => row.JobNumber))
         {
-            _jobRegistry.UpdateJobPath(row.JobNumber, JobPathField.Source, row.Source?.Trim() ?? string.Empty);
-            _jobRegistry.UpdateJobPath(row.JobNumber, JobPathField.Target, row.Target?.Trim() ?? string.Empty);
+            BackupType currentType = jobs[row.JobNumber - 1].Type;
+            _jobRegistry.UpdateJob(row.JobNumber, new BackupJob
+            {
+                Name = row.Name,
+                Source = row.Source?.Trim() ?? string.Empty,
+                Target = row.Target?.Trim() ?? string.Empty,
+                Type = currentType
+            });
         }
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
@@ -241,12 +262,15 @@ public partial class MainWindow : Window
             SelectedJobLabel.Text = Text("Wpf.NoSelectedJob");
             SourceTextBox.Text = string.Empty;
             TargetTextBox.Text = string.Empty;
+            TypeComboBox.SelectedIndex = -1;
             return;
         }
 
+        BackupJob selectedJob = _jobRegistry.LoadJobs()[selectedRow.JobNumber - 1];
         SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", selectedRow.JobNumber, selectedRow.Name, selectedRow.Type);
         SourceTextBox.Text = selectedRow.Source;
         TargetTextBox.Text = selectedRow.Target;
+        TypeComboBox.SelectedValue = selectedJob.Type;
     }
 
     private void SetBusy(bool busy, string message)
@@ -256,6 +280,8 @@ public partial class MainWindow : Window
         RunSelectedButton.IsEnabled = !busy;
         RunAllButton.IsEnabled = !busy;
         SaveAllButton.IsEnabled = !busy;
+        AddJobButton.IsEnabled = !busy;
+        DeleteJobButton.IsEnabled = !busy;
         JobsDataGrid.IsEnabled = !busy;
         StatusTextBlock.Text = message;
     }
@@ -288,15 +314,19 @@ public partial class MainWindow : Window
         EditSelectedJobGroupBox.Header = Text("Wpf.EditSelectedJobHeader");
         SourceLabel.Text = Text("Wpf.SourceColumnHeader");
         TargetLabel.Text = Text("Wpf.TargetColumnHeader");
+        TypeLabel.Text = Text("Wpf.TypeColumnHeader");
         SaveSelectedJobButton.Content = Text("Wpf.SaveSelectedJobButton");
         EditHintTextBlock.Text = Text("Wpf.EditHint");
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
+        AddJobButton.Content = Text("Wpf.AddJobButton");
+        DeleteJobButton.Content = Text("Wpf.DeleteJobButton");
         RefreshButton.Content = Text("Wpf.RefreshButton");
         RunSelectedButton.Content = Text("Wpf.RunSelectedButton");
         RunAllButton.Content = Text("Wpf.RunAllButton");
         SaveAllButton.Content = Text("Wpf.SaveAllButton");
+        ConfigureTypeSelector();
 
         if (string.IsNullOrWhiteSpace(StatusTextBlock.Text))
         {
@@ -304,6 +334,18 @@ public partial class MainWindow : Window
         }
 
         UpdateSelectedJobLabel();
+    }
+
+    private void ConfigureTypeSelector()
+    {
+        _backupTypeOptions =
+        [
+            new BackupTypeOption(BackupType.Full, _textService.GetBackupTypeDisplayName(BackupType.Full)),
+            new BackupTypeOption(BackupType.Differential, _textService.GetBackupTypeDisplayName(BackupType.Differential))
+        ];
+        TypeComboBox.ItemsSource = _backupTypeOptions;
+        TypeComboBox.DisplayMemberPath = nameof(BackupTypeOption.DisplayName);
+        TypeComboBox.SelectedValuePath = nameof(BackupTypeOption.Value);
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -337,5 +379,51 @@ public partial class MainWindow : Window
 
     private string Format(string key, params object[] args) => _textService.FormatText(key, args);
 
+    private void AddJobButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        int jobNumber = jobs.Count + 1;
+        BackupType selectedType = TypeComboBox.SelectedValue is BackupType type ? type : BackupType.Full;
+
+        _jobRegistry.CreateJob(jobNumber, new BackupJob
+        {
+            Name = $"Job{jobNumber}",
+            Source = string.Empty,
+            Target = string.Empty,
+            Type = selectedType
+        });
+
+        LoadJobsIntoGrid();
+        JobsDataGrid.SelectedIndex = _jobRows.Count - 1;
+        StatusTextBlock.Text = Format("Wpf.JobAddedStatus", jobNumber);
+        RefreshStateAndLog();
+    }
+
+    private void DeleteJobButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
+        {
+            StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
+            return;
+        }
+
+        _jobRegistry.DeleteJob(selectedRow.JobNumber);
+        LoadJobsIntoGrid();
+        JobsDataGrid.SelectedIndex = Math.Min(selectedRow.JobNumber - 1, Math.Max(0, _jobRows.Count - 1));
+        StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", selectedRow.JobNumber);
+        RefreshStateAndLog();
+    }
+
     private sealed record LanguageOption(string LanguageCode, string DisplayName);
+    private sealed record BackupTypeOption(BackupType Value, string DisplayName);
 }
