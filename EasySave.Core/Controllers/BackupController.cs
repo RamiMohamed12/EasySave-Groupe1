@@ -1,10 +1,17 @@
 public class BackupController
 {
     private readonly IBackupService _backupService;
+    private readonly BackupJobRegistry _jobRegistry;
 
     public BackupController(IBackupService backupService)
+        : this(backupService, new BackupJobRegistry())
+    {
+    }
+
+    public BackupController(IBackupService backupService, BackupJobRegistry jobRegistry)
     {
         _backupService = backupService;
+        _jobRegistry = jobRegistry;
     }
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
@@ -22,5 +29,20 @@ public class BackupController
         }
 
         return results;
+    }
+
+    public BackupJob CreateJob(int jobNumber, BackupJob job)
+    {
+        return _jobRegistry.CreateJob(jobNumber, job);
+    }
+
+    public BackupJob UpdateJob(int jobNumber, BackupJob job)
+    {
+        return _jobRegistry.UpdateJob(jobNumber, job);
+    }
+
+    public BackupJob DeleteJob(int jobNumber)
+    {
+        return _jobRegistry.DeleteJob(jobNumber);
     }
 }

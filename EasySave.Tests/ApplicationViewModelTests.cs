@@ -42,6 +42,20 @@ public class ApplicationViewModelTests
     }
 
     [Fact]
+    public void Load_WithConfigureCommand_BeyondDefaultSlots_CreatesNewSlot()
+    {
+        using var workspace = new TestWorkspace();
+        ApplicationViewModel viewModel = CreateViewModel(out _);
+
+        viewModel.Load(["--configure", "6", "source", @"E:\Extra"]);
+
+        Assert.True(viewModel.ShowJobList);
+        Assert.Single(viewModel.Messages);
+        Assert.Equal(6, viewModel.AvailableJobs.Count);
+        Assert.Equal(@"E:\Extra", viewModel.AvailableJobs[5].Source);
+    }
+
+    [Fact]
     public void Load_WithStorageDirectoryCommand_RelocatesRuntimeFiles()
     {
         using var workspace = new TestWorkspace();

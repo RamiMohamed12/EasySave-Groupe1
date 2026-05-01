@@ -4,11 +4,13 @@ public static class RuntimeStoragePaths
 {
     public const string JsonLogFileFormat = "json";
     public const string XmlLogFileFormat = "xml";
+    private const string SharedApplicationDirectoryName = "EasySave";
+    private const string SharedStorageDirectoryName = "runtime";
 
     private static readonly object SyncRoot = new();
     private static RuntimeStorageSettings? _settings;
 
-    public static string ConfigurationFilePath => Path.Combine(GetBaseDirectory(), "storage-settings.json");
+    public static string ConfigurationFilePath => Path.Combine(GetSharedConfigurationDirectory(), "storage-settings.json");
     public static string BackupStateDirectory => GetStorageDirectory();
     public static string JobsFilePath => Path.Combine(BackupStateDirectory, "jobs.json");
     public static string StateFilePath => Path.Combine(BackupStateDirectory, "state.json");
@@ -96,7 +98,7 @@ public static class RuntimeStoragePaths
     {
         string configuredDirectory = GetSettings().StorageDirectory;
         string storageDirectory = string.IsNullOrWhiteSpace(configuredDirectory)
-            ? GetBaseDirectory()
+            ? GetDefaultSharedStorageDirectory()
             : ResolveDirectoryPath(configuredDirectory);
 
         Directory.CreateDirectory(storageDirectory);
@@ -145,5 +147,23 @@ public static class RuntimeStoragePaths
         return normalizedLogFileFormat == XmlLogFileFormat
             ? XmlLogFileFormat
             : JsonLogFileFormat;
+    }
+
+    private static string GetSharedConfigurationDirectory()
+    {
+        string localApplicationDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string rootDirectory = string.IsNullOrWhiteSpace(localApplicationDataPath)
+            ? GetBaseDirectory()
+            : localApplicationDataPath;
+        string configurationDirectory = Path.Combine(rootDirectory, SharedApplicationDirectoryName);
+        Directory.CreateDirectory(configurationDirectory);
+        return configurationDirectory;
+    }
+
+    private static string GetDefaultSharedStorageDirectory()
+    {
+        string storageDirectory = Path.Combine(GetSharedConfigurationDirectory(), SharedStorageDirectoryName);
+        Directory.CreateDirectory(storageDirectory);
+        return storageDirectory;
     }
 }

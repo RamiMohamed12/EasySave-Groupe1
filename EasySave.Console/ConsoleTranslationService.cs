@@ -28,6 +28,26 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.ConfigureJobLabel : _englishTexts.ConfigureJobLabel;
     }
 
+    public string GetManageJobsLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ManageJobsLabel : _englishTexts.ManageJobsLabel;
+    }
+
+    public string GetAddJobLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.AddJobLabel : _englishTexts.AddJobLabel;
+    }
+
+    public string GetEditJobLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.EditJobLabel : _englishTexts.EditJobLabel;
+    }
+
+    public string GetDeleteJobLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.DeleteJobLabel : _englishTexts.DeleteJobLabel;
+    }
+
     public string GetRunBackupsLabel(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.RunBackupsLabel : _englishTexts.RunBackupsLabel;
@@ -316,6 +336,11 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.JobNumberPrompt : _englishTexts.JobNumberPrompt;
     }
 
+    public string GetNewJobNumberPrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NewJobNumberPrompt : _englishTexts.NewJobNumberPrompt;
+    }
+
     public string GetInvalidJobNumberSelectionMessage(ApplicationTextService textService, int jobCount)
     {
         return IsFrench(textService)
@@ -403,6 +428,71 @@ public class ConsoleTranslationService
         return IsFrench(textService)
             ? _frenchTexts.GetConfigurationSuccessMessage(jobNumber, updatedJob, pathField)
             : _englishTexts.GetConfigurationSuccessMessage(jobNumber, updatedJob, pathField);
+    }
+
+    public string GetJobAddedMessage(ApplicationTextService textService, int jobNumber)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetJobAddedMessage(jobNumber)
+            : _englishTexts.GetJobAddedMessage(jobNumber);
+    }
+
+    public string GetJobEditedMessage(ApplicationTextService textService, int jobNumber)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetJobEditedMessage(jobNumber)
+            : _englishTexts.GetJobEditedMessage(jobNumber);
+    }
+
+    public string GetJobDeletedMessage(ApplicationTextService textService, int jobNumber)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetJobDeletedMessage(jobNumber)
+            : _englishTexts.GetJobDeletedMessage(jobNumber);
+    }
+
+    public string GetJobAlreadyExistsMessage(ApplicationTextService textService, int jobNumber)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetJobAlreadyExistsMessage(jobNumber)
+            : _englishTexts.GetJobAlreadyExistsMessage(jobNumber);
+    }
+
+    public string GetJobNumberDoesNotExistMessage(ApplicationTextService textService, int jobNumber)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.GetJobNumberDoesNotExistMessage(jobNumber)
+            : _englishTexts.GetJobNumberDoesNotExistMessage(jobNumber);
+    }
+
+    public string GetAddJobTitle(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.AddJobTitle : _englishTexts.AddJobTitle;
+    }
+
+    public string GetEditJobTitle(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.EditJobTitle : _englishTexts.EditJobTitle;
+    }
+
+    public string GetDeleteJobTitle(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.DeleteJobTitle : _englishTexts.DeleteJobTitle;
+    }
+
+    public string GetConfirmDeleteLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ConfirmDeleteLabel : _englishTexts.ConfirmDeleteLabel;
+    }
+
+    public string GetSelectBackupTypeTitle(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.SelectBackupTypeTitle : _englishTexts.SelectBackupTypeTitle;
+    }
+
+    public string GetChangeTypeLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ChangeTypeLabel : _englishTexts.ChangeTypeLabel;
     }
 
     public string GetJobHeader(ApplicationTextService textService, BackupResult result)

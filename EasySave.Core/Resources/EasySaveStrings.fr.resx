@@ -15,7 +15,7 @@
   <data name="SelectionRequiredMessage" xml:space="preserve"><value>Une selection de tache est requise.</value></data>
   <data name="InvalidRangeFormatMessage" xml:space="preserve"><value>Format de plage invalide. Utilisez des valeurs comme 1-3.</value></data>
   <data name="InvalidRangeOrderMessage" xml:space="preserve"><value>Le debut de la plage doit etre inferieur ou egal a la fin.</value></data>
-  <data name="InvalidJobNumberMessage" xml:space="preserve"><value>Les numeros de tache doivent etre compris entre 1 et 5.</value></data>
+  <data name="InvalidJobNumberMessage" xml:space="preserve"><value>Les numeros de tache doivent etre superieurs ou egaux a 1.</value></data>
   <data name="SingleArgumentExpectedMessage" xml:space="preserve"><value>Un seul argument est attendu. Utilisez --help pour afficher l'aide.</value></data>
   <data name="InvalidCommandMessage" xml:space="preserve"><value>Commande invalide. Utilisez --help pour afficher l'aide.</value></data>
   <data name="InvalidConfigureCommandMessage" xml:space="preserve"><value>Commande de configuration invalide. Utilisez : EasySave --configure &lt;job&gt; source|target &lt;chemin&gt;.</value></data>
@@ -24,9 +24,9 @@
   <data name="InvalidStorageDirectoryCommandMessage" xml:space="preserve"><value>Commande storage-dir invalide. Utilisez : EasySave --storage-dir &lt;chemin&gt;.</value></data>
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Commande lang invalide. Utilisez : EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Code de langue invalide. Utilisez en ou fr.</value></data>
-  <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave sans argument affiche les 5 taches configurees.</value></data>
+  <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave sans argument affiche toutes les taches configurees.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Utilisez --help pour afficher cette aide.</value></data>
-  <data name="HelpJobNumbersLine" xml:space="preserve"><value>Les numeros de tache vont de 1 a 5.</value></data>
+  <data name="HelpJobNumbersLine" xml:space="preserve"><value>Les numeros de tache commencent a 1.</value></data>
   <data name="HelpSelectionLine" xml:space="preserve"><value>Vous pouvez lancer une seule tache, une plage ou une liste separee par des points-virgules.</value></data>
   <data name="HelpConfigureLine" xml:space="preserve"><value>Utilisez --configure &lt;job&gt; source &lt;chemin&gt; ou --configure &lt;job&gt; target &lt;chemin&gt; pour modifier un slot.</value></data>
   <data name="HelpStorageLine" xml:space="preserve"><value>Utilisez --storage-dir &lt;chemin&gt; pour deplacer jobs.json, state.json, backup-history.json et les logs.</value></data>
@@ -77,6 +77,10 @@ Temps ecoule : {2}</value></data>
   <data name="Console.ConfigureSourceLabel" xml:space="preserve"><value>Configurer la source</value></data>
   <data name="Console.ConfigureTargetLabel" xml:space="preserve"><value>Configurer la cible</value></data>
   <data name="Console.ConfigureJobLabel" xml:space="preserve"><value>Configurer une tache</value></data>
+  <data name="Console.ManageJobsLabel" xml:space="preserve"><value>Gerer les taches</value></data>
+  <data name="Console.AddJobLabel" xml:space="preserve"><value>Ajouter une tache</value></data>
+  <data name="Console.EditJobLabel" xml:space="preserve"><value>Modifier une tache</value></data>
+  <data name="Console.DeleteJobLabel" xml:space="preserve"><value>Supprimer une tache</value></data>
   <data name="Console.RunBackupsLabel" xml:space="preserve"><value>Lancer les sauvegardes</value></data>
   <data name="Console.ViewStateLabel" xml:space="preserve"><value>Voir l'etat</value></data>
   <data name="Console.ViewLogsLabel" xml:space="preserve"><value>Voir les logs</value></data>
@@ -101,6 +105,7 @@ Temps ecoule : {2}</value></data>
   <data name="Console.SourcePathPrompt" xml:space="preserve"><value>Entrez le chemin source : </value></data>
   <data name="Console.TargetPathPrompt" xml:space="preserve"><value>Entrez le chemin cible : </value></data>
   <data name="Console.JobNumberPrompt" xml:space="preserve"><value>Entrez le numero de tache : </value></data>
+  <data name="Console.NewJobNumberPrompt" xml:space="preserve"><value>Entrez le numero de la nouvelle tache : </value></data>
   <data name="Console.PastePathLabel" xml:space="preserve"><value>Coller un chemin</value></data>
   <data name="Console.PasteSourcePathLabel" xml:space="preserve"><value>Coller le chemin source</value></data>
   <data name="Console.PasteTargetPathLabel" xml:space="preserve"><value>Coller le chemin cible</value></data>
@@ -116,8 +121,19 @@ Temps ecoule : {2}</value></data>
   <data name="Console.InvalidSearchRootMessage" xml:space="preserve"><value>La racine de recherche n'existe pas.</value></data>
   <data name="Console.DirectoryDoesNotExistMessage" xml:space="preserve"><value>Le dossier n'existe pas.</value></data>
   <data name="Console.ConfigurationCompletedMessage" xml:space="preserve"><value>La configuration a reussi.</value></data>
+  <data name="Console.JobAddedMessage" xml:space="preserve"><value>La tache {0} a ete ajoutee.</value></data>
+  <data name="Console.JobEditedMessage" xml:space="preserve"><value>La tache {0} a ete modifiee.</value></data>
+  <data name="Console.JobDeletedMessage" xml:space="preserve"><value>La tache {0} a ete supprimee.</value></data>
+  <data name="Console.JobAlreadyExistsMessage" xml:space="preserve"><value>La tache {0} existe deja. Utilisez Modifier.</value></data>
+  <data name="Console.JobNumberDoesNotExistMessage" xml:space="preserve"><value>La tache {0} n'existe pas.</value></data>
   <data name="Console.NoConfigurationChangesMessage" xml:space="preserve"><value>Aucune modification de configuration n'a ete effectuee.</value></data>
   <data name="Console.SelectedJobLabel" xml:space="preserve"><value>Tache selectionnee :</value></data>
+  <data name="Console.AddJobTitle" xml:space="preserve"><value>Ajouter une tache</value></data>
+  <data name="Console.EditJobTitle" xml:space="preserve"><value>Modifier une tache</value></data>
+  <data name="Console.DeleteJobTitle" xml:space="preserve"><value>Supprimer une tache</value></data>
+  <data name="Console.ConfirmDeleteLabel" xml:space="preserve"><value>Confirmer la suppression</value></data>
+  <data name="Console.SelectBackupTypeTitle" xml:space="preserve"><value>Choisir le type de sauvegarde</value></data>
+  <data name="Console.ChangeTypeLabel" xml:space="preserve"><value>Changer le type</value></data>
   <data name="Console.SourcePathKeepExistingPrompt" xml:space="preserve"><value>Chemin source (laisser vide pour conserver la valeur actuelle) : </value></data>
   <data name="Console.TargetPathKeepExistingPrompt" xml:space="preserve"><value>Chemin cible (laisser vide pour conserver la valeur actuelle) : </value></data>
   <data name="Console.NoLogsFoundMessage" xml:space="preserve"><value>Aucun fichier de log trouve.</value></data>
@@ -145,15 +161,15 @@ Temps ecoule : {2}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Le format des logs a ete change en {0} avec succes.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - Interface WPF</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - Version WPF</value></data>
-  <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Jobs configures (1 a 5)</value></data>
+  <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Taches configurees</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Lancer</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>N°</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Nom</value></data>
   <data name="Wpf.TypeColumnHeader" xml:space="preserve"><value>Type</value></data>
   <data name="Wpf.SourceColumnHeader" xml:space="preserve"><value>Source</value></data>
   <data name="Wpf.TargetColumnHeader" xml:space="preserve"><value>Cible</value></data>
-  <data name="Wpf.EditSelectedJobHeader" xml:space="preserve"><value>Edition du job selectionne</value></data>
-  <data name="Wpf.NoSelectedJob" xml:space="preserve"><value>Aucun job selectionne</value></data>
+  <data name="Wpf.EditSelectedJobHeader" xml:space="preserve"><value>Edition de la tache selectionnee</value></data>
+  <data name="Wpf.NoSelectedJob" xml:space="preserve"><value>Aucune tache selectionnee</value></data>
   <data name="Wpf.SaveSelectedJobButton" xml:space="preserve"><value>Enregistrer les chemins</value></data>
   <data name="Wpf.EditHint" xml:space="preserve"><value>Modifiez Source/Cible, puis cliquez sur Enregistrer.</value></data>
   <data name="Wpf.StateHeader" xml:space="preserve"><value>Etat (state.json)</value></data>
@@ -164,16 +180,21 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Lancer tous</value></data>
   <data name="Wpf.SaveAllButton" xml:space="preserve"><value>Enregistrer tableau</value></data>
   <data name="Wpf.ReadyStatus" xml:space="preserve"><value>Pret</value></data>
-  <data name="Wpf.NoCheckedJobStatus" xml:space="preserve"><value>Aucun job coche.</value></data>
-  <data name="Wpf.RunningSelectedStatus" xml:space="preserve"><value>Execution des jobs selectionnes...</value></data>
-  <data name="Wpf.RunningAllStatus" xml:space="preserve"><value>Execution de tous les jobs...</value></data>
+  <data name="Wpf.NoCheckedJobStatus" xml:space="preserve"><value>Aucune tache cochee.</value></data>
+  <data name="Wpf.RunningSelectedStatus" xml:space="preserve"><value>Execution des taches selectionnees...</value></data>
+  <data name="Wpf.RunningAllStatus" xml:space="preserve"><value>Execution de toutes les taches...</value></data>
   <data name="Wpf.ExecutionCompleteStatus" xml:space="preserve"><value>Execution terminee - Succes : {0}, Erreurs : {1}</value></data>
   <data name="Wpf.ErrorStatus" xml:space="preserve"><value>Erreur : {0}</value></data>
-  <data name="Wpf.SelectJobFirstStatus" xml:space="preserve"><value>Selectionnez un job d'abord.</value></data>
-  <data name="Wpf.JobUpdatedStatus" xml:space="preserve"><value>Job {0} mis a jour.</value></data>
+  <data name="Wpf.SelectJobFirstStatus" xml:space="preserve"><value>Selectionnez une tache d'abord.</value></data>
+  <data name="Wpf.SelectTypeFirstStatus" xml:space="preserve"><value>Selectionnez un type d'abord.</value></data>
+  <data name="Wpf.JobUpdatedStatus" xml:space="preserve"><value>Tache {0} mise a jour.</value></data>
+  <data name="Wpf.JobAddedStatus" xml:space="preserve"><value>Tache {0} ajoutee.</value></data>
+  <data name="Wpf.JobDeletedStatus" xml:space="preserve"><value>Tache {0} supprimee.</value></data>
   <data name="Wpf.TableSavedStatus" xml:space="preserve"><value>Tableau enregistre dans jobs.json.</value></data>
   <data name="Wpf.RefreshedStatus" xml:space="preserve"><value>Actualise.</value></data>
   <data name="Wpf.FileNotFound" xml:space="preserve"><value>Fichier introuvable : {0}</value></data>
   <data name="Wpf.EmptyFile" xml:space="preserve"><value>(fichier vide)</value></data>
-  <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Job {0} - {1} ({2})</value></data>
+  <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Tache {0} - {1} ({2})</value></data>
+  <data name="Wpf.AddJobButton" xml:space="preserve"><value>Ajouter tache</value></data>
+  <data name="Wpf.DeleteJobButton" xml:space="preserve"><value>Supprimer tache</value></data>
 </root>

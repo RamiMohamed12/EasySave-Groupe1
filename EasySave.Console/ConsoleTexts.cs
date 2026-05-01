@@ -12,6 +12,10 @@ public abstract class ConsoleTexts
     public string ConfigureSourceLabel => Text("Console.ConfigureSourceLabel");
     public string ConfigureTargetLabel => Text("Console.ConfigureTargetLabel");
     public string ConfigureJobLabel => Text("Console.ConfigureJobLabel");
+    public string ManageJobsLabel => Text("Console.ManageJobsLabel");
+    public string AddJobLabel => Text("Console.AddJobLabel");
+    public string EditJobLabel => Text("Console.EditJobLabel");
+    public string DeleteJobLabel => Text("Console.DeleteJobLabel");
     public string RunBackupsLabel => Text("Console.RunBackupsLabel");
     public string ViewStateLabel => Text("Console.ViewStateLabel");
     public string ViewLogsLabel => Text("Console.ViewLogsLabel");
@@ -36,6 +40,7 @@ public abstract class ConsoleTexts
     public string SourcePathPrompt => Text("Console.SourcePathPrompt");
     public string TargetPathPrompt => Text("Console.TargetPathPrompt");
     public string JobNumberPrompt => Text("Console.JobNumberPrompt");
+    public string NewJobNumberPrompt => Text("Console.NewJobNumberPrompt");
     public string NotConfiguredLabel => Text("NotConfiguredLabel");
     public string ConfiguredLabel => Text("ConfiguredLabel");
     public string IncompleteLabel => Text("IncompleteLabel");
@@ -54,6 +59,12 @@ public abstract class ConsoleTexts
     public string InvalidSearchRootMessage => Text("Console.InvalidSearchRootMessage");
     public string DirectoryDoesNotExistMessage => Text("Console.DirectoryDoesNotExistMessage");
     public string ConfigurationCompletedMessage => Text("Console.ConfigurationCompletedMessage");
+    public string AddJobTitle => Text("Console.AddJobTitle");
+    public string EditJobTitle => Text("Console.EditJobTitle");
+    public string DeleteJobTitle => Text("Console.DeleteJobTitle");
+    public string ConfirmDeleteLabel => Text("Console.ConfirmDeleteLabel");
+    public string SelectBackupTypeTitle => Text("Console.SelectBackupTypeTitle");
+    public string ChangeTypeLabel => Text("Console.ChangeTypeLabel");
     public string NoConfigurationChangesMessage => Text("Console.NoConfigurationChangesMessage");
     public string SelectedJobLabel => Text("Console.SelectedJobLabel");
     public string SourcePathKeepExistingPrompt => Text("Console.SourcePathKeepExistingPrompt");
@@ -99,6 +110,16 @@ public abstract class ConsoleTexts
     {
         return Format("Console.InvalidJobNumberSelectionMessage", jobCount);
     }
+
+    public string GetJobAddedMessage(int jobNumber) => Format("Console.JobAddedMessage", jobNumber);
+
+    public string GetJobEditedMessage(int jobNumber) => Format("Console.JobEditedMessage", jobNumber);
+
+    public string GetJobDeletedMessage(int jobNumber) => Format("Console.JobDeletedMessage", jobNumber);
+
+    public string GetJobAlreadyExistsMessage(int jobNumber) => Format("Console.JobAlreadyExistsMessage", jobNumber);
+
+    public string GetJobNumberDoesNotExistMessage(int jobNumber) => Format("Console.JobNumberDoesNotExistMessage", jobNumber);
 
     public string GetConfigurationSuccessMessage(int jobNumber, BackupJob updatedJob, JobPathField pathField)
     {

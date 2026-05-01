@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 
 public class BackupJobRegistry
 {
-    public const int MaximumJobs = 5;
+    public const int DefaultJobCount = 5;
+    public const int MaximumJobs = DefaultJobCount;
 
     private readonly string _jobsFilePath;
     private readonly JsonSerializerOptions _serializerOptions;
@@ -33,12 +34,8 @@ public class BackupJobRegistry
     public BackupJob UpdateJobPath(int jobNumber, JobPathField pathField, string pathValue)
     {
         List<BackupJob> jobs = LoadJobs().ToList();
-        int jobIndex = jobNumber - 1;
-
-        if (jobIndex < 0 || jobIndex >= MaximumJobs)
-        {
-            throw new ArgumentOutOfRangeException(nameof(jobNumber));
-        }
+        int jobIndex = GetJobIndex(jobNumber);
+        EnsureJobCapacity(jobs, jobIndex);
 
         BackupJob job = jobs[jobIndex];
 
@@ -53,6 +50,31 @@ public class BackupJobRegistry
 
         SaveJobs(jobs);
         return job;
+    }
+
+    public BackupJob CreateJob(int jobNumber, BackupJob job)
+    {
+        return SaveJob(jobNumber, job);
+    }
+
+    public BackupJob UpdateJob(int jobNumber, BackupJob job)
+    {
+        return SaveJob(jobNumber, job);
+    }
+
+    public BackupJob DeleteJob(int jobNumber)
+    {
+        List<BackupJob> jobs = LoadJobs().ToList();
+        int jobIndex = GetJobIndex(jobNumber);
+        if (jobIndex >= jobs.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(jobNumber));
+        }
+
+        BackupJob removedJob = jobs[jobIndex];
+        jobs.RemoveAt(jobIndex);
+        SaveJobs(jobs);
+        return removedJob;
     }
 
     private void EnsureJobsFileExists()
@@ -83,32 +105,90 @@ public class BackupJobRegistry
 
     private static List<BackupJob> NormalizeJobs(IReadOnlyList<BackupJob> jobs)
     {
-        List<BackupJob> defaultJobs = CreateDefaultJobs();
-
-        for (int index = 0; index < MaximumJobs; index++)
+        int targetCount = jobs.Count;
+        var normalizedJobs = new List<BackupJob>(targetCount);
+        for (int index = 0; index < targetCount; index++)
         {
-            if (index >= jobs.Count)
+            if (index < jobs.Count)
             {
+                BackupJob existingJob = jobs[index] ?? CreateDefaultJob(index);
+                normalizedJobs.Add(NormalizeJob(existingJob, index));
                 continue;
             }
 
-            BackupJob existingJob = jobs[index] ?? new BackupJob();
-            defaultJobs[index].Source = existingJob.Source ?? string.Empty;
-            defaultJobs[index].Target = existingJob.Target ?? string.Empty;
+            normalizedJobs.Add(CreateDefaultJob(index));
         }
 
-        return defaultJobs;
+        return normalizedJobs;
     }
 
     private static List<BackupJob> CreateDefaultJobs()
     {
-        return new List<BackupJob>
+        var jobs = new List<BackupJob>(DefaultJobCount);
+        for (int index = 0; index < DefaultJobCount; index++)
         {
-            new BackupJob { Name = "Job1", Source = string.Empty, Target = string.Empty, Type = BackupType.Full },
-            new BackupJob { Name = "Job2", Source = string.Empty, Target = string.Empty, Type = BackupType.Differential },
-            new BackupJob { Name = "Job3", Source = string.Empty, Target = string.Empty, Type = BackupType.Full },
-            new BackupJob { Name = "Job4", Source = string.Empty, Target = string.Empty, Type = BackupType.Differential },
-            new BackupJob { Name = "Job5", Source = string.Empty, Target = string.Empty, Type = BackupType.Full }
+            jobs.Add(CreateDefaultJob(index));
+        }
+
+        return jobs;
+    }
+
+    private static BackupJob CreateDefaultJob(int jobIndex)
+    {
+        return new BackupJob
+        {
+            Name = $"Job{jobIndex + 1}",
+            Source = string.Empty,
+            Target = string.Empty,
+            Type = jobIndex % 2 == 0 ? BackupType.Full : BackupType.Differential
         };
+    }
+
+    private static int GetJobIndex(int jobNumber)
+    {
+        int jobIndex = jobNumber - 1;
+        if (jobIndex < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(jobNumber));
+        }
+
+        return jobIndex;
+    }
+
+    private BackupJob SaveJob(int jobNumber, BackupJob job)
+    {
+        if (job is null)
+        {
+            throw new ArgumentNullException(nameof(job));
+        }
+
+        List<BackupJob> jobs = LoadJobs().ToList();
+        int jobIndex = GetJobIndex(jobNumber);
+        EnsureJobCapacity(jobs, jobIndex);
+        BackupJob savedJob = NormalizeJob(job, jobIndex);
+        jobs[jobIndex] = savedJob;
+        SaveJobs(jobs);
+        return savedJob;
+    }
+
+    private static BackupJob NormalizeJob(BackupJob job, int jobIndex)
+    {
+        BackupJob template = CreateDefaultJob(jobIndex);
+
+        return new BackupJob
+        {
+            Name = template.Name,
+            Source = job.Source?.Trim() ?? string.Empty,
+            Target = job.Target?.Trim() ?? string.Empty,
+            Type = job.Type
+        };
+    }
+
+    private static void EnsureJobCapacity(List<BackupJob> jobs, int jobIndex)
+    {
+        while (jobs.Count <= jobIndex)
+        {
+            jobs.Add(CreateDefaultJob(jobs.Count));
+        }
     }
 }

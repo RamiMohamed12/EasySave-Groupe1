@@ -15,7 +15,7 @@
   <data name="SelectionRequiredMessage" xml:space="preserve"><value>A job selection is required.</value></data>
   <data name="InvalidRangeFormatMessage" xml:space="preserve"><value>Invalid range format. Use values like 1-3.</value></data>
   <data name="InvalidRangeOrderMessage" xml:space="preserve"><value>Range start must be less than or equal to range end.</value></data>
-  <data name="InvalidJobNumberMessage" xml:space="preserve"><value>Job numbers must be between 1 and 5.</value></data>
+  <data name="InvalidJobNumberMessage" xml:space="preserve"><value>Job numbers must be greater than or equal to 1.</value></data>
   <data name="SingleArgumentExpectedMessage" xml:space="preserve"><value>Expected a single argument. Use --help to display help.</value></data>
   <data name="InvalidCommandMessage" xml:space="preserve"><value>Invalid command. Use --help to display help.</value></data>
   <data name="InvalidConfigureCommandMessage" xml:space="preserve"><value>Invalid configure command. Use: EasySave --configure &lt;job&gt; source|target &lt;path&gt;.</value></data>
@@ -24,9 +24,9 @@
   <data name="InvalidStorageDirectoryCommandMessage" xml:space="preserve"><value>Invalid storage-dir command. Use: EasySave --storage-dir &lt;path&gt;.</value></data>
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Invalid lang command. Use: EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Invalid language code. Use en or fr.</value></data>
-  <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave without arguments displays the 5 configured jobs.</value></data>
+  <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave without arguments displays all configured jobs.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Use --help to display this help.</value></data>
-  <data name="HelpJobNumbersLine" xml:space="preserve"><value>Job numbers range from 1 to 5.</value></data>
+  <data name="HelpJobNumbersLine" xml:space="preserve"><value>Job numbers start at 1.</value></data>
   <data name="HelpSelectionLine" xml:space="preserve"><value>You can run a single job, a range, or a semicolon-separated list.</value></data>
   <data name="HelpConfigureLine" xml:space="preserve"><value>Use --configure &lt;job&gt; source &lt;path&gt; or --configure &lt;job&gt; target &lt;path&gt; to update a slot.</value></data>
   <data name="HelpStorageLine" xml:space="preserve"><value>Use --storage-dir &lt;path&gt; to relocate jobs.json, state.json, backup-history.json, and the logs.</value></data>
@@ -77,6 +77,10 @@ Elapsed time: {2}</value></data>
   <data name="Console.ConfigureSourceLabel" xml:space="preserve"><value>Configure source</value></data>
   <data name="Console.ConfigureTargetLabel" xml:space="preserve"><value>Configure target</value></data>
   <data name="Console.ConfigureJobLabel" xml:space="preserve"><value>Configure job</value></data>
+  <data name="Console.ManageJobsLabel" xml:space="preserve"><value>Manage jobs</value></data>
+  <data name="Console.AddJobLabel" xml:space="preserve"><value>Add job</value></data>
+  <data name="Console.EditJobLabel" xml:space="preserve"><value>Edit job</value></data>
+  <data name="Console.DeleteJobLabel" xml:space="preserve"><value>Delete job</value></data>
   <data name="Console.RunBackupsLabel" xml:space="preserve"><value>Run backups</value></data>
   <data name="Console.ViewStateLabel" xml:space="preserve"><value>View state</value></data>
   <data name="Console.ViewLogsLabel" xml:space="preserve"><value>View logs</value></data>
@@ -101,6 +105,7 @@ Elapsed time: {2}</value></data>
   <data name="Console.SourcePathPrompt" xml:space="preserve"><value>Enter source path: </value></data>
   <data name="Console.TargetPathPrompt" xml:space="preserve"><value>Enter target path: </value></data>
   <data name="Console.JobNumberPrompt" xml:space="preserve"><value>Enter job number: </value></data>
+  <data name="Console.NewJobNumberPrompt" xml:space="preserve"><value>Enter new job number: </value></data>
   <data name="Console.PastePathLabel" xml:space="preserve"><value>Paste path</value></data>
   <data name="Console.PasteSourcePathLabel" xml:space="preserve"><value>Paste source path</value></data>
   <data name="Console.PasteTargetPathLabel" xml:space="preserve"><value>Paste target path</value></data>
@@ -116,8 +121,19 @@ Elapsed time: {2}</value></data>
   <data name="Console.InvalidSearchRootMessage" xml:space="preserve"><value>Search root does not exist.</value></data>
   <data name="Console.DirectoryDoesNotExistMessage" xml:space="preserve"><value>Directory does not exist.</value></data>
   <data name="Console.ConfigurationCompletedMessage" xml:space="preserve"><value>Configuration was successful.</value></data>
+  <data name="Console.JobAddedMessage" xml:space="preserve"><value>Job {0} was added.</value></data>
+  <data name="Console.JobEditedMessage" xml:space="preserve"><value>Job {0} was updated.</value></data>
+  <data name="Console.JobDeletedMessage" xml:space="preserve"><value>Job {0} was deleted.</value></data>
+  <data name="Console.JobAlreadyExistsMessage" xml:space="preserve"><value>Job {0} already exists. Use Edit.</value></data>
+  <data name="Console.JobNumberDoesNotExistMessage" xml:space="preserve"><value>Job {0} does not exist.</value></data>
   <data name="Console.NoConfigurationChangesMessage" xml:space="preserve"><value>No configuration changes were made.</value></data>
   <data name="Console.SelectedJobLabel" xml:space="preserve"><value>Selected job:</value></data>
+  <data name="Console.AddJobTitle" xml:space="preserve"><value>Add job</value></data>
+  <data name="Console.EditJobTitle" xml:space="preserve"><value>Edit job</value></data>
+  <data name="Console.DeleteJobTitle" xml:space="preserve"><value>Delete job</value></data>
+  <data name="Console.ConfirmDeleteLabel" xml:space="preserve"><value>Confirm deletion</value></data>
+  <data name="Console.SelectBackupTypeTitle" xml:space="preserve"><value>Choose backup type</value></data>
+  <data name="Console.ChangeTypeLabel" xml:space="preserve"><value>Change type</value></data>
   <data name="Console.SourcePathKeepExistingPrompt" xml:space="preserve"><value>Source path (leave empty to keep unchanged): </value></data>
   <data name="Console.TargetPathKeepExistingPrompt" xml:space="preserve"><value>Target path (leave empty to keep unchanged): </value></data>
   <data name="Console.NoLogsFoundMessage" xml:space="preserve"><value>No log files were found.</value></data>
@@ -145,7 +161,7 @@ Elapsed time: {2}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Log format switched to {0} successfully.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - WPF interface</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - WPF version</value></data>
-  <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Configured jobs (1 to 5)</value></data>
+  <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Configured jobs</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Run</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>No.</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Name</value></data>
@@ -170,10 +186,15 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.ExecutionCompleteStatus" xml:space="preserve"><value>Execution complete - Success: {0}, Errors: {1}</value></data>
   <data name="Wpf.ErrorStatus" xml:space="preserve"><value>Error: {0}</value></data>
   <data name="Wpf.SelectJobFirstStatus" xml:space="preserve"><value>Select a job first.</value></data>
+  <data name="Wpf.SelectTypeFirstStatus" xml:space="preserve"><value>Select a type first.</value></data>
   <data name="Wpf.JobUpdatedStatus" xml:space="preserve"><value>Job {0} was updated.</value></data>
+  <data name="Wpf.JobAddedStatus" xml:space="preserve"><value>Job {0} was added.</value></data>
+  <data name="Wpf.JobDeletedStatus" xml:space="preserve"><value>Job {0} was deleted.</value></data>
   <data name="Wpf.TableSavedStatus" xml:space="preserve"><value>Table saved to jobs.json.</value></data>
   <data name="Wpf.RefreshedStatus" xml:space="preserve"><value>Refreshed.</value></data>
   <data name="Wpf.FileNotFound" xml:space="preserve"><value>File not found: {0}</value></data>
   <data name="Wpf.EmptyFile" xml:space="preserve"><value>(empty file)</value></data>
   <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Job {0} - {1} ({2})</value></data>
+  <data name="Wpf.AddJobButton" xml:space="preserve"><value>Add job</value></data>
+  <data name="Wpf.DeleteJobButton" xml:space="preserve"><value>Delete job</value></data>
 </root>

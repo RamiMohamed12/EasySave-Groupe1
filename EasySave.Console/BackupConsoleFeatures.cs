@@ -29,14 +29,60 @@ public class BackupConsoleFeatures
     public void ViewJobs()
     {
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-        _interactiveConsole.RenderOutputScreen(
+        _interactiveConsole.BrowseOutputScreen(
             _translationService.GetViewJobsLabel(TextService),
-            BuildJobsScreenLines(jobs),
-            _translationService.GetPauseMessage(TextService));
-        Pause();
+            BuildJobsScreenLines(jobs));
+    }
+
+    public void ManageJobs()
+    {
+        int selectedIndex = 0;
+
+        while (true)
+        {
+            IReadOnlyList<string> options =
+            [
+                _translationService.GetAddJobLabel(TextService),
+                _translationService.GetEditJobLabel(TextService),
+                _translationService.GetDeleteJobLabel(TextService),
+                _translationService.GetBackLabel(TextService)
+            ];
+
+            int? selection = _interactiveConsole.SelectOption(
+                _translationService.GetManageJobsLabel(TextService),
+                options,
+                [TextService.GetConfiguredJobsHeader()],
+                _translationService.GetNavigationHelp(TextService),
+                initialIndex: selectedIndex);
+
+            if (selection == null || selection.Value == 3)
+            {
+                return;
+            }
+
+            selectedIndex = selection.Value;
+
+            switch (selection.Value)
+            {
+                case 0:
+                    AddJob();
+                    break;
+                case 1:
+                    EditJob();
+                    break;
+                case 2:
+                    DeleteJob();
+                    break;
+            }
+        }
     }
 
     public void ConfigureJob()
+    {
+        EditJob();
+    }
+
+    private void EditJob()
     {
         int selectedIndex = 0;
 
@@ -63,6 +109,115 @@ public class BackupConsoleFeatures
             selectedIndex = selection.Value;
             ConfigureSelectedJob(selection.Value + 1, jobs[selection.Value]);
         }
+    }
+
+    private void AddJob()
+    {
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        string? jobNumberValue = _interactiveConsole.PromptLine(
+            _translationService.GetAddJobTitle(TextService),
+            _translationService.GetNewJobNumberPrompt(TextService),
+            [_translationService.GetAvailableJobsLine(TextService, jobs.Count)],
+            _translationService.GetLeaveEmptyToGoBackMessage(TextService),
+            input => ValidateNewJobNumber(input, jobs.Count));
+
+        if (string.IsNullOrWhiteSpace(jobNumberValue))
+        {
+            return;
+        }
+
+        int jobNumber = int.Parse(jobNumberValue);
+        BackupType? selectedType = SelectBackupType();
+        if (!selectedType.HasValue)
+        {
+            return;
+        }
+
+        PathSelectionResult sourceSelection = ReadPath(JobPathField.Source, string.Empty);
+        if (sourceSelection.Action == PathSelectionAction.Back)
+        {
+            return;
+        }
+
+        PathSelectionResult targetSelection = ReadPath(JobPathField.Target, string.Empty);
+        if (targetSelection.Action == PathSelectionAction.Back)
+        {
+            return;
+        }
+
+        var newJob = new BackupJob
+        {
+            Type = selectedType.Value,
+            Source = sourceSelection.Action == PathSelectionAction.UsePath ? sourceSelection.Path! : string.Empty,
+            Target = targetSelection.Action == PathSelectionAction.UsePath ? targetSelection.Path! : string.Empty
+        };
+
+        _jobRegistry.CreateJob(jobNumber, newJob);
+        _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+        BackupJob createdJob = _jobRegistry.LoadJobs()[jobNumber - 1];
+        var lines = new List<InteractiveConsole.ScreenLine>
+        {
+            SuccessLine(_translationService.GetJobAddedMessage(TextService, jobNumber)),
+            BlankLine()
+        };
+        lines.AddRange(BuildJobScreenLines(jobNumber, createdJob));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetAddJobTitle(TextService),
+            lines,
+            _translationService.GetPauseMessage(TextService));
+        Pause();
+    }
+
+    private void DeleteJob()
+    {
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        IReadOnlyList<string> options = jobs
+            .Select(BuildJobOptionLabel)
+            .Append(_translationService.GetBackLabel(TextService))
+            .ToArray();
+
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetDeleteJobTitle(TextService),
+            options,
+            [TextService.GetConfiguredJobsHeader()],
+            _translationService.GetNavigationHelp(TextService));
+
+        if (selection == null || selection.Value == jobs.Count)
+        {
+            return;
+        }
+
+        int jobNumber = selection.Value + 1;
+        BackupJob selectedJob = jobs[selection.Value];
+
+        int? confirmation = _interactiveConsole.SelectOption(
+            _translationService.GetDeleteJobTitle(TextService),
+            [
+                _translationService.GetConfirmDeleteLabel(TextService),
+                _translationService.GetBackLabel(TextService)
+            ],
+            [TextService.GetJobSummaryLine(jobNumber, selectedJob)],
+            _translationService.GetNavigationHelp(TextService),
+            initialIndex: 1);
+
+        if (confirmation == null || confirmation.Value == 1)
+        {
+            return;
+        }
+
+        BackupJob deletedJob = _jobRegistry.DeleteJob(jobNumber);
+        _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetDeleteJobTitle(TextService),
+            [
+                SuccessLine(_translationService.GetJobDeletedMessage(TextService, jobNumber)),
+                BlankLine(),
+                AccentLine(_translationService.GetSelectedJobLabel(TextService)),
+                .. BuildJobScreenLines(jobNumber, deletedJob)
+            ],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
     }
 
     public void RunBackups()
@@ -270,6 +425,24 @@ public class BackupConsoleFeatures
 
     private void ConfigureSelectedJob(int jobNumber, BackupJob job)
     {
+        BackupType? selectedType = SelectBackupType(job.Type, allowKeepCurrent: true);
+        if (!selectedType.HasValue)
+        {
+            return;
+        }
+
+        if (selectedType.Value != job.Type)
+        {
+            _jobRegistry.UpdateJob(jobNumber, new BackupJob
+            {
+                Name = job.Name,
+                Source = job.Source,
+                Target = job.Target,
+                Type = selectedType.Value
+            });
+            job = _jobRegistry.LoadJobs()[jobNumber - 1];
+        }
+
         PathSelectionResult sourceSelection = ReadPath(JobPathField.Source, job.Source);
         if (sourceSelection.Action == PathSelectionAction.Back)
         {
@@ -305,7 +478,7 @@ public class BackupConsoleFeatures
 
         if (hasChanges)
         {
-            lines.Add(SuccessLine(_translationService.GetConfigurationCompletedMessage(TextService)));
+            lines.Add(SuccessLine(_translationService.GetJobEditedMessage(TextService, jobNumber)));
         }
         else
         {
@@ -320,6 +493,61 @@ public class BackupConsoleFeatures
             lines,
             _translationService.GetPauseMessage(TextService));
         Pause();
+    }
+
+    private string? ValidateNewJobNumber(string input, int existingCount)
+    {
+        if (!int.TryParse(input, out int jobNumber) || jobNumber < 1)
+        {
+            return _translationService.BuildErrorMessage(TextService, TextService.GetInvalidJobNumberMessage());
+        }
+
+        if (jobNumber <= existingCount)
+        {
+            return _translationService.BuildErrorMessage(TextService, _translationService.GetJobAlreadyExistsMessage(TextService, jobNumber));
+        }
+
+        return null;
+    }
+
+    private BackupType? SelectBackupType(BackupType? currentType = null, bool allowKeepCurrent = false)
+    {
+        var options = new List<string>
+        {
+            TextService.GetBackupTypeDisplayName(BackupType.Full),
+            TextService.GetBackupTypeDisplayName(BackupType.Differential)
+        };
+
+        int keepCurrentIndex = -1;
+        if (allowKeepCurrent && currentType.HasValue)
+        {
+            keepCurrentIndex = options.Count;
+            options.Add(_translationService.GetSkipLabel(TextService));
+        }
+
+        options.Add(_translationService.GetBackLabel(TextService));
+
+        int initialIndex = currentType == BackupType.Differential ? 1 : 0;
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetSelectBackupTypeTitle(TextService),
+            options,
+            allowKeepCurrent && currentType.HasValue
+                ? [$"{_translationService.GetChangeTypeLabel(TextService)}: {TextService.GetBackupTypeDisplayName(currentType.Value)}"]
+                : null,
+            _translationService.GetNavigationHelp(TextService),
+            initialIndex: initialIndex);
+
+        if (selection == null || selection.Value == options.Count - 1)
+        {
+            return null;
+        }
+
+        if (selection.Value == keepCurrentIndex && currentType.HasValue)
+        {
+            return currentType.Value;
+        }
+
+        return selection.Value == 0 ? BackupType.Full : BackupType.Differential;
     }
 
     private IReadOnlyList<InteractiveConsole.ScreenLine> BuildFileScreenLines(string filePath, string displayName)
