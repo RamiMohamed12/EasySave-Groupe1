@@ -1,6 +1,6 @@
 # EasySave - Groupe 1
 
-EasySave est une application console .NET 8 qui permet de gérer jusqu'à cinq tâches de sauvegarde.
+EasySave est une solution .NET 8 de sauvegarde proposant trois modes d’utilisation : une application graphique WPF, une interface console/TUI interactive et une utilisation en ligne de commande.
 Elle prend en charge les sauvegardes complètes et différentielles, conserve l'état d'exécution au format JSON et génère des journaux de transfert quotidiens avec la bibliothèque `EasyLog`.
 
 La version `1.1.0` introduit une nouvelle interface TUI plus graphique, basée sur des menus interactifs au clavier.
@@ -12,6 +12,7 @@ La version `1.1.0` introduit une nouvelle interface TUI plus graphique, basée s
 * [Fonctionnalités](#fonctionnalités)
 * [Mode TUI graphique](#mode-tui-graphique)
 * [Utilisation en ligne de commande](#utilisation-en-ligne-de-commande)
+* [Mode graphique WPF](#mode-graphique-wpf)
 * [Fichiers d'exécution](#fichiers-dexécution)
 * [Support des langues](#support-des-langues)
 * [Documentation](#documentation)
@@ -58,6 +59,7 @@ Navigation :
 * `Up` / `Down` : déplacer la sélection.
 * `Enter` : valider.
 * `Esc` : revenir en arrière.
+
 
 ---
 
@@ -128,6 +130,48 @@ Cette commande déplace automatiquement les fichiers d'exécution :
 * `state.json`
 * `backup-history.json`
 * les logs quotidiens, par exemple `2026-04-29.json` ou `2026-04-29.xml`
+
+---
+## Mode graphique WPF
+
+EasySave propose désormais une application graphique Windows basée sur WPF, en complément du mode console/TUI et de l’utilisation en ligne de commande.
+
+L’application WPF permet de piloter les sauvegardes depuis une fenêtre dédiée, sans saisir de commandes. Elle réutilise la même logique métier que la console grâce au projet `EasySave.Core`, ce qui garantit un comportement cohérent entre les deux modes.
+
+### Lancer l’application WPF
+
+Depuis la racine du projet :
+
+```powershell
+dotnet run --project .\EasySave.Wpf
+```
+
+Ou depuis une version compilée : 
+```powershell
+.\EasySave.Wpf.exe
+```
+
+### Fonctionnalités du mode graphique
+
+
+Le mode WPF permet de :
+
+- Visualiser les tâches de sauvegarde dans un tableau ;
+- Sélectionner une ou plusieurs tâches à exécuter ;
+- Lancer uniquement les tâches cochées ou toutes les tâches ;
+- Modifier les chemins source et cible d’une tâche ;
+- Choisir le type de sauvegarde : complète ou différentielle ;
+- Ajouter ou supprimer une tâche depuis l’interface ;
+- Configurer les extensions à chiffrer avec CryptoSoft ;
+- Renseigner la clé CryptoSoft utilisée pour le chiffrement ;
+- Consulter directement le contenu de state.json ;
+- Consulter le journal du jour au format JSON ou XML ;
+- Changer la langue de l’interface entre français et anglais ;
+- Rafraîchir l’état de l’application après une exécution.
+
+
+*Pendant l’exécution d’une sauvegarde, l’interface désactive les actions principales afin d’éviter les conflits. Les traitements sont lancés en arrière-plan pour conserver une fenêtre réactive.*
+
 
 ---
 
