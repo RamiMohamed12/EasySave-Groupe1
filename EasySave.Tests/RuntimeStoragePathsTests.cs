@@ -81,6 +81,28 @@ public class RuntimeStoragePathsTests
     }
 
     [Fact]
+    public void SetEncryptedExtensions_NormalizesAndPersistsExtensions()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetEncryptedExtensions(["txt; .PDF, docx txt"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal([".docx", ".pdf", ".txt"], RuntimeStoragePaths.GetEncryptedExtensions());
+    }
+
+    [Fact]
+    public void SetCryptoSoftKey_PersistsKeyAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetCryptoSoftKey("secret");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal("secret", RuntimeStoragePaths.GetCryptoSoftKey());
+    }
+
+    [Fact]
     public void SetBlockedProcessNames_PersistsAcrossReload()
     {
         using var workspace = new TestWorkspace();

@@ -5,6 +5,7 @@ public class BackupTransferredFile
     public string DestinationPath { get; set; }
     public long FileSizeBytes { get; set; }
     public long TransferTimeMilliseconds { get; set; }
+    public long EncryptionTimeMilliseconds { get; set; }
 
     public BackupTransferredFile()
     {
@@ -13,5 +14,6 @@ public class BackupTransferredFile
         DestinationPath = string.Empty;
         FileSizeBytes = 0;
         TransferTimeMilliseconds = 0;
+        EncryptionTimeMilliseconds = 0;
     }
 }

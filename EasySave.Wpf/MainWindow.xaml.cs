@@ -33,6 +33,7 @@ public partial class MainWindow : Window
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
         ApplyTexts();
+        LoadEncryptionSettingsIntoForm();
         RefreshBlockedProcesses();
         LoadJobsIntoGrid();
         SetActiveSection(DashboardSection.Overview);
@@ -299,6 +300,7 @@ public partial class MainWindow : Window
         RunSelectedButton.IsEnabled = !busy;
         RunAllButton.IsEnabled = !busy;
         SaveAllButton.IsEnabled = !busy;
+        SaveEncryptionSettingsButton.IsEnabled = !busy;
         AddJobButton.IsEnabled = !busy;
         DeleteJobButton.IsEnabled = !busy;
         JobsDataGrid.IsEnabled = !busy;
@@ -357,6 +359,9 @@ public partial class MainWindow : Window
         SourceLabel.Text = Text("Wpf.SourceColumnHeader");
         TargetLabel.Text = Text("Wpf.TargetColumnHeader");
         TypeLabel.Text = Text("Wpf.TypeColumnHeader");
+        EncryptedExtensionsLabel.Text = Text("Wpf.EncryptedExtensionsLabel");
+        CryptoSoftKeyLabel.Text = Text("Wpf.CryptoSoftKeyLabel");
+        SaveEncryptionSettingsButton.Content = Text("Wpf.SaveEncryptionSettingsButton");
         SaveSelectedJobButton.Content = Text("Wpf.SaveSelectedJobButton");
         EditHintTextBlock.Text = Text("Wpf.EditHint");
         StateGroupBox.Header = Text("Wpf.StateHeader");
@@ -364,6 +369,7 @@ public partial class MainWindow : Window
         SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
         LanguageSectionTitle.Text = Text("Wpf.LanguageSectionTitle");
         LogFormatSectionTitle.Text = Text("Wpf.LogFormatSectionTitle");
+        EncryptionSectionTitle.Text = Text("Wpf.EncryptionSectionTitle");
         BusinessSoftwareSectionTitle.Text = Text("Wpf.BusinessSoftwareSectionTitle");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
         LogFormatLabel.Text = Text("Wpf.LogFormatLabel");
@@ -419,6 +425,7 @@ public partial class MainWindow : Window
         LoadJobsIntoGrid();
         RefreshBlockedProcesses();
         ApplyTexts();
+        LoadEncryptionSettingsIntoForm();
         StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
         RefreshStateAndLog();
     }
@@ -487,6 +494,21 @@ public partial class MainWindow : Window
     private string Text(string key) => _textService.GetText(key);
 
     private string Format(string key, params object[] args) => _textService.FormatText(key, args);
+
+    private void LoadEncryptionSettingsIntoForm()
+    {
+        EncryptedExtensionsTextBox.Text = string.Join("; ", RuntimeStoragePaths.GetEncryptedExtensions());
+        CryptoSoftKeyTextBox.Text = RuntimeStoragePaths.GetCryptoSoftKey();
+    }
+
+    private void SaveEncryptionSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RuntimeStoragePaths.SetEncryptedExtensions([EncryptedExtensionsTextBox.Text]);
+        RuntimeStoragePaths.SetCryptoSoftKey(CryptoSoftKeyTextBox.Text);
+        LoadEncryptionSettingsIntoForm();
+        StatusTextBlock.Text = Text("Wpf.EncryptionSettingsSavedStatus");
+        RefreshStateAndLog();
+    }
 
     private void AddJobButton_Click(object sender, RoutedEventArgs e)
     {

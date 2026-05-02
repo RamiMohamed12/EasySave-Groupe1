@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Publish options -->
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>false</SelfContained>
+        <PublishTrimmed>true</PublishTrimmed>
+        <!-- Branding -->
+        <Authors>ProSoft</Authors>
+        <Company>ProSoft</Company>
+        <Product>CryptoSoft</Product>
+        <Copyright>Copyright © 2025 ProSoft</Copyright>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <AssemblyTitle>CryptoSoft</AssemblyTitle>
+        <AssemblyDescription>Encrypt given files</AssemblyDescription>
+        <AssemblyCompany>ProSoft</AssemblyCompany>
+        <AssemblyProduct>CryptoSoft</AssemblyProduct>
+        <AssemblyCopyright>Copyright © 2025 ProSoft</AssemblyCopyright>
+        <PublishAot>False</PublishAot>
+        <SignAssembly>False</SignAssembly>
+    </PropertyGroup>
+
+</Project>

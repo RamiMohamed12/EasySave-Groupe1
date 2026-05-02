@@ -39,6 +39,7 @@ ScaffoldingReadMe.txt
 # Others
 ~$*
 *~
+*.csproj.user
 CodeCoverage/
 
 # MSBuild Binary and Structured Log
@@ -60,6 +61,7 @@ BackupState/
 jobs.json
 
 publish/EasySave/
+publish/EasySave.Wpf/
 release-assets/
 
 .vs/

@@ -86,6 +86,19 @@ Temps ecoule : {2}</value></data>
   <data name="Console.ViewStateLabel" xml:space="preserve"><value>Voir l'etat</value></data>
   <data name="Console.ViewLogsLabel" xml:space="preserve"><value>Voir les logs</value></data>
   <data name="Console.ChangeLogFormatLabel" xml:space="preserve"><value>Changer le format des logs</value></data>
+  <data name="Console.EncryptionSettingsLabel" xml:space="preserve"><value>Parametres de cryptage</value></data>
+  <data name="Console.ConfigureEncryptedExtensionsLabel" xml:space="preserve"><value>Configurer les extensions a crypter</value></data>
+  <data name="Console.ConfigureCryptoSoftKeyLabel" xml:space="preserve"><value>Configurer la cle CryptoSoft</value></data>
+  <data name="Console.CurrentEncryptedExtensionsLine" xml:space="preserve"><value>Extensions cryptees : {0}</value></data>
+  <data name="Console.CurrentCryptoSoftKeyLine" xml:space="preserve"><value>Cle CryptoSoft : {0}</value></data>
+  <data name="Console.CryptoSoftKeyConfigured" xml:space="preserve"><value>configuree</value></data>
+  <data name="Console.CryptoSoftKeyMissing" xml:space="preserve"><value>non configuree</value></data>
+  <data name="Console.NoEncryptedExtensions" xml:space="preserve"><value>&lt;aucune&gt;</value></data>
+  <data name="Console.EncryptedExtensionsPrompt" xml:space="preserve"><value>Saisissez les extensions a crypter, separees par des points-virgules, virgules ou espaces :</value></data>
+  <data name="Console.CryptoSoftKeyPrompt" xml:space="preserve"><value>Saisissez la cle CryptoSoft :</value></data>
+  <data name="Console.EmptyExtensionsAllowedMessage" xml:space="preserve"><value>Laissez vide pour revenir, ou tapez clear pour desactiver le cryptage par extension.</value></data>
+  <data name="Console.EmptyCryptoSoftKeyWarning" xml:space="preserve"><value>Laissez vide pour revenir, ou tapez clear pour effacer la cle. Les fichiers ne peuvent pas etre cryptes sans cle.</value></data>
+  <data name="Console.EncryptionSettingsUpdatedMessage" xml:space="preserve"><value>Parametres de cryptage mis a jour.</value></data>
   <data name="Console.ManageBusinessSoftwareLabel" xml:space="preserve"><value>Gerer les logiciels metier</value></data>
   <data name="Console.ChangeLanguageLabel" xml:space="preserve"><value>Changer la langue</value></data>
   <data name="Console.ExitLabel" xml:space="preserve"><value>Quitter</value></data>
@@ -196,6 +209,9 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.SourceColumnHeader" xml:space="preserve"><value>Source</value></data>
   <data name="Wpf.TargetColumnHeader" xml:space="preserve"><value>Cible</value></data>
   <data name="Wpf.EditSelectedJobHeader" xml:space="preserve"><value>Edition de la tache selectionnee</value></data>
+  <data name="Wpf.EncryptedExtensionsLabel" xml:space="preserve"><value>Extensions a crypter</value></data>
+  <data name="Wpf.CryptoSoftKeyLabel" xml:space="preserve"><value>Cle CryptoSoft</value></data>
+  <data name="Wpf.SaveEncryptionSettingsButton" xml:space="preserve"><value>Enregistrer cryptage</value></data>
   <data name="Wpf.NoSelectedJob" xml:space="preserve"><value>Aucune tache selectionnee</value></data>
   <data name="Wpf.SaveSelectedJobButton" xml:space="preserve"><value>Enregistrer les chemins</value></data>
   <data name="Wpf.EditHint" xml:space="preserve"><value>Modifiez Source/Cible, puis cliquez sur Enregistrer.</value></data>
@@ -204,6 +220,7 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Langue</value></data>
   <data name="Wpf.LanguageSectionTitle" xml:space="preserve"><value>Parametres de langue</value></data>
   <data name="Wpf.LogFormatSectionTitle" xml:space="preserve"><value>Parametres de log</value></data>
+  <data name="Wpf.EncryptionSectionTitle" xml:space="preserve"><value>Cryptage</value></data>
   <data name="Wpf.BusinessSoftwareSectionTitle" xml:space="preserve"><value>Detection logiciel metier</value></data>
   <data name="Wpf.LogFormatLabel" xml:space="preserve"><value>Format de log</value></data>
   <data name="Wpf.BlockedProcessesLabel" xml:space="preserve"><value>Processus logiciels metier bloquants</value></data>
@@ -228,6 +245,7 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.JobDeletedStatus" xml:space="preserve"><value>Tache {0} supprimee.</value></data>
   <data name="Wpf.TableSavedStatus" xml:space="preserve"><value>Tableau enregistre dans jobs.json.</value></data>
   <data name="Wpf.RefreshedStatus" xml:space="preserve"><value>Actualise.</value></data>
+  <data name="Wpf.EncryptionSettingsSavedStatus" xml:space="preserve"><value>Parametres de cryptage enregistres.</value></data>
   <data name="Wpf.FileNotFound" xml:space="preserve"><value>Fichier introuvable : {0}</value></data>
   <data name="Wpf.EmptyFile" xml:space="preserve"><value>(fichier vide)</value></data>
   <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Tache {0} - {1} ({2})</value></data>

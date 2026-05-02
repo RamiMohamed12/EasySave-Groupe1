@@ -91,6 +91,43 @@ public class BackupServiceTests
     }
 
     [Fact]
+    public void StartBackup_WhenFileExtensionIsConfigured_LogsEncryptionTime()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "secret.txt"), "content");
+        RuntimeStoragePaths.SetEncryptedExtensions([".txt"]);
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+        var cryptoService = new FakeCryptoService(_ => 23);
+
+        BackupResult result = CreateBackupService(cryptoService).StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        LogEntry fileTransferEntry = LoadLogEntries().Last(entry => entry.ActionType == "FileTransfer");
+        Assert.Equal(23, fileTransferEntry.EncryptionTimeMilliseconds);
+        Assert.Equal(Path.Combine(targetDirectory, "secret.txt"), cryptoService.EncryptedFilePaths.Single());
+    }
+
+    [Fact]
+    public void StartBackup_WhenCryptoSoftReturnsError_LogsNegativeEncryptionTime()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "secret.txt"), "content");
+        RuntimeStoragePaths.SetEncryptedExtensions([".txt"]);
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+
+        BackupResult result = CreateBackupService(new FakeCryptoService(_ => -97)).StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Error, result.Status);
+        LogEntry errorEntry = LoadLogEntries().Last(entry => entry.ActionType == "Error");
+        Assert.Equal(-97, errorEntry.EncryptionTimeMilliseconds);
+        Assert.True(errorEntry.TransferTimeMilliseconds >= 0);
+    }
+
+    [Fact]
     public void StartBackup_FullSuccess_UpdatesBackupHistory()
     {
         using var workspace = new TestWorkspace();
@@ -115,7 +152,7 @@ public class BackupServiceTests
         BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
         var monitor = new FakeBusinessSoftwareMonitor(["winword"]);
 
-        BackupResult result = CreateBackupService(monitor).StartBackup(CreateSelectedJob(1, job));
+        BackupResult result = CreateBackupService(monitor: monitor).StartBackup(CreateSelectedJob(1, job));
 
         Assert.Equal(BackupExecutionStatus.Stopped, result.Status);
         Assert.True(result.StoppedByBusinessSoftware);
@@ -124,13 +161,16 @@ public class BackupServiceTests
         Assert.Contains("BusinessSoftwareDetected", LoadLogEntries().Select(entry => entry.ActionType));
     }
 
-    private static BackupService CreateBackupService(IBusinessSoftwareMonitor? monitor = null)
+    private static BackupService CreateBackupService(
+        ICryptoService? cryptoService = null,
+        IBusinessSoftwareMonitor? monitor = null)
     {
         return new BackupService(
             new LoggerService(),
             new StateService(),
             new BackupHistoryService(),
             ApplicationTextService.Create(),
+            cryptoService ?? new FakeCryptoService(_ => 0),
             monitor ?? new FakeBusinessSoftwareMonitor());
     }
 
@@ -182,6 +222,30 @@ public class BackupServiceTests
     {
         string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
         return JsonSerializer.Deserialize<List<BackupState>>(json, JsonTestHelper.SerializerOptions) ?? new List<BackupState>();
+    }
+
+    private sealed class FakeCryptoService : ICryptoService
+    {
+        private readonly Func<string, long> _encrypt;
+
+        public FakeCryptoService(Func<string, long> encrypt)
+        {
+            _encrypt = encrypt;
+            EncryptedFilePaths = new List<string>();
+        }
+
+        public List<string> EncryptedFilePaths { get; }
+
+        public long EncryptIfRequired(string filePath)
+        {
+            if (!RuntimeStoragePaths.GetEncryptedExtensions().Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            EncryptedFilePaths.Add(filePath);
+            return _encrypt(filePath);
+        }
     }
 
     private sealed class FakeBusinessSoftwareMonitor : IBusinessSoftwareMonitor

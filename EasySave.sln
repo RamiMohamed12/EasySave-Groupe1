@@ -10,8 +10,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySave.Tests", "EasySave.Tests\EasySave.Tests.csproj", "{A8D3C22A-B159-42E7-932D-466EA0032688}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySave.Console", "EasySave.Console\EasySave.Console.csproj", "{15E7DD23-07D9-4C56-9A66-B0EC89DC0B15}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F} = {8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySave.Wpf", "EasySave.Wpf\EasySave.Wpf.csproj", "{E07EBE55-C45D-40CA-99B5-C495C648E2B9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F} = {8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoSoft", "CryptoSoft\CryptoSoft.csproj", "{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +91,18 @@ Global
 		{E07EBE55-C45D-40CA-99B5-C495C648E2B9}.Release|x64.Build.0 = Release|Any CPU
 		{E07EBE55-C45D-40CA-99B5-C495C648E2B9}.Release|x86.ActiveCfg = Release|Any CPU
 		{E07EBE55-C45D-40CA-99B5-C495C648E2B9}.Release|x86.Build.0 = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|x64.Build.0 = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Debug|x86.Build.0 = Debug|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x64.ActiveCfg = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x64.Build.0 = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x86.ActiveCfg = Release|Any CPU
+		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

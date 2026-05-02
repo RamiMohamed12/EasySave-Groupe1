@@ -86,6 +86,19 @@ Elapsed time: {2}</value></data>
   <data name="Console.ViewStateLabel" xml:space="preserve"><value>View state</value></data>
   <data name="Console.ViewLogsLabel" xml:space="preserve"><value>View logs</value></data>
   <data name="Console.ChangeLogFormatLabel" xml:space="preserve"><value>Change log format</value></data>
+  <data name="Console.EncryptionSettingsLabel" xml:space="preserve"><value>Encryption settings</value></data>
+  <data name="Console.ConfigureEncryptedExtensionsLabel" xml:space="preserve"><value>Configure encrypted extensions</value></data>
+  <data name="Console.ConfigureCryptoSoftKeyLabel" xml:space="preserve"><value>Configure CryptoSoft key</value></data>
+  <data name="Console.CurrentEncryptedExtensionsLine" xml:space="preserve"><value>Encrypted extensions: {0}</value></data>
+  <data name="Console.CurrentCryptoSoftKeyLine" xml:space="preserve"><value>CryptoSoft key: {0}</value></data>
+  <data name="Console.CryptoSoftKeyConfigured" xml:space="preserve"><value>configured</value></data>
+  <data name="Console.CryptoSoftKeyMissing" xml:space="preserve"><value>not configured</value></data>
+  <data name="Console.NoEncryptedExtensions" xml:space="preserve"><value>&lt;none&gt;</value></data>
+  <data name="Console.EncryptedExtensionsPrompt" xml:space="preserve"><value>Enter extensions to encrypt, separated by semicolons, commas, or spaces:</value></data>
+  <data name="Console.CryptoSoftKeyPrompt" xml:space="preserve"><value>Enter the CryptoSoft key:</value></data>
+  <data name="Console.EmptyExtensionsAllowedMessage" xml:space="preserve"><value>Leave empty to go back, or type clear to disable encryption by extension.</value></data>
+  <data name="Console.EmptyCryptoSoftKeyWarning" xml:space="preserve"><value>Leave empty to go back, or type clear to clear the key. Files cannot be encrypted without a key.</value></data>
+  <data name="Console.EncryptionSettingsUpdatedMessage" xml:space="preserve"><value>Encryption settings updated.</value></data>
   <data name="Console.ManageBusinessSoftwareLabel" xml:space="preserve"><value>Manage business software</value></data>
   <data name="Console.ChangeLanguageLabel" xml:space="preserve"><value>Change language</value></data>
   <data name="Console.ExitLabel" xml:space="preserve"><value>Exit</value></data>
@@ -196,6 +209,9 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.SourceColumnHeader" xml:space="preserve"><value>Source</value></data>
   <data name="Wpf.TargetColumnHeader" xml:space="preserve"><value>Target</value></data>
   <data name="Wpf.EditSelectedJobHeader" xml:space="preserve"><value>Edit selected job</value></data>
+  <data name="Wpf.EncryptedExtensionsLabel" xml:space="preserve"><value>Extensions to encrypt</value></data>
+  <data name="Wpf.CryptoSoftKeyLabel" xml:space="preserve"><value>CryptoSoft key</value></data>
+  <data name="Wpf.SaveEncryptionSettingsButton" xml:space="preserve"><value>Save encryption settings</value></data>
   <data name="Wpf.NoSelectedJob" xml:space="preserve"><value>No job selected</value></data>
   <data name="Wpf.SaveSelectedJobButton" xml:space="preserve"><value>Save job paths</value></data>
   <data name="Wpf.EditHint" xml:space="preserve"><value>Edit Source/Target, then click Save.</value></data>
@@ -204,6 +220,7 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Language</value></data>
   <data name="Wpf.LanguageSectionTitle" xml:space="preserve"><value>Language settings</value></data>
   <data name="Wpf.LogFormatSectionTitle" xml:space="preserve"><value>Log settings</value></data>
+  <data name="Wpf.EncryptionSectionTitle" xml:space="preserve"><value>Encryption</value></data>
   <data name="Wpf.BusinessSoftwareSectionTitle" xml:space="preserve"><value>Business software detection</value></data>
   <data name="Wpf.LogFormatLabel" xml:space="preserve"><value>Log format</value></data>
   <data name="Wpf.BlockedProcessesLabel" xml:space="preserve"><value>Blocked business software processes</value></data>
@@ -228,6 +245,7 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.JobDeletedStatus" xml:space="preserve"><value>Job {0} was deleted.</value></data>
   <data name="Wpf.TableSavedStatus" xml:space="preserve"><value>Table saved to jobs.json.</value></data>
   <data name="Wpf.RefreshedStatus" xml:space="preserve"><value>Refreshed.</value></data>
+  <data name="Wpf.EncryptionSettingsSavedStatus" xml:space="preserve"><value>Encryption settings saved.</value></data>
   <data name="Wpf.FileNotFound" xml:space="preserve"><value>File not found: {0}</value></data>
   <data name="Wpf.EmptyFile" xml:space="preserve"><value>(empty file)</value></data>
   <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Job {0} - {1} ({2})</value></data>

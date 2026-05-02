@@ -53,7 +53,8 @@ public class LoggerService
                 new XElement(nameof(LogEntry.ActionType), entry.ActionType),
                 new XElement(nameof(LogEntry.ErrorMessage), entry.ErrorMessage),
                 new XElement(nameof(LogEntry.FileSizeBytes), entry.FileSizeBytes),
-                new XElement(nameof(LogEntry.TransferTimeMilliseconds), entry.TransferTimeMilliseconds)));
+                new XElement(nameof(LogEntry.TransferTimeMilliseconds), entry.TransferTimeMilliseconds),
+                new XElement(nameof(LogEntry.EncryptionTimeMilliseconds), entry.EncryptionTimeMilliseconds)));
 
         document.Save(logFilePath);
     }

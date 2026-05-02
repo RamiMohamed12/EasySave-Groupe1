@@ -468,9 +468,114 @@ public class BackupConsoleFeatures
         Pause();
     }
 
+    public void ConfigureEncryptionSettings()
+    {
+        int selectedIndex = 0;
+
+        while (true)
+        {
+            IReadOnlyList<string> options =
+            [
+                TextService.GetText("Console.ConfigureEncryptedExtensionsLabel"),
+                TextService.GetText("Console.ConfigureCryptoSoftKeyLabel"),
+                _translationService.GetBackLabel(TextService)
+            ];
+
+            int? selection = _interactiveConsole.SelectOption(
+                TextService.GetText("Console.EncryptionSettingsLabel"),
+                options,
+                BuildEncryptionSettingsContext(),
+                _translationService.GetNavigationHelp(TextService),
+                initialIndex: selectedIndex);
+
+            if (selection == null || selection.Value == 2)
+            {
+                return;
+            }
+
+            selectedIndex = selection.Value;
+
+            if (selection.Value == 0)
+            {
+                ConfigureEncryptedExtensions();
+                continue;
+            }
+
+            ConfigureCryptoSoftKey();
+        }
+    }
+
     private ApplicationTextService TextService => _runtimeAccessor().TextService;
 
     private BackupController BackupController => _runtimeAccessor().BackupController;
+
+    private IReadOnlyList<string> BuildEncryptionSettingsContext()
+    {
+        string extensions = FormatExtensions(RuntimeStoragePaths.GetEncryptedExtensions());
+        string keyStatus = string.IsNullOrWhiteSpace(RuntimeStoragePaths.GetCryptoSoftKey())
+            ? TextService.GetText("Console.CryptoSoftKeyMissing")
+            : TextService.GetText("Console.CryptoSoftKeyConfigured");
+
+        return
+        [
+            TextService.FormatText("Console.CurrentEncryptedExtensionsLine", extensions),
+            TextService.FormatText("Console.CurrentCryptoSoftKeyLine", keyStatus)
+        ];
+    }
+
+    private void ConfigureEncryptedExtensions()
+    {
+        string? extensionValue = _interactiveConsole.PromptLine(
+            TextService.GetText("Console.ConfigureEncryptedExtensionsLabel"),
+            TextService.GetText("Console.EncryptedExtensionsPrompt"),
+            [TextService.FormatText("Console.CurrentEncryptedExtensionsLine", FormatExtensions(RuntimeStoragePaths.GetEncryptedExtensions()))],
+            TextService.GetText("Console.EmptyExtensionsAllowedMessage"));
+
+        if (extensionValue is null)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetEncryptedExtensions(IsClearCommand(extensionValue) ? [] : [extensionValue]);
+
+        _interactiveConsole.RenderOutputScreen(
+            TextService.GetText("Console.ConfigureEncryptedExtensionsLabel"),
+            [
+                SuccessLine(TextService.GetText("Console.EncryptionSettingsUpdatedMessage")),
+                BlankLine(),
+                NormalLine(TextService.FormatText(
+                    "Console.CurrentEncryptedExtensionsLine",
+                    FormatExtensions(RuntimeStoragePaths.GetEncryptedExtensions())))
+            ],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
+    }
+
+    private void ConfigureCryptoSoftKey()
+    {
+        string? key = _interactiveConsole.PromptLine(
+            TextService.GetText("Console.ConfigureCryptoSoftKeyLabel"),
+            TextService.GetText("Console.CryptoSoftKeyPrompt"),
+            BuildEncryptionSettingsContext(),
+            TextService.GetText("Console.EmptyCryptoSoftKeyWarning"));
+
+        if (key is null)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetCryptoSoftKey(IsClearCommand(key) ? string.Empty : key);
+
+        _interactiveConsole.RenderOutputScreen(
+            TextService.GetText("Console.ConfigureCryptoSoftKeyLabel"),
+            [
+                SuccessLine(TextService.GetText("Console.EncryptionSettingsUpdatedMessage")),
+                BlankLine(),
+                .. BuildEncryptionSettingsContext().Select(NormalLine)
+            ],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
+    }
 
     private void ConfigureSelectedJob(int jobNumber, BackupJob job)
     {
@@ -991,6 +1096,19 @@ public class BackupConsoleFeatures
         return string.IsNullOrWhiteSpace(path)
             ? _translationService.GetNotConfiguredLabel(TextService)
             : $"<{path}>";
+    }
+
+    private string FormatExtensions(IReadOnlyList<string> extensions)
+    {
+        return extensions.Count == 0
+            ? TextService.GetText("Console.NoEncryptedExtensions")
+            : string.Join("; ", extensions);
+    }
+
+    private static bool IsClearCommand(string value)
+    {
+        return value.Equals("clear", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("none", StringComparison.OrdinalIgnoreCase);
     }
 
     private void Pause()

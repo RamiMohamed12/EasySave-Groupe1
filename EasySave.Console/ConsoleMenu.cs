@@ -39,6 +39,7 @@ public class ConsoleMenu
                 _translationService.GetViewStateLabel(_runtime.TextService),
                 _translationService.GetViewLogsLabel(_runtime.TextService),
                 _translationService.GetChangeLogFormatLabel(_runtime.TextService),
+                _runtime.TextService.GetText("Console.EncryptionSettingsLabel"),
                 _translationService.GetManageBusinessSoftwareLabel(_runtime.TextService),
                 _translationService.GetChangeLanguageLabel(_runtime.TextService),
                 _translationService.GetExitLabel(_runtime.TextService)
@@ -81,12 +82,15 @@ public class ConsoleMenu
                     _backupFeatures.ChangeLogFormat();
                     break;
                 case 6:
-                    _backupFeatures.ManageBusinessSoftware();
+                    _backupFeatures.ConfigureEncryptionSettings();
                     break;
                 case 7:
-                    _backupFeatures.ChangeLanguage();
+                    _backupFeatures.ManageBusinessSoftware();
                     break;
                 case 8:
+                    _backupFeatures.ChangeLanguage();
+                    break;
+                case 9:
                     return;
             }
         }
