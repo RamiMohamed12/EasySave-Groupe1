@@ -105,13 +105,33 @@ public class BackupServiceTests
         Assert.NotNull(new BackupHistoryService().GetLastFullBackupUtc("Job1"));
     }
 
-    private static BackupService CreateBackupService()
+    [Fact]
+    public void StartBackup_ReturnsStopped_WhenBusinessSoftwareIsDetectedBeforeStart()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "a.txt"), "A");
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+        var monitor = new FakeBusinessSoftwareMonitor(["winword"]);
+
+        BackupResult result = CreateBackupService(monitor).StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Stopped, result.Status);
+        Assert.True(result.StoppedByBusinessSoftware);
+        Assert.Equal("winword", result.BlockingProcessName);
+        Assert.False(File.Exists(Path.Combine(targetDirectory, "a.txt")));
+        Assert.Contains("BusinessSoftwareDetected", LoadLogEntries().Select(entry => entry.ActionType));
+    }
+
+    private static BackupService CreateBackupService(IBusinessSoftwareMonitor? monitor = null)
     {
         return new BackupService(
             new LoggerService(),
             new StateService(),
             new BackupHistoryService(),
-            ApplicationTextService.Create());
+            ApplicationTextService.Create(),
+            monitor ?? new FakeBusinessSoftwareMonitor());
     }
 
     private static BackupJob PrepareConfiguredSlot(int jobNumber, string source, string target)
@@ -162,5 +182,27 @@ public class BackupServiceTests
     {
         string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
         return JsonSerializer.Deserialize<List<BackupState>>(json, JsonTestHelper.SerializerOptions) ?? new List<BackupState>();
+    }
+
+    private sealed class FakeBusinessSoftwareMonitor : IBusinessSoftwareMonitor
+    {
+        private readonly Queue<string> _processNames;
+
+        public FakeBusinessSoftwareMonitor(IEnumerable<string>? processNames = null)
+        {
+            _processNames = new Queue<string>(processNames ?? Array.Empty<string>());
+        }
+
+        public bool TryGetRunningBlockedProcess(out string processName)
+        {
+            if (_processNames.Count > 0)
+            {
+                processName = _processNames.Dequeue();
+                return true;
+            }
+
+            processName = string.Empty;
+            return false;
+        }
     }
 }

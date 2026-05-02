@@ -100,6 +100,11 @@ public class ApplicationTextService
 
     public string GetInvalidLanguageCodeMessage() => GetText("InvalidLanguageCodeMessage");
 
+    public string GetBackupBlockedByBusinessSoftwareMessage(string processName)
+    {
+        return FormatText("BackupBlockedByBusinessSoftwareMessage", processName);
+    }
+
     public IReadOnlyList<string> GetHelpLines()
     {
         return

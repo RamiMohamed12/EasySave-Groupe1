@@ -59,6 +59,29 @@ public static class RuntimeStoragePaths
         UpdateSettings(settings => settings.LogFileFormat = normalizedLogFileFormat);
     }
 
+    public static IReadOnlyList<string> GetBlockedProcessNames()
+    {
+        return GetSettings()
+            .BlockedProcessNames
+            .Select(NormalizeProcessName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public static void SetBlockedProcessNames(IEnumerable<string> processNames)
+    {
+        var normalizedNames = processNames
+            .Select(NormalizeProcessName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        UpdateSettings(settings => settings.BlockedProcessNames = normalizedNames);
+    }
+
     public static void Reload()
     {
         lock (SyncRoot)
@@ -147,6 +170,19 @@ public static class RuntimeStoragePaths
         return normalizedLogFileFormat == XmlLogFileFormat
             ? XmlLogFileFormat
             : JsonLogFileFormat;
+    }
+
+    private static string NormalizeProcessName(string? processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName))
+        {
+            return string.Empty;
+        }
+
+        string normalized = processName.Trim().ToLowerInvariant();
+        return normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? normalized[..^4]
+            : normalized;
     }
 
     private static string GetSharedConfigurationDirectory()

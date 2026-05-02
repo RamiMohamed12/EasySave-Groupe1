@@ -377,6 +377,55 @@ public class BackupConsoleFeatures
         Pause();
     }
 
+    public void ManageBusinessSoftware()
+    {
+        int selectedIndex = 0;
+
+        while (true)
+        {
+            IReadOnlyList<string> configuredProcesses = RuntimeStoragePaths.GetBlockedProcessNames();
+            var contextLines = new List<string>();
+            if (configuredProcesses.Count == 0)
+            {
+                contextLines.Add(_translationService.GetNoBlockedProcessesMessage(TextService));
+            }
+            else
+            {
+                contextLines.AddRange(configuredProcesses.Select(processName => $"- {processName}.exe"));
+            }
+
+            IReadOnlyList<string> options =
+            [
+                _translationService.GetAddProcessLabel(TextService),
+                _translationService.GetRemoveProcessLabel(TextService),
+                _translationService.GetBackLabel(TextService)
+            ];
+
+            int? selection = _interactiveConsole.SelectOption(
+                _translationService.GetBusinessSoftwareTitle(TextService),
+                options,
+                contextLines,
+                _translationService.GetNavigationHelp(TextService),
+                initialIndex: selectedIndex);
+
+            if (selection == null || selection.Value == 2)
+            {
+                return;
+            }
+
+            selectedIndex = selection.Value;
+
+            if (selection.Value == 0)
+            {
+                AddBlockedProcess(configuredProcesses);
+            }
+            else
+            {
+                RemoveBlockedProcess(configuredProcesses);
+            }
+        }
+    }
+
     public void ChangeLogFormat()
     {
         int initialIndex = RuntimeStoragePaths.GetLogFileFormat() == RuntimeStoragePaths.XmlLogFileFormat
@@ -548,6 +597,77 @@ public class BackupConsoleFeatures
         }
 
         return selection.Value == 0 ? BackupType.Full : BackupType.Differential;
+    }
+
+    private void AddBlockedProcess(IReadOnlyList<string> configuredProcesses)
+    {
+        string? processNameInput = _interactiveConsole.PromptLine(
+            _translationService.GetBusinessSoftwareTitle(TextService),
+            _translationService.GetProcessNamePrompt(TextService),
+            null,
+            _translationService.GetLeaveEmptyToGoBackMessage(TextService));
+
+        if (string.IsNullOrWhiteSpace(processNameInput))
+        {
+            return;
+        }
+
+        string normalizedProcessName = NormalizeProcessName(processNameInput);
+        if (configuredProcesses.Any(name => string.Equals(name, normalizedProcessName, StringComparison.OrdinalIgnoreCase)))
+        {
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetBusinessSoftwareTitle(TextService),
+                [WarningLine(_translationService.GetProcessAlreadyConfiguredMessage(TextService))],
+                _translationService.GetPauseMessage(TextService));
+            Pause();
+            return;
+        }
+
+        RuntimeStoragePaths.SetBlockedProcessNames(configuredProcesses.Append(normalizedProcessName));
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetBusinessSoftwareTitle(TextService),
+            [SuccessLine(_translationService.GetProcessAddedMessage(TextService))],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
+    }
+
+    private void RemoveBlockedProcess(IReadOnlyList<string> configuredProcesses)
+    {
+        if (configuredProcesses.Count == 0)
+        {
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetBusinessSoftwareTitle(TextService),
+                [WarningLine(_translationService.GetNoBlockedProcessesMessage(TextService))],
+                _translationService.GetPauseMessage(TextService));
+            Pause();
+            return;
+        }
+
+        IReadOnlyList<string> options = configuredProcesses
+            .Select(processName => $"{processName}.exe")
+            .Append(_translationService.GetBackLabel(TextService))
+            .ToArray();
+
+        int? selection = _interactiveConsole.SelectOption(
+            _translationService.GetBusinessSoftwareTitle(TextService),
+            options,
+            null,
+            _translationService.GetNavigationHelp(TextService));
+
+        if (selection == null || selection.Value == configuredProcesses.Count)
+        {
+            return;
+        }
+
+        string processToRemove = configuredProcesses[selection.Value];
+        RuntimeStoragePaths.SetBlockedProcessNames(
+            configuredProcesses.Where(process => !string.Equals(process, processToRemove, StringComparison.OrdinalIgnoreCase)));
+
+        _interactiveConsole.RenderOutputScreen(
+            _translationService.GetBusinessSoftwareTitle(TextService),
+            [SuccessLine(_translationService.GetProcessRemovedMessage(TextService))],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
     }
 
     private IReadOnlyList<InteractiveConsole.ScreenLine> BuildFileScreenLines(string filePath, string displayName)
@@ -891,6 +1011,14 @@ public class BackupConsoleFeatures
             : StringComparison.Ordinal;
 
         return string.Equals(left, right, comparison);
+    }
+
+    private static string NormalizeProcessName(string processName)
+    {
+        string normalized = processName.Trim().ToLowerInvariant();
+        return normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? normalized[..^4]
+            : normalized;
     }
 
     private static IEnumerable<InteractiveConsole.ScreenLine> BuildMessageLines(

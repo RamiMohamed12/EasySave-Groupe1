@@ -20,6 +20,7 @@ public sealed class TestWorkspace : IDisposable
             : null;
 
         RuntimeStoragePaths.SetStorageDirectory(RuntimePath);
+        RuntimeStoragePaths.SetBlockedProcessNames(Array.Empty<string>());
     }
 
     public string GetPath(params string[] parts)
