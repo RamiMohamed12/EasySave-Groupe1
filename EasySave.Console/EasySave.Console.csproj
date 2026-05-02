@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EasySave.Core\EasySave.Core.csproj" />
+    <ProjectReference Include="..\CryptoSoft\CryptoSoft.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -23,6 +24,17 @@
           DestinationFolder="$(OutDir)CryptoSoft\"
           SkipUnchangedFiles="true"
           Condition="'@(CryptoSoftRuntimeFiles)' != ''" />
+  </Target>
+
+  <Target Name="CopyCryptoSoftPublishOutput" AfterTargets="Publish" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
+    <ItemGroup>
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CryptoSoftPublishRuntimeFiles)"
+          DestinationFolder="$(PublishDir)CryptoSoft\"
+          SkipUnchangedFiles="true"
+          Condition="'@(CryptoSoftPublishRuntimeFiles)' != ''" />
   </Target>
 
 </Project>
