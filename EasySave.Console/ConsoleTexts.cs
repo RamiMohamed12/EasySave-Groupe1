@@ -20,6 +20,7 @@ public abstract class ConsoleTexts
     public string ViewStateLabel => Text("Console.ViewStateLabel");
     public string ViewLogsLabel => Text("Console.ViewLogsLabel");
     public string ChangeLogFormatLabel => Text("Console.ChangeLogFormatLabel");
+    public string ManageBusinessSoftwareLabel => Text("Console.ManageBusinessSoftwareLabel");
     public string ChangeLanguageLabel => Text("Console.ChangeLanguageLabel");
     public string ExitLabel => Text("Console.ExitLabel");
     public string BackLabel => Text("Console.BackLabel");
@@ -73,6 +74,14 @@ public abstract class ConsoleTexts
     public string AvailableLogsLine => Text("Console.AvailableLogsLine");
     public string LogSelectionPrompt => Text("Console.LogSelectionPrompt");
     public string InvalidLogSelectionMessage => Text("Console.InvalidLogSelectionMessage");
+    public string BusinessSoftwareTitle => Text("Console.BusinessSoftwareTitle");
+    public string AddProcessLabel => Text("Console.AddProcessLabel");
+    public string RemoveProcessLabel => Text("Console.RemoveProcessLabel");
+    public string NoBlockedProcessesMessage => Text("Console.NoBlockedProcessesMessage");
+    public string ProcessNamePrompt => Text("Console.ProcessNamePrompt");
+    public string ProcessAlreadyConfiguredMessage => Text("Console.ProcessAlreadyConfiguredMessage");
+    public string ProcessAddedMessage => Text("Console.ProcessAddedMessage");
+    public string ProcessRemovedMessage => Text("Console.ProcessRemovedMessage");
 
     public string GetFilePathLine(string filePath) => Format("Console.FilePathLine", filePath);
 

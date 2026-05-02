@@ -285,17 +285,63 @@
                 </Grid>
 
                 <Grid Name="SettingsPanel" Visibility="Collapsed">
-                    <Border Padding="16" Background="White" CornerRadius="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
                             <TextBlock Name="SettingsTitleTextBlock" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="LanguageLabel" Margin="0,7,8,0" />
-                                <ComboBox Name="LanguageComboBox"
-                                          Width="140"
-                                          SelectionChanged="LanguageComboBox_SelectionChanged" />
-                            </StackPanel>
+
+                            <Border Padding="16" Margin="0,0,0,10" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="LanguageSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Name="LanguageLabel" Margin="0,7,8,0" />
+                                        <ComboBox Name="LanguageComboBox"
+                                                  Width="140"
+                                                  SelectionChanged="LanguageComboBox_SelectionChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="16" Margin="0,0,0,10" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="LogFormatSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Name="LogFormatLabel" Margin="0,7,8,0" />
+                                        <ComboBox Name="LogFormatComboBox"
+                                                  Width="140"
+                                                  SelectionChanged="LogFormatComboBox_SelectionChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="16" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="BusinessSoftwareSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <TextBlock Name="BlockedProcessesLabel"
+                                               Margin="0,0,0,6"
+                                               FontWeight="SemiBold" />
+                                    <ListBox Name="BlockedProcessesListBox"
+                                             Width="360"
+                                             MinHeight="120"
+                                             MaxHeight="220" />
+                                    <TextBlock Name="ProcessNameLabel"
+                                               Margin="0,10,0,4" />
+                                    <TextBox Name="ProcessNameTextBox"
+                                             Width="360" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <Button Name="AddProcessButton"
+                                                Width="150"
+                                                Height="32"
+                                                Margin="0,0,8,0"
+                                                Click="AddProcessButton_Click" />
+                                        <Button Name="RemoveProcessButton"
+                                                Width="180"
+                                                Height="32"
+                                                Click="RemoveProcessButton_Click" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                    </Border>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Grid>

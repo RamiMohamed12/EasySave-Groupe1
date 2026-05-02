@@ -7,6 +7,8 @@ public class BackupResult
     public long TransferredBytes { get; set; }
     public string ErrorMessage { get; set; }
     public TimeSpan ElapsedTime { get; set; }
+    public bool StoppedByBusinessSoftware { get; set; }
+    public string BlockingProcessName { get; set; }
 
     public BackupResult()
     {
@@ -17,5 +19,7 @@ public class BackupResult
         TransferredBytes = 0;
         ErrorMessage = string.Empty;
         ElapsedTime = TimeSpan.Zero;
+        StoppedByBusinessSoftware = false;
+        BlockingProcessName = string.Empty;
     }
 }

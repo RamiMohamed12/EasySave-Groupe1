@@ -25,7 +25,13 @@ public class BackupController
 
         foreach (SelectedBackupJob backupJob in backupJobs)
         {
-            results.Add(_backupService.StartBackup(backupJob));
+            BackupResult result = _backupService.StartBackup(backupJob);
+            results.Add(result);
+
+            if (result.StoppedByBusinessSoftware)
+            {
+                break;
+            }
         }
 
         return results;

@@ -15,7 +15,9 @@ public partial class MainWindow : Window
     private ApplicationTextService _textService;
     private bool _isBusy;
     private bool _isApplyingLanguage;
+    private bool _isApplyingLogFormat;
     private List<BackupTypeOption> _backupTypeOptions = new();
+    private List<string> _blockedProcessNames = new();
     private DashboardSection _activeSection = DashboardSection.Overview;
 
     public MainWindow()
@@ -29,7 +31,9 @@ public partial class MainWindow : Window
 
         _jobRows = new List<JobRow>();
         ConfigureLanguageSelector();
+        ConfigureLogFormatSelector();
         ApplyTexts();
+        RefreshBlockedProcesses();
         LoadJobsIntoGrid();
         SetActiveSection(DashboardSection.Overview);
         RefreshStateAndLog();
@@ -41,7 +45,8 @@ public partial class MainWindow : Window
             new LoggerService(),
             _stateService,
             new BackupHistoryService(),
-            _textService);
+            _textService,
+            new BusinessSoftwareMonitor());
         return new BackupController(backupService);
     }
 
@@ -314,6 +319,20 @@ public partial class MainWindow : Window
         _isApplyingLanguage = false;
     }
 
+    private void ConfigureLogFormatSelector()
+    {
+        _isApplyingLogFormat = true;
+        LogFormatComboBox.ItemsSource = new[]
+        {
+            new LogFormatOption(RuntimeStoragePaths.JsonLogFileFormat, "JSON"),
+            new LogFormatOption(RuntimeStoragePaths.XmlLogFileFormat, "XML")
+        };
+        LogFormatComboBox.DisplayMemberPath = nameof(LogFormatOption.DisplayName);
+        LogFormatComboBox.SelectedValuePath = nameof(LogFormatOption.Value);
+        LogFormatComboBox.SelectedValue = RuntimeStoragePaths.GetLogFileFormat();
+        _isApplyingLogFormat = false;
+    }
+
     private void ApplyTexts()
     {
         Title = Text("Wpf.WindowTitle");
@@ -343,7 +362,15 @@ public partial class MainWindow : Window
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
         SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
+        LanguageSectionTitle.Text = Text("Wpf.LanguageSectionTitle");
+        LogFormatSectionTitle.Text = Text("Wpf.LogFormatSectionTitle");
+        BusinessSoftwareSectionTitle.Text = Text("Wpf.BusinessSoftwareSectionTitle");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
+        LogFormatLabel.Text = Text("Wpf.LogFormatLabel");
+        BlockedProcessesLabel.Text = Text("Wpf.BlockedProcessesLabel");
+        ProcessNameLabel.Text = Text("Wpf.ProcessNameLabel");
+        AddProcessButton.Content = Text("Wpf.AddBlockedProcessButton");
+        RemoveProcessButton.Content = Text("Wpf.RemoveBlockedProcessButton");
         AddJobButton.Content = Text("Wpf.AddJobButton");
         DeleteJobButton.Content = Text("Wpf.DeleteJobButton");
         RefreshButton.Content = Text("Wpf.RefreshButton");
@@ -388,10 +415,62 @@ public partial class MainWindow : Window
         RuntimeStoragePaths.SetLanguageCode(languageCode);
         _textService = ApplicationTextService.Create(languageCode);
         _backupController = CreateBackupController();
+        ConfigureLogFormatSelector();
         LoadJobsIntoGrid();
+        RefreshBlockedProcesses();
         ApplyTexts();
         StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
         RefreshStateAndLog();
+    }
+
+    private void LogFormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingLogFormat || LogFormatComboBox.SelectedValue is not string logFormat)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetLogFileFormat(logFormat);
+        ConfigureLogFormatSelector();
+        StatusTextBlock.Text = Format("Wpf.LogFormatUpdatedStatus", _textService.GetLogFileFormatDisplayName(logFormat));
+        RefreshStateAndLog();
+    }
+
+    private void AddProcessButton_Click(object sender, RoutedEventArgs e)
+    {
+        string processNameInput = ProcessNameTextBox.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(processNameInput))
+        {
+            StatusTextBlock.Text = Text("Wpf.ProcessNameRequiredStatus");
+            return;
+        }
+
+        string normalizedProcessName = NormalizeProcessName(processNameInput);
+        if (_blockedProcessNames.Any(name => string.Equals(name, normalizedProcessName, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusTextBlock.Text = Text("Wpf.ProcessAlreadyConfiguredStatus");
+            return;
+        }
+
+        RuntimeStoragePaths.SetBlockedProcessNames(_blockedProcessNames.Append(normalizedProcessName));
+        ProcessNameTextBox.Text = string.Empty;
+        RefreshBlockedProcesses();
+        StatusTextBlock.Text = Format("Wpf.ProcessAddedStatus", $"{normalizedProcessName}.exe");
+    }
+
+    private void RemoveProcessButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (BlockedProcessesListBox.SelectedItem is not string selectedProcessLabel)
+        {
+            StatusTextBlock.Text = Text("Wpf.SelectProcessFirstStatus");
+            return;
+        }
+
+        string normalizedProcessName = NormalizeProcessName(selectedProcessLabel);
+        RuntimeStoragePaths.SetBlockedProcessNames(
+            _blockedProcessNames.Where(process => !string.Equals(process, normalizedProcessName, StringComparison.OrdinalIgnoreCase)));
+        RefreshBlockedProcesses();
+        StatusTextBlock.Text = Format("Wpf.ProcessRemovedStatus", $"{normalizedProcessName}.exe");
     }
 
     private void UpdateSelectedJobLabel()
@@ -545,7 +624,25 @@ public partial class MainWindow : Window
         return !string.IsNullOrWhiteSpace(row.Source) && !string.IsNullOrWhiteSpace(row.Target);
     }
 
+    private void RefreshBlockedProcesses()
+    {
+        _blockedProcessNames = RuntimeStoragePaths.GetBlockedProcessNames().ToList();
+        BlockedProcessesListBox.ItemsSource = null;
+        BlockedProcessesListBox.ItemsSource = _blockedProcessNames
+            .Select(processName => $"{processName}.exe")
+            .ToList();
+    }
+
+    private static string NormalizeProcessName(string processName)
+    {
+        string normalized = processName.Trim().ToLowerInvariant();
+        return normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? normalized[..^4]
+            : normalized;
+    }
+
     private sealed record LanguageOption(string LanguageCode, string DisplayName);
+    private sealed record LogFormatOption(string Value, string DisplayName);
     private sealed record BackupTypeOption(BackupType Value, string DisplayName);
 
     private enum DashboardSection

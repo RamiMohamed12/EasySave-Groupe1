@@ -20,6 +20,27 @@ public class BackupControllerTests
     }
 
     [Fact]
+    public void StartBackups_StopsSequence_WhenBusinessSoftwareIsDetected()
+    {
+        var fakeService = new FakeBackupService
+        {
+            StopOnJobNumber = 1
+        };
+        var controller = new BackupController(fakeService);
+        SelectedBackupJob[] jobs =
+        {
+            new() { JobNumber = 1, Job = new BackupJob { Name = "Job1" } },
+            new() { JobNumber = 2, Job = new BackupJob { Name = "Job2" } }
+        };
+
+        IReadOnlyList<BackupResult> results = controller.StartBackups(jobs);
+
+        Assert.Single(results);
+        Assert.Equal([1], fakeService.ReceivedJobNumbers);
+        Assert.True(results[0].StoppedByBusinessSoftware);
+    }
+
+    [Fact]
     public void CreateUpdateDeleteJob_UsesRegistryFromCore()
     {
         using var workspace = new TestWorkspace();
@@ -53,15 +74,19 @@ public class BackupControllerTests
     private sealed class FakeBackupService : IBackupService
     {
         public List<int> ReceivedJobNumbers { get; } = new();
+        public int? StopOnJobNumber { get; set; }
 
         public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
         {
             ReceivedJobNumbers.Add(selectedBackupJob.JobNumber);
+            bool shouldStop = StopOnJobNumber.HasValue && StopOnJobNumber.Value == selectedBackupJob.JobNumber;
             return new BackupResult
             {
                 JobNumber = selectedBackupJob.JobNumber,
                 BackupName = selectedBackupJob.Job.Name,
-                Status = BackupExecutionStatus.Finished
+                Status = shouldStop ? BackupExecutionStatus.Stopped : BackupExecutionStatus.Finished,
+                StoppedByBusinessSoftware = shouldStop,
+                BlockingProcessName = shouldStop ? "winword" : string.Empty
             };
         }
     }

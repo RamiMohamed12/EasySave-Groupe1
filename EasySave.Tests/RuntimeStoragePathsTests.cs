@@ -79,4 +79,15 @@ public class RuntimeStoragePathsTests
 
         Assert.Equal("xml", RuntimeStoragePaths.GetLogFileFormat());
     }
+
+    [Fact]
+    public void SetBlockedProcessNames_PersistsAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetBlockedProcessNames(["calc.exe", "WINWORD"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(["calc", "winword"], RuntimeStoragePaths.GetBlockedProcessNames());
+    }
 }
