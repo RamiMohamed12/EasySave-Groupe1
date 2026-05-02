@@ -16,6 +16,7 @@ public static class RuntimeStoragePaths
     public static string StateFilePath => Path.Combine(BackupStateDirectory, "state.json");
     public static string BackupHistoryFilePath => Path.Combine(BackupStateDirectory, "backup-history.json");
     public static string LogsDirectoryPath => BackupStateDirectory;
+    public static string DefaultCryptoSoftExecutablePath => Path.Combine(GetBaseDirectory(), "CryptoSoft", "CryptoSoft.exe");
 
     public static string GetDailyLogFilePath(DateTime timestamp)
     {
@@ -47,6 +48,27 @@ public static class RuntimeStoragePaths
         return NormalizeLogFileFormat(GetSettings().LogFileFormat);
     }
 
+    public static IReadOnlyList<string> GetEncryptedExtensions()
+    {
+        return NormalizeEncryptedExtensions(GetSettings().EncryptedExtensions);
+    }
+
+    public static string GetCryptoSoftKey()
+    {
+        return GetSettings().CryptoSoftKey ?? string.Empty;
+    }
+
+    public static string GetCryptoSoftPath()
+    {
+        string configuredPath = GetSettings().CryptoSoftPath;
+        if (string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return DefaultCryptoSoftExecutablePath;
+        }
+
+        return ResolveFilePath(configuredPath);
+    }
+
     public static void SetLanguageCode(string languageCode)
     {
         string normalizedLanguageCode = NormalizeLanguageCode(languageCode);
@@ -57,6 +79,25 @@ public static class RuntimeStoragePaths
     {
         string normalizedLogFileFormat = NormalizeLogFileFormat(logFileFormat);
         UpdateSettings(settings => settings.LogFileFormat = normalizedLogFileFormat);
+    }
+
+    public static void SetEncryptedExtensions(IEnumerable<string> extensions)
+    {
+        List<string> normalizedExtensions = NormalizeEncryptedExtensions(extensions).ToList();
+        UpdateSettings(settings => settings.EncryptedExtensions = normalizedExtensions);
+    }
+
+    public static void SetCryptoSoftKey(string key)
+    {
+        UpdateSettings(settings => settings.CryptoSoftKey = key?.Trim() ?? string.Empty);
+    }
+
+    public static void SetCryptoSoftPath(string path)
+    {
+        string normalizedPath = string.IsNullOrWhiteSpace(path)
+            ? string.Empty
+            : ResolveFilePath(path);
+        UpdateSettings(settings => settings.CryptoSoftPath = normalizedPath);
     }
 
     public static void Reload()
@@ -91,7 +132,19 @@ public static class RuntimeStoragePaths
         string json = File.ReadAllText(ConfigurationFilePath);
         RuntimeStorageSettings? settings = JsonSerializer.Deserialize<RuntimeStorageSettings>(json);
 
-        return settings ?? new RuntimeStorageSettings();
+        return EnsureSettingsDefaults(settings);
+    }
+
+    private static RuntimeStorageSettings EnsureSettingsDefaults(RuntimeStorageSettings? settings)
+    {
+        settings ??= new RuntimeStorageSettings();
+        settings.StorageDirectory ??= string.Empty;
+        settings.LanguageCode ??= string.Empty;
+        settings.LogFileFormat ??= string.Empty;
+        settings.EncryptedExtensions ??= new List<string>();
+        settings.CryptoSoftKey ??= string.Empty;
+        settings.CryptoSoftPath ??= string.Empty;
+        return settings;
     }
 
     private static string GetStorageDirectory()
@@ -131,6 +184,16 @@ public static class RuntimeStoragePaths
         return Path.GetFullPath(resolvedPath);
     }
 
+    private static string ResolveFilePath(string path)
+    {
+        string trimmedPath = path.Trim();
+        string resolvedPath = Path.IsPathRooted(trimmedPath)
+            ? trimmedPath
+            : Path.Combine(GetBaseDirectory(), trimmedPath);
+
+        return Path.GetFullPath(resolvedPath);
+    }
+
     private static string NormalizeLanguageCode(string? languageCode)
     {
         return string.IsNullOrWhiteSpace(languageCode)
@@ -147,6 +210,37 @@ public static class RuntimeStoragePaths
         return normalizedLogFileFormat == XmlLogFileFormat
             ? XmlLogFileFormat
             : JsonLogFileFormat;
+    }
+
+    private static IReadOnlyList<string> NormalizeEncryptedExtensions(IEnumerable<string>? extensions)
+    {
+        if (extensions is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return extensions
+            .SelectMany(extension => (extension ?? string.Empty)
+                .Split([';', ',', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Select(NormalizeExtension)
+            .Where(extension => !string.IsNullOrWhiteSpace(extension))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(extension => extension, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string NormalizeExtension(string extension)
+    {
+        string trimmedExtension = extension.Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(trimmedExtension))
+        {
+            return string.Empty;
+        }
+
+        return trimmedExtension.StartsWith('.')
+            ? trimmedExtension
+            : $".{trimmedExtension}";
     }
 
     private static string GetSharedConfigurationDirectory()

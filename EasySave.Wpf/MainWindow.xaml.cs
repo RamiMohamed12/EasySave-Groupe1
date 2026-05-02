@@ -28,6 +28,7 @@ public partial class MainWindow : Window
         _jobRows = new List<JobRow>();
         ConfigureLanguageSelector();
         ApplyTexts();
+        LoadEncryptionSettingsIntoForm();
         LoadJobsIntoGrid();
         RefreshStateAndLog();
     }
@@ -280,6 +281,7 @@ public partial class MainWindow : Window
         RunSelectedButton.IsEnabled = !busy;
         RunAllButton.IsEnabled = !busy;
         SaveAllButton.IsEnabled = !busy;
+        SaveEncryptionSettingsButton.IsEnabled = !busy;
         AddJobButton.IsEnabled = !busy;
         DeleteJobButton.IsEnabled = !busy;
         JobsDataGrid.IsEnabled = !busy;
@@ -315,6 +317,9 @@ public partial class MainWindow : Window
         SourceLabel.Text = Text("Wpf.SourceColumnHeader");
         TargetLabel.Text = Text("Wpf.TargetColumnHeader");
         TypeLabel.Text = Text("Wpf.TypeColumnHeader");
+        EncryptedExtensionsLabel.Text = Text("Wpf.EncryptedExtensionsLabel");
+        CryptoSoftKeyLabel.Text = Text("Wpf.CryptoSoftKeyLabel");
+        SaveEncryptionSettingsButton.Content = Text("Wpf.SaveEncryptionSettingsButton");
         SaveSelectedJobButton.Content = Text("Wpf.SaveSelectedJobButton");
         EditHintTextBlock.Text = Text("Wpf.EditHint");
         StateGroupBox.Header = Text("Wpf.StateHeader");
@@ -360,6 +365,7 @@ public partial class MainWindow : Window
         _backupController = CreateBackupController();
         LoadJobsIntoGrid();
         ApplyTexts();
+        LoadEncryptionSettingsIntoForm();
         StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
         RefreshStateAndLog();
     }
@@ -378,6 +384,21 @@ public partial class MainWindow : Window
     private string Text(string key) => _textService.GetText(key);
 
     private string Format(string key, params object[] args) => _textService.FormatText(key, args);
+
+    private void LoadEncryptionSettingsIntoForm()
+    {
+        EncryptedExtensionsTextBox.Text = string.Join("; ", RuntimeStoragePaths.GetEncryptedExtensions());
+        CryptoSoftKeyTextBox.Text = RuntimeStoragePaths.GetCryptoSoftKey();
+    }
+
+    private void SaveEncryptionSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RuntimeStoragePaths.SetEncryptedExtensions([EncryptedExtensionsTextBox.Text]);
+        RuntimeStoragePaths.SetCryptoSoftKey(CryptoSoftKeyTextBox.Text);
+        LoadEncryptionSettingsIntoForm();
+        StatusTextBlock.Text = Text("Wpf.EncryptionSettingsSavedStatus");
+        RefreshStateAndLog();
+    }
 
     private void AddJobButton_Click(object sender, RoutedEventArgs e)
     {

@@ -63,6 +63,11 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
                         <TextBlock Grid.Row="1" Name="SourceLabel" />
@@ -71,8 +76,13 @@
                         <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
                         <TextBlock Grid.Row="5" Name="TypeLabel" />
                         <ComboBox Grid.Row="6" Name="TypeComboBox" Margin="0,4,0,10" />
-                        <Button Grid.Row="7" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
-                        <TextBlock Grid.Row="8"
+                        <TextBlock Grid.Row="7" Name="EncryptedExtensionsLabel" />
+                        <TextBox Grid.Row="8" Name="EncryptedExtensionsTextBox" Margin="0,4,0,8" />
+                        <TextBlock Grid.Row="9" Name="CryptoSoftKeyLabel" />
+                        <TextBox Grid.Row="10" Name="CryptoSoftKeyTextBox" Margin="0,4,0,10" />
+                        <Button Grid.Row="11" Name="SaveEncryptionSettingsButton" Height="30" Margin="0,0,0,8" Click="SaveEncryptionSettingsButton_Click" />
+                        <Button Grid.Row="12" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
+                        <TextBlock Grid.Row="13"
                                    Name="EditHintTextBlock"
                                    Margin="0,8,0,0"
                                    TextWrapping="Wrap"

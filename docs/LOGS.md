@@ -6,6 +6,7 @@
 4. UNC path of the destination file
 5. Size of the file in bytes
 6. Time taken to transfer the file in milliseconds
+7. Time taken to encrypt the file in milliseconds (`0` means no encryption, a positive value is the CryptoSoft duration, and a negative value is a CryptoSoft error code)
 
 The file must be named like this: `2020-12-17.json` and must be created in the same directory as the executable. Each line of the file must be a JSON object with the above information, and there must be a newline between each JSON object.
 

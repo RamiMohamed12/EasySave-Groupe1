@@ -14,4 +14,15 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
+  <Target Name="CopyCryptoSoftOutput" AfterTargets="Build" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
+    <ItemGroup>
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CryptoSoftRuntimeFiles)"
+          DestinationFolder="$(OutDir)CryptoSoft\"
+          SkipUnchangedFiles="true"
+          Condition="'@(CryptoSoftRuntimeFiles)' != ''" />
+  </Target>
+
 </Project>

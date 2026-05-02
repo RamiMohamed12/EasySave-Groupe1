@@ -20,7 +20,8 @@ public class LoggerServiceTests
             DestinationPath = @"D:\Backup\a.txt",
             ActionType = "FileTransfer",
             FileSizeBytes = 42,
-            TransferTimeMilliseconds = 12
+            TransferTimeMilliseconds = 12,
+            EncryptionTimeMilliseconds = 7
         });
 
         string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(timestamp);
@@ -34,6 +35,7 @@ public class LoggerServiceTests
         Assert.NotNull(entry);
         Assert.Equal("FileTransfer", entry.ActionType);
         Assert.Equal(42, entry.FileSizeBytes);
+        Assert.Equal(7, entry.EncryptionTimeMilliseconds);
     }
 
     [Fact]
@@ -67,7 +69,8 @@ public class LoggerServiceTests
             DestinationPath = @"D:\Backup\a.txt",
             ActionType = "FileTransfer",
             FileSizeBytes = 42,
-            TransferTimeMilliseconds = 12
+            TransferTimeMilliseconds = 12,
+            EncryptionTimeMilliseconds = 7
         });
 
         string logFilePath = RuntimeStoragePaths.GetDailyLogFilePath(timestamp);
@@ -80,6 +83,7 @@ public class LoggerServiceTests
         Assert.NotNull(entry);
         Assert.Equal("FileTransfer", entry?.Element(nameof(LogEntry.ActionType))?.Value);
         Assert.Equal("42", entry?.Element(nameof(LogEntry.FileSizeBytes))?.Value);
+        Assert.Equal("7", entry?.Element(nameof(LogEntry.EncryptionTimeMilliseconds))?.Value);
     }
 
     private static int CountLogEntries(string logContent)

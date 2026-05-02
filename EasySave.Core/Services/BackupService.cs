@@ -6,17 +6,29 @@ public class BackupService : IBackupService
     private readonly LoggerService _loggerService;
     private readonly StateService _stateService;
     private readonly ApplicationTextService _textService;
+    private readonly ICryptoService _cryptoService;
 
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService)
+        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService())
+    {
+    }
+
+    public BackupService(
+        LoggerService loggerService,
+        StateService stateService,
+        BackupHistoryService backupHistoryService,
+        ApplicationTextService textService,
+        ICryptoService cryptoService)
     {
         _loggerService = loggerService;
         _stateService = stateService;
         _backupHistoryService = backupHistoryService;
         _textService = textService;
+        _cryptoService = cryptoService;
     }
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
@@ -81,12 +93,23 @@ public class BackupService : IBackupService
             string? destinationDirectory = Path.GetDirectoryName(destinationFilePath);
             long currentFileSize = new FileInfo(sourceFilePath).Length;
             var stopwatch = Stopwatch.StartNew();
+            long transferTimeMilliseconds = 0;
+            long encryptionTimeMilliseconds = 0;
+            bool fileWasCopied = false;
 
             try
             {
                 EnsureDestinationDirectoryExists(backupJob.Name, sourceFilePath, destinationDirectory, createdDirectories);
                 File.Copy(sourceFilePath, destinationFilePath, true);
                 stopwatch.Stop();
+                transferTimeMilliseconds = stopwatch.ElapsedMilliseconds;
+                fileWasCopied = true;
+                encryptionTimeMilliseconds = _cryptoService.EncryptIfRequired(destinationFilePath);
+
+                if (encryptionTimeMilliseconds < 0)
+                {
+                    throw new InvalidOperationException($"CryptoSoft failed with code {encryptionTimeMilliseconds}.");
+                }
 
                 DateTime transferTimestamp = DateTime.Now;
                 state.CurrentSourcePath = sourceFilePath;
@@ -104,7 +127,8 @@ public class BackupService : IBackupService
                     SourcePath = sourceFilePath,
                     DestinationPath = destinationFilePath,
                     FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = stopwatch.ElapsedMilliseconds
+                    TransferTimeMilliseconds = transferTimeMilliseconds,
+                    EncryptionTimeMilliseconds = encryptionTimeMilliseconds
                 };
                 state.LastRunTransferredFiles.Add(transferredFile);
 
@@ -117,20 +141,31 @@ public class BackupService : IBackupService
                     DestinationPath = destinationFilePath,
                     ActionType = "FileTransfer",
                     FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = stopwatch.ElapsedMilliseconds
+                    TransferTimeMilliseconds = transferTimeMilliseconds,
+                    EncryptionTimeMilliseconds = encryptionTimeMilliseconds
                 });
             }
             catch (Exception exception)
             {
-                stopwatch.Stop();
+                if (stopwatch.IsRunning)
+                {
+                    stopwatch.Stop();
+                }
+
                 hasErrors = true;
                 DateTime transferTimestamp = DateTime.Now;
-                long negativeTransferTime = -Math.Max(1, stopwatch.ElapsedMilliseconds);
+                long loggedTransferTime = fileWasCopied
+                    ? transferTimeMilliseconds
+                    : -Math.Max(1, stopwatch.ElapsedMilliseconds);
+                long loggedEncryptionTime = encryptionTimeMilliseconds < 0
+                    ? encryptionTimeMilliseconds
+                    : 0;
 
                 state.CurrentSourcePath = sourceFilePath;
                 state.CurrentTargetPath = destinationFilePath;
                 state.CurrentFileSize = currentFileSize;
                 state.LastBackupUpdateTime = transferTimestamp;
+                state.TransferredBytes += fileWasCopied ? currentFileSize : 0;
                 state.ProcessedBytes += currentFileSize;
                 state.RemainingBytes -= currentFileSize;
                 state.RemainingFileCount -= 1;
@@ -147,7 +182,8 @@ public class BackupService : IBackupService
                     ActionType = "Error",
                     ErrorMessage = exception.Message,
                     FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = negativeTransferTime
+                    TransferTimeMilliseconds = loggedTransferTime,
+                    EncryptionTimeMilliseconds = loggedEncryptionTime
                 });
             }
         }

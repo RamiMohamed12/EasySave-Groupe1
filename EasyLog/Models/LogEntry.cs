@@ -18,6 +18,9 @@ public class LogEntry
     // Keep the unit in the name because the spec requires milliseconds.
     public long TransferTimeMilliseconds { get; set; }
 
+    // 0 means no encryption, positive values are encryption time, negative values are CryptoSoft errors.
+    public long EncryptionTimeMilliseconds { get; set; }
+
     public LogEntry()
     {
         Timestamp = DateTime.MinValue;
@@ -28,5 +31,6 @@ public class LogEntry
         ErrorMessage = string.Empty;
         FileSizeBytes = 0;
         TransferTimeMilliseconds = 0;
+        EncryptionTimeMilliseconds = 0;
     }
 }
