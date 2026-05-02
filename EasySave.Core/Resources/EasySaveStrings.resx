@@ -161,7 +161,24 @@ Elapsed time: {2}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Log format switched to {0} successfully.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - WPF interface</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - WPF version</value></data>
+  <data name="Wpf.SidebarTitle" xml:space="preserve"><value>EasySave</value></data>
+  <data name="Wpf.NavOverview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Wpf.NavTasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Wpf.NavExecution" xml:space="preserve"><value>Execution</value></data>
+  <data name="Wpf.NavStateLogs" xml:space="preserve"><value>State and logs</value></data>
+  <data name="Wpf.NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Global overview of backups and configured jobs</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Manage jobs (create, edit, delete)</value></data>
+  <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Run backups quickly from one place</value></data>
+  <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Inspect runtime state and daily logs</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Configure application language</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Configured jobs</value></data>
+  <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Job list</value></data>
+  <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Jobs available for execution</value></data>
+  <data name="Wpf.KpiTotalJobs" xml:space="preserve"><value>Total jobs</value></data>
+  <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Configured jobs</value></data>
+  <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Selected jobs</value></data>
+  <data name="Wpf.KpiStorage" xml:space="preserve"><value>Storage directory</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Run</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>No.</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Name</value></data>
@@ -175,6 +192,7 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.StateHeader" xml:space="preserve"><value>State (state.json)</value></data>
   <data name="Wpf.LogHeader" xml:space="preserve"><value>Today's log</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Language</value></data>
+  <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Settings</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Refresh</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Run selected</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Run all</value></data>
