@@ -6,6 +6,7 @@ public class RuntimeStorageSettings
     public List<string> EncryptedExtensions { get; set; }
     public string CryptoSoftKey { get; set; }
     public string CryptoSoftPath { get; set; }
+    public List<string> BlockedProcessNames { get; set; }
 
     public RuntimeStorageSettings()
     {
@@ -15,5 +16,6 @@ public class RuntimeStorageSettings
         EncryptedExtensions = new List<string>();
         CryptoSoftKey = string.Empty;
         CryptoSoftPath = string.Empty;
+        BlockedProcessNames = new List<string>();
     }
 }

@@ -5,135 +5,361 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="EasySave"
-        Height="720"
-        Width="1100"
-        MinHeight="650"
-        MinWidth="980">
-    <Grid Margin="12">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="2*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        Height="760"
+        Width="1240"
+        MinHeight="700"
+        MinWidth="1080"
+        Background="#F4F6FA">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Name="HeadingTextBlock"
-                   Margin="0,0,0,8"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   Text="EasySave" />
+        <Border Grid.Column="0"
+                CornerRadius="12"
+                Padding="14"
+                Margin="0,0,10,0"
+                Background="#1F2937">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="2*" />
-            </Grid.ColumnDefinitions>
+                <TextBlock Name="SidebarTitleTextBlock"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="White" />
 
-            <GroupBox Grid.Column="0" Name="ConfiguredJobsGroupBox" Margin="0,0,8,8">
-                <DataGrid Name="JobsDataGrid"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          SelectionMode="Single"
-                          SelectionChanged="JobsDataGrid_SelectionChanged">
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn x:Name="RunColumn" Binding="{Binding IsSelected}" Width="60" />
-                        <DataGridTextColumn x:Name="NumberColumn" Binding="{Binding JobNumber}" IsReadOnly="True" Width="55" />
-                        <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="120" />
-                        <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="110" />
-                        <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" Width="*" />
-                        <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
+                <Button Grid.Row="1"
+                        Name="OverviewNavButton"
+                        Height="36"
+                        Margin="0,20,0,8"
+                        Click="OverviewNavButton_Click" />
+                <Button Grid.Row="2"
+                        Name="TasksNavButton"
+                        Height="36"
+                        Margin="0,0,0,8"
+                        Click="TasksNavButton_Click" />
+                <Button Grid.Row="3"
+                        Name="ExecutionNavButton"
+                        Height="36"
+                        Margin="0,0,0,8"
+                        Click="ExecutionNavButton_Click" />
+                <Button Grid.Row="4"
+                        Name="StateLogsNavButton"
+                        Height="36"
+                        Margin="0,0,0,8"
+                        Click="StateLogsNavButton_Click" />
+                <Button Grid.Row="6"
+                        Name="SettingsNavButton"
+                        Height="36"
+                        Click="SettingsNavButton_Click" />
+            </Grid>
+        </Border>
 
-            <GroupBox Grid.Column="1" Name="EditSelectedJobGroupBox" Margin="8,0,0,8">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
-                        <TextBlock Grid.Row="1" Name="SourceLabel" />
-                        <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,8" />
-                        <TextBlock Grid.Row="3" Name="TargetLabel" />
-                        <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
-                        <TextBlock Grid.Row="5" Name="TypeLabel" />
-                        <ComboBox Grid.Row="6" Name="TypeComboBox" Margin="0,4,0,10" />
-                        <TextBlock Grid.Row="7" Name="EncryptedExtensionsLabel" />
-                        <TextBox Grid.Row="8" Name="EncryptedExtensionsTextBox" Margin="0,4,0,8" />
-                        <TextBlock Grid.Row="9" Name="CryptoSoftKeyLabel" />
-                        <TextBox Grid.Row="10" Name="CryptoSoftKeyTextBox" Margin="0,4,0,10" />
-                        <Button Grid.Row="11" Name="SaveEncryptionSettingsButton" Height="30" Margin="0,0,0,8" Click="SaveEncryptionSettingsButton_Click" />
-                        <Button Grid.Row="12" Name="SaveSelectedJobButton" Height="30" Click="SaveSelectedJobButton_Click" />
-                        <TextBlock Grid.Row="13"
-                                   Name="EditHintTextBlock"
-                                   Margin="0,8,0,0"
-                                   TextWrapping="Wrap"
-                                   Foreground="DimGray" />
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Background="White"
+                    CornerRadius="12"
+                    Padding="16"
+                    Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Name="HeadingTextBlock" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock Name="PageSubtitleTextBlock" Margin="0,4,0,0" Foreground="#4B5563" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1"
+                               Name="StatusTextBlock"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Foreground="#1D4ED8" />
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1">
+                <Grid Name="OverviewPanel" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <UniformGrid Rows="1" Columns="4" Margin="0,0,0,10">
+                        <Border Margin="0,0,8,0" Padding="14" CornerRadius="10" Background="White">
+                            <StackPanel>
+                                <TextBlock Name="KpiTotalJobsLabelTextBlock" Foreground="#6B7280" />
+                                <TextBlock Name="KpiTotalJobsValueTextBlock" FontSize="26" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="0,0,8,0" Padding="14" CornerRadius="10" Background="White">
+                            <StackPanel>
+                                <TextBlock Name="KpiConfiguredJobsLabelTextBlock" Foreground="#6B7280" />
+                                <TextBlock Name="KpiConfiguredJobsValueTextBlock" FontSize="26" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="0,0,8,0" Padding="14" CornerRadius="10" Background="White">
+                            <StackPanel>
+                                <TextBlock Name="KpiSelectedJobsLabelTextBlock" Foreground="#6B7280" />
+                                <TextBlock Name="KpiSelectedJobsValueTextBlock" FontSize="26" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+                        <Border Padding="14" CornerRadius="10" Background="White">
+                            <StackPanel>
+                                <TextBlock Name="KpiStorageLabelTextBlock" Foreground="#6B7280" />
+                                <TextBlock Name="KpiStorageValueTextBlock" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <GroupBox Grid.Row="1" Name="OverviewJobsGroupBox" Background="White">
+                        <DataGrid Name="OverviewJobsDataGrid"
+                                  Margin="8"
+                                  IsReadOnly="True"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="N°" Binding="{Binding JobNumber}" Width="60" />
+                                <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="120" />
+                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" />
+                                <DataGridTextColumn Header="Cible" Binding="{Binding Target}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                </Grid>
+
+                <Grid Name="TasksPanel" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Name="AddJobButton" Width="130" Height="34" Margin="0,0,8,0" Click="AddJobButton_Click" />
+                        <Button Name="DeleteJobButton" Width="150" Height="34" Margin="0,0,8,0" Click="DeleteJobButton_Click" />
+                        <Button Name="SaveAllButton" Width="150" Height="34" Click="SaveAllButton_Click" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
+
+                        <GroupBox Grid.Column="0" Name="ConfiguredJobsGroupBox" Margin="0,0,8,0" Background="White">
+                            <DataGrid Name="JobsDataGrid"
+                                      Margin="8"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      SelectionMode="Single"
+                                      SelectionChanged="JobsDataGrid_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn x:Name="RunColumn" Binding="{Binding IsSelected}" Width="55" />
+                                    <DataGridTextColumn x:Name="NumberColumn" Binding="{Binding JobNumber}" IsReadOnly="True" Width="60" />
+                                    <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="130" />
+                                    <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="130" />
+                                    <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" Width="*" />
+                                    <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+
+                        <GroupBox Grid.Column="1" Name="EditSelectedJobGroupBox" Margin="8,0,0,0" Background="White">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <Grid Margin="10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Name="SelectedJobLabel" Margin="0,0,0,10" FontWeight="Bold" />
+                                    <TextBlock Grid.Row="1" Name="SourceLabel" />
+                                    <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,8" />
+                                    <TextBlock Grid.Row="3" Name="TargetLabel" />
+                                    <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
+                                    <TextBlock Grid.Row="5" Name="TypeLabel" />
+                                    <ComboBox Grid.Row="6" Name="TypeComboBox" Margin="0,4,0,10" />
+                                    <Button Grid.Row="7" Name="SaveSelectedJobButton" Height="32" Click="SaveSelectedJobButton_Click" />
+                                    <TextBlock Grid.Row="8"
+                                               Name="EditHintTextBlock"
+                                               Margin="0,8,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="DimGray" />
+                                </Grid>
+                            </ScrollViewer>
+                        </GroupBox>
                     </Grid>
-                </ScrollViewer>
-            </GroupBox>
-        </Grid>
+                </Grid>
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
-            <GroupBox Grid.Column="0" Name="StateGroupBox" Margin="0,0,8,8">
-                <TextBox Name="StateTextBox"
-                         Margin="8"
-                         FontFamily="Consolas"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         IsReadOnly="True"
-                         TextWrapping="NoWrap" />
-            </GroupBox>
-            <GroupBox Grid.Column="1" Name="LogGroupBox" Margin="8,0,0,8">
-                <TextBox Name="LogTextBox"
-                         Margin="8"
-                         FontFamily="Consolas"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         IsReadOnly="True"
-                         TextWrapping="NoWrap" />
-            </GroupBox>
-        </Grid>
+                <Grid Name="ExecutionPanel" Visibility="Collapsed">
+                    <StackPanel>
+                        <Border Padding="14" Margin="0,0,0,10" Background="White" CornerRadius="10">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Name="RunSelectedButton" Width="180" Height="36" Margin="0,0,8,0" Click="RunSelectedButton_Click" />
+                                <Button Name="RunAllButton" Width="150" Height="36" Click="RunAllButton_Click" />
+                            </StackPanel>
+                        </Border>
+                        <GroupBox Name="ExecutionJobsGroupBox" Background="White">
+                            <DataGrid Name="ExecutionJobsDataGrid"
+                                      Margin="8"
+                                      IsReadOnly="True"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="Run" Binding="{Binding IsSelected}" Width="55" />
+                                    <DataGridTextColumn Header="N°" Binding="{Binding JobNumber}" Width="60" />
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="140" />
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" />
+                                    <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+                    </StackPanel>
+                </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left">
-            <TextBlock Name="LanguageLabel" Margin="0,7,6,0" />
-            <ComboBox Name="LanguageComboBox"
-                      Width="110"
-                      Margin="0,0,12,0"
-                      SelectionChanged="LanguageComboBox_SelectionChanged" />
-            <Button Name="AddJobButton" Width="120" Margin="0,0,8,0" Click="AddJobButton_Click" />
-            <Button Name="DeleteJobButton" Width="130" Margin="0,0,8,0" Click="DeleteJobButton_Click" />
-            <Button Name="RefreshButton" Width="110" Margin="0,0,8,0" Click="RefreshButton_Click" />
-            <Button Name="RunSelectedButton" Width="130" Margin="0,0,8,0" Click="RunSelectedButton_Click" />
-            <Button Name="RunAllButton" Width="110" Margin="0,0,8,0" Click="RunAllButton_Click" />
-            <Button Name="SaveAllButton" Width="140" Click="SaveAllButton_Click" />
-            <TextBlock Name="StatusTextBlock"
-                       Margin="16,7,0,0"
-                       FontWeight="SemiBold" />
-        </StackPanel>
+                <Grid Name="StateLogsPanel" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Button Name="RefreshButton"
+                            Width="130"
+                            Height="34"
+                            Margin="0,0,0,10"
+                            HorizontalAlignment="Left"
+                            Click="RefreshButton_Click" />
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <GroupBox Grid.Column="0" Name="StateGroupBox" Margin="0,0,8,0" Background="White">
+                            <TextBox Name="StateTextBox"
+                                     Margin="8"
+                                     FontFamily="Consolas"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     IsReadOnly="True"
+                                     TextWrapping="NoWrap" />
+                        </GroupBox>
+                        <GroupBox Grid.Column="1" Name="LogGroupBox" Margin="8,0,0,0" Background="White">
+                            <TextBox Name="LogTextBox"
+                                     Margin="8"
+                                     FontFamily="Consolas"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     IsReadOnly="True"
+                                     TextWrapping="NoWrap" />
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+
+                <Grid Name="SettingsPanel" Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <TextBlock Name="SettingsTitleTextBlock" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                            <Border Padding="16" Margin="0,0,0,10" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="LanguageSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Name="LanguageLabel" Margin="0,7,8,0" />
+                                        <ComboBox Name="LanguageComboBox"
+                                                  Width="140"
+                                                  SelectionChanged="LanguageComboBox_SelectionChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="16" Margin="0,0,0,10" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="LogFormatSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Name="LogFormatLabel" Margin="0,7,8,0" />
+                                        <ComboBox Name="LogFormatComboBox"
+                                                  Width="140"
+                                                  SelectionChanged="LogFormatComboBox_SelectionChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="16" Margin="0,0,0,10" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="EncryptionSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <TextBlock Name="EncryptedExtensionsLabel" Margin="0,0,0,4" />
+                                    <TextBox Name="EncryptedExtensionsTextBox" Width="360" />
+                                    <TextBlock Name="CryptoSoftKeyLabel" Margin="0,10,0,4" />
+                                    <TextBox Name="CryptoSoftKeyTextBox" Width="360" />
+                                    <Button Name="SaveEncryptionSettingsButton"
+                                            Width="190"
+                                            Height="32"
+                                            Margin="0,10,0,0"
+                                            HorizontalAlignment="Left"
+                                            Click="SaveEncryptionSettingsButton_Click" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="16" Background="White" CornerRadius="10" HorizontalAlignment="Left">
+                                <StackPanel>
+                                    <TextBlock Name="BusinessSoftwareSectionTitle" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                    <TextBlock Name="BlockedProcessesLabel"
+                                               Margin="0,0,0,6"
+                                               FontWeight="SemiBold" />
+                                    <ListBox Name="BlockedProcessesListBox"
+                                             Width="360"
+                                             MinHeight="120"
+                                             MaxHeight="220" />
+                                    <TextBlock Name="ProcessNameLabel"
+                                               Margin="0,10,0,4" />
+                                    <TextBox Name="ProcessNameTextBox"
+                                             Width="360" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <Button Name="AddProcessButton"
+                                                Width="150"
+                                                Height="32"
+                                                Margin="0,0,8,0"
+                                                Click="AddProcessButton_Click" />
+                                        <Button Name="RemoveProcessButton"
+                                                Width="180"
+                                                Height="32"
+                                                Click="RemoveProcessButton_Click" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

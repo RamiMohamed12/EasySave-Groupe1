@@ -101,4 +101,15 @@ public class RuntimeStoragePathsTests
 
         Assert.Equal("secret", RuntimeStoragePaths.GetCryptoSoftKey());
     }
+
+    [Fact]
+    public void SetBlockedProcessNames_PersistsAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetBlockedProcessNames(["calc.exe", "WINWORD"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(["calc", "winword"], RuntimeStoragePaths.GetBlockedProcessNames());
+    }
 }

@@ -24,6 +24,7 @@
   <data name="InvalidStorageDirectoryCommandMessage" xml:space="preserve"><value>Invalid storage-dir command. Use: EasySave --storage-dir &lt;path&gt;.</value></data>
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Invalid lang command. Use: EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Invalid language code. Use en or fr.</value></data>
+  <data name="BackupBlockedByBusinessSoftwareMessage" xml:space="preserve"><value>Backup stopped: blocked process detected ({0}.exe).</value></data>
   <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave without arguments displays all configured jobs.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Use --help to display this help.</value></data>
   <data name="HelpJobNumbersLine" xml:space="preserve"><value>Job numbers start at 1.</value></data>
@@ -98,6 +99,7 @@ Elapsed time: {2}</value></data>
   <data name="Console.EmptyExtensionsAllowedMessage" xml:space="preserve"><value>Leave empty to go back, or type clear to disable encryption by extension.</value></data>
   <data name="Console.EmptyCryptoSoftKeyWarning" xml:space="preserve"><value>Leave empty to go back, or type clear to clear the key. Files cannot be encrypted without a key.</value></data>
   <data name="Console.EncryptionSettingsUpdatedMessage" xml:space="preserve"><value>Encryption settings updated.</value></data>
+  <data name="Console.ManageBusinessSoftwareLabel" xml:space="preserve"><value>Manage business software</value></data>
   <data name="Console.ChangeLanguageLabel" xml:space="preserve"><value>Change language</value></data>
   <data name="Console.ExitLabel" xml:space="preserve"><value>Exit</value></data>
   <data name="Console.BackLabel" xml:space="preserve"><value>Back</value></data>
@@ -172,9 +174,34 @@ Elapsed time: {2}</value></data>
   <data name="Console.JobHeader" xml:space="preserve"><value>Job {0}: {1}</value></data>
   <data name="Console.ErrorMessage" xml:space="preserve"><value>Error: {0}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Log format switched to {0} successfully.</value></data>
+  <data name="Console.BusinessSoftwareTitle" xml:space="preserve"><value>Business software detection</value></data>
+  <data name="Console.AddProcessLabel" xml:space="preserve"><value>Add blocked process</value></data>
+  <data name="Console.RemoveProcessLabel" xml:space="preserve"><value>Remove blocked process</value></data>
+  <data name="Console.NoBlockedProcessesMessage" xml:space="preserve"><value>No blocked process is configured.</value></data>
+  <data name="Console.ProcessNamePrompt" xml:space="preserve"><value>Enter process name (example: winword.exe): </value></data>
+  <data name="Console.ProcessAlreadyConfiguredMessage" xml:space="preserve"><value>This process is already configured.</value></data>
+  <data name="Console.ProcessAddedMessage" xml:space="preserve"><value>Process added successfully.</value></data>
+  <data name="Console.ProcessRemovedMessage" xml:space="preserve"><value>Process removed successfully.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - WPF interface</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - WPF version</value></data>
+  <data name="Wpf.SidebarTitle" xml:space="preserve"><value>EasySave</value></data>
+  <data name="Wpf.NavOverview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Wpf.NavTasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Wpf.NavExecution" xml:space="preserve"><value>Execution</value></data>
+  <data name="Wpf.NavStateLogs" xml:space="preserve"><value>State and logs</value></data>
+  <data name="Wpf.NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Global overview of backups and configured jobs</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Manage jobs (create, edit, delete)</value></data>
+  <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Run backups quickly from one place</value></data>
+  <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Inspect runtime state and daily logs</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Configure application language</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Configured jobs</value></data>
+  <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Job list</value></data>
+  <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Jobs available for execution</value></data>
+  <data name="Wpf.KpiTotalJobs" xml:space="preserve"><value>Total jobs</value></data>
+  <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Configured jobs</value></data>
+  <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Selected jobs</value></data>
+  <data name="Wpf.KpiStorage" xml:space="preserve"><value>Storage directory</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Run</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>No.</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Name</value></data>
@@ -191,6 +218,16 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.StateHeader" xml:space="preserve"><value>State (state.json)</value></data>
   <data name="Wpf.LogHeader" xml:space="preserve"><value>Today's log</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Language</value></data>
+  <data name="Wpf.LanguageSectionTitle" xml:space="preserve"><value>Language settings</value></data>
+  <data name="Wpf.LogFormatSectionTitle" xml:space="preserve"><value>Log settings</value></data>
+  <data name="Wpf.EncryptionSectionTitle" xml:space="preserve"><value>Encryption</value></data>
+  <data name="Wpf.BusinessSoftwareSectionTitle" xml:space="preserve"><value>Business software detection</value></data>
+  <data name="Wpf.LogFormatLabel" xml:space="preserve"><value>Log format</value></data>
+  <data name="Wpf.BlockedProcessesLabel" xml:space="preserve"><value>Blocked business software processes</value></data>
+  <data name="Wpf.ProcessNameLabel" xml:space="preserve"><value>Process name (example: winword.exe)</value></data>
+  <data name="Wpf.AddBlockedProcessButton" xml:space="preserve"><value>Add process</value></data>
+  <data name="Wpf.RemoveBlockedProcessButton" xml:space="preserve"><value>Remove selected process</value></data>
+  <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Settings</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Refresh</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Run selected</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Run all</value></data>
@@ -214,4 +251,10 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Job {0} - {1} ({2})</value></data>
   <data name="Wpf.AddJobButton" xml:space="preserve"><value>Add job</value></data>
   <data name="Wpf.DeleteJobButton" xml:space="preserve"><value>Delete job</value></data>
+  <data name="Wpf.ProcessNameRequiredStatus" xml:space="preserve"><value>Enter a process name first.</value></data>
+  <data name="Wpf.ProcessAlreadyConfiguredStatus" xml:space="preserve"><value>This process is already configured.</value></data>
+  <data name="Wpf.SelectProcessFirstStatus" xml:space="preserve"><value>Select a process first.</value></data>
+  <data name="Wpf.ProcessAddedStatus" xml:space="preserve"><value>Process added: {0}</value></data>
+  <data name="Wpf.ProcessRemovedStatus" xml:space="preserve"><value>Process removed: {0}</value></data>
+  <data name="Wpf.LogFormatUpdatedStatus" xml:space="preserve"><value>Log format updated: {0}</value></data>
 </root>

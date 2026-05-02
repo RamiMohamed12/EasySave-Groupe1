@@ -68,6 +68,11 @@ public class ConsoleTranslationService
         return IsFrench(textService) ? _frenchTexts.ChangeLogFormatLabel : _englishTexts.ChangeLogFormatLabel;
     }
 
+    public string GetManageBusinessSoftwareLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ManageBusinessSoftwareLabel : _englishTexts.ManageBusinessSoftwareLabel;
+    }
+
     public string GetChangeLanguageLabel(ApplicationTextService textService)
     {
         return IsFrench(textService) ? _frenchTexts.ChangeLanguageLabel : _englishTexts.ChangeLanguageLabel;
@@ -248,6 +253,48 @@ public class ConsoleTranslationService
         return IsFrench(textService)
             ? _frenchTexts.InvalidLogSelectionMessage
             : _englishTexts.InvalidLogSelectionMessage;
+    }
+
+    public string GetBusinessSoftwareTitle(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.BusinessSoftwareTitle : _englishTexts.BusinessSoftwareTitle;
+    }
+
+    public string GetAddProcessLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.AddProcessLabel : _englishTexts.AddProcessLabel;
+    }
+
+    public string GetRemoveProcessLabel(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.RemoveProcessLabel : _englishTexts.RemoveProcessLabel;
+    }
+
+    public string GetNoBlockedProcessesMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.NoBlockedProcessesMessage : _englishTexts.NoBlockedProcessesMessage;
+    }
+
+    public string GetProcessNamePrompt(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ProcessNamePrompt : _englishTexts.ProcessNamePrompt;
+    }
+
+    public string GetProcessAlreadyConfiguredMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService)
+            ? _frenchTexts.ProcessAlreadyConfiguredMessage
+            : _englishTexts.ProcessAlreadyConfiguredMessage;
+    }
+
+    public string GetProcessAddedMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ProcessAddedMessage : _englishTexts.ProcessAddedMessage;
+    }
+
+    public string GetProcessRemovedMessage(ApplicationTextService textService)
+    {
+        return IsFrench(textService) ? _frenchTexts.ProcessRemovedMessage : _englishTexts.ProcessRemovedMessage;
     }
 
     public string GetFilePathLine(ApplicationTextService textService, string filePath)

@@ -24,6 +24,7 @@
   <data name="InvalidStorageDirectoryCommandMessage" xml:space="preserve"><value>Commande storage-dir invalide. Utilisez : EasySave --storage-dir &lt;chemin&gt;.</value></data>
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Commande lang invalide. Utilisez : EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Code de langue invalide. Utilisez en ou fr.</value></data>
+  <data name="BackupBlockedByBusinessSoftwareMessage" xml:space="preserve"><value>Sauvegarde arretee : processus bloquant detecte ({0}.exe).</value></data>
   <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave sans argument affiche toutes les taches configurees.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Utilisez --help pour afficher cette aide.</value></data>
   <data name="HelpJobNumbersLine" xml:space="preserve"><value>Les numeros de tache commencent a 1.</value></data>
@@ -98,6 +99,7 @@ Temps ecoule : {2}</value></data>
   <data name="Console.EmptyExtensionsAllowedMessage" xml:space="preserve"><value>Laissez vide pour revenir, ou tapez clear pour desactiver le cryptage par extension.</value></data>
   <data name="Console.EmptyCryptoSoftKeyWarning" xml:space="preserve"><value>Laissez vide pour revenir, ou tapez clear pour effacer la cle. Les fichiers ne peuvent pas etre cryptes sans cle.</value></data>
   <data name="Console.EncryptionSettingsUpdatedMessage" xml:space="preserve"><value>Parametres de cryptage mis a jour.</value></data>
+  <data name="Console.ManageBusinessSoftwareLabel" xml:space="preserve"><value>Gerer les logiciels metier</value></data>
   <data name="Console.ChangeLanguageLabel" xml:space="preserve"><value>Changer la langue</value></data>
   <data name="Console.ExitLabel" xml:space="preserve"><value>Quitter</value></data>
   <data name="Console.BackLabel" xml:space="preserve"><value>Retour</value></data>
@@ -172,9 +174,34 @@ Temps ecoule : {2}</value></data>
   <data name="Console.JobHeader" xml:space="preserve"><value>Tache {0} : {1}</value></data>
   <data name="Console.ErrorMessage" xml:space="preserve"><value>Erreur : {0}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Le format des logs a ete change en {0} avec succes.</value></data>
+  <data name="Console.BusinessSoftwareTitle" xml:space="preserve"><value>Detection logiciel metier</value></data>
+  <data name="Console.AddProcessLabel" xml:space="preserve"><value>Ajouter un processus bloquant</value></data>
+  <data name="Console.RemoveProcessLabel" xml:space="preserve"><value>Retirer un processus bloquant</value></data>
+  <data name="Console.NoBlockedProcessesMessage" xml:space="preserve"><value>Aucun processus bloquant configure.</value></data>
+  <data name="Console.ProcessNamePrompt" xml:space="preserve"><value>Entrez le nom du processus (exemple : winword.exe) : </value></data>
+  <data name="Console.ProcessAlreadyConfiguredMessage" xml:space="preserve"><value>Ce processus est deja configure.</value></data>
+  <data name="Console.ProcessAddedMessage" xml:space="preserve"><value>Processus ajoute avec succes.</value></data>
+  <data name="Console.ProcessRemovedMessage" xml:space="preserve"><value>Processus retire avec succes.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - Interface WPF</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - Version WPF</value></data>
+  <data name="Wpf.SidebarTitle" xml:space="preserve"><value>EasySave</value></data>
+  <data name="Wpf.NavOverview" xml:space="preserve"><value>Vue d'ensemble</value></data>
+  <data name="Wpf.NavTasks" xml:space="preserve"><value>Taches</value></data>
+  <data name="Wpf.NavExecution" xml:space="preserve"><value>Execution</value></data>
+  <data name="Wpf.NavStateLogs" xml:space="preserve"><value>Etat et logs</value></data>
+  <data name="Wpf.NavSettings" xml:space="preserve"><value>Parametres</value></data>
+  <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Vue globale des sauvegardes et des taches configurees</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Gerer les taches (ajout, edition, suppression)</value></data>
+  <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Lancer les sauvegardes rapidement</value></data>
+  <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Consulter l'etat runtime et les journaux</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Parametrer la langue de l'application</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Taches configurees</value></data>
+  <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Liste des taches</value></data>
+  <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Taches disponibles pour execution</value></data>
+  <data name="Wpf.KpiTotalJobs" xml:space="preserve"><value>Taches totales</value></data>
+  <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Taches configurees</value></data>
+  <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Taches selectionnees</value></data>
+  <data name="Wpf.KpiStorage" xml:space="preserve"><value>Dossier de stockage</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Lancer</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>N°</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Nom</value></data>
@@ -191,6 +218,16 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.StateHeader" xml:space="preserve"><value>Etat (state.json)</value></data>
   <data name="Wpf.LogHeader" xml:space="preserve"><value>Log du jour</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Langue</value></data>
+  <data name="Wpf.LanguageSectionTitle" xml:space="preserve"><value>Parametres de langue</value></data>
+  <data name="Wpf.LogFormatSectionTitle" xml:space="preserve"><value>Parametres de log</value></data>
+  <data name="Wpf.EncryptionSectionTitle" xml:space="preserve"><value>Cryptage</value></data>
+  <data name="Wpf.BusinessSoftwareSectionTitle" xml:space="preserve"><value>Detection logiciel metier</value></data>
+  <data name="Wpf.LogFormatLabel" xml:space="preserve"><value>Format de log</value></data>
+  <data name="Wpf.BlockedProcessesLabel" xml:space="preserve"><value>Processus logiciels metier bloquants</value></data>
+  <data name="Wpf.ProcessNameLabel" xml:space="preserve"><value>Nom du processus (exemple : winword.exe)</value></data>
+  <data name="Wpf.AddBlockedProcessButton" xml:space="preserve"><value>Ajouter processus</value></data>
+  <data name="Wpf.RemoveBlockedProcessButton" xml:space="preserve"><value>Retirer processus selectionne</value></data>
+  <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Parametres</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Actualiser</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Lancer selection</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Lancer tous</value></data>
@@ -214,4 +251,10 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.SelectedJobLabel" xml:space="preserve"><value>Tache {0} - {1} ({2})</value></data>
   <data name="Wpf.AddJobButton" xml:space="preserve"><value>Ajouter tache</value></data>
   <data name="Wpf.DeleteJobButton" xml:space="preserve"><value>Supprimer tache</value></data>
+  <data name="Wpf.ProcessNameRequiredStatus" xml:space="preserve"><value>Entrez d'abord un nom de processus.</value></data>
+  <data name="Wpf.ProcessAlreadyConfiguredStatus" xml:space="preserve"><value>Ce processus est deja configure.</value></data>
+  <data name="Wpf.SelectProcessFirstStatus" xml:space="preserve"><value>Selectionnez d'abord un processus.</value></data>
+  <data name="Wpf.ProcessAddedStatus" xml:space="preserve"><value>Processus ajoute : {0}</value></data>
+  <data name="Wpf.ProcessRemovedStatus" xml:space="preserve"><value>Processus retire : {0}</value></data>
+  <data name="Wpf.LogFormatUpdatedStatus" xml:space="preserve"><value>Format de log mis a jour : {0}</value></data>
 </root>

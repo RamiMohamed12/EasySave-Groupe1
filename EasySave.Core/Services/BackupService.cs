@@ -7,13 +7,14 @@ public class BackupService : IBackupService
     private readonly StateService _stateService;
     private readonly ApplicationTextService _textService;
     private readonly ICryptoService _cryptoService;
+    private readonly IBusinessSoftwareMonitor _businessSoftwareMonitor;
 
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService)
-        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService())
+        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService(), new BusinessSoftwareMonitor())
     {
     }
 
@@ -23,12 +24,34 @@ public class BackupService : IBackupService
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService,
         ICryptoService cryptoService)
+        : this(loggerService, stateService, backupHistoryService, textService, cryptoService, new BusinessSoftwareMonitor())
+    {
+    }
+
+    public BackupService(
+        LoggerService loggerService,
+        StateService stateService,
+        BackupHistoryService backupHistoryService,
+        ApplicationTextService textService,
+        IBusinessSoftwareMonitor businessSoftwareMonitor)
+        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService(), businessSoftwareMonitor)
+    {
+    }
+
+    public BackupService(
+        LoggerService loggerService,
+        StateService stateService,
+        BackupHistoryService backupHistoryService,
+        ApplicationTextService textService,
+        ICryptoService cryptoService,
+        IBusinessSoftwareMonitor businessSoftwareMonitor)
     {
         _loggerService = loggerService;
         _stateService = stateService;
         _backupHistoryService = backupHistoryService;
         _textService = textService;
         _cryptoService = cryptoService;
+        _businessSoftwareMonitor = businessSoftwareMonitor;
     }
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
@@ -40,6 +63,11 @@ public class BackupService : IBackupService
             JobNumber = selectedBackupJob.JobNumber,
             BackupName = backupJob.Name
         };
+
+        if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string startupBlockedProcess))
+        {
+            return CompleteWithBusinessSoftwareStop(result, backupJob, startupBlockedProcess);
+        }
 
         if (string.IsNullOrWhiteSpace(backupJob.Source))
         {
@@ -186,6 +214,38 @@ public class BackupService : IBackupService
                     EncryptionTimeMilliseconds = loggedEncryptionTime
                 });
             }
+
+            if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string runningBlockedProcess))
+            {
+                state.IsRunning = false;
+                state.LastBackupUpdateTime = DateTime.Now;
+                state.LastRunCompletedAt = state.LastBackupUpdateTime;
+                state.Status = BackupExecutionStatus.Stopped;
+                state.ErrorMessage = _textService.GetBackupBlockedByBusinessSoftwareMessage(runningBlockedProcess);
+                _stateService.WriteState(state);
+
+                _loggerService.WriteLog(new LogEntry
+                {
+                    Timestamp = state.LastBackupUpdateTime,
+                    BackupName = backupJob.Name,
+                    SourcePath = state.CurrentSourcePath,
+                    DestinationPath = state.CurrentTargetPath,
+                    ActionType = "BusinessSoftwareDetected",
+                    ErrorMessage = state.ErrorMessage,
+                    FileSizeBytes = 0,
+                    TransferTimeMilliseconds = 0
+                });
+
+                globalStopwatch.Stop();
+                result.Status = BackupExecutionStatus.Stopped;
+                result.TransferredFileCount = state.LastRunTransferredFiles.Count;
+                result.TransferredBytes = state.TransferredBytes;
+                result.ErrorMessage = state.ErrorMessage;
+                result.ElapsedTime = globalStopwatch.Elapsed;
+                result.StoppedByBusinessSoftware = true;
+                result.BlockingProcessName = runningBlockedProcess;
+                return result;
+            }
         }
 
         state.IsRunning = false;
@@ -287,6 +347,51 @@ public class BackupService : IBackupService
 
         result.Status = BackupExecutionStatus.Error;
         result.ErrorMessage = errorMessage;
+        return result;
+    }
+
+    private BackupResult CompleteWithBusinessSoftwareStop(BackupResult result, BackupJob backupJob, string processName)
+    {
+        DateTime timestamp = DateTime.Now;
+        string errorMessage = _textService.GetBackupBlockedByBusinessSoftwareMessage(processName);
+        var state = new BackupState
+        {
+            BackupName = backupJob.Name,
+            CurrentSourcePath = backupJob.Source,
+            CurrentTargetPath = backupJob.Target,
+            IsRunning = false,
+            Status = BackupExecutionStatus.Stopped,
+            ErrorMessage = errorMessage,
+            CurrentFileSize = 0,
+            LastBackupUpdateTime = timestamp,
+            TransferredBytes = 0,
+            ProcessedBytes = 0,
+            TotalEligibleFileCount = 0,
+            RemainingFileCount = 0,
+            TotalEligibleBytes = 0,
+            RemainingBytes = 0,
+            LastRunStartedAt = timestamp,
+            LastRunCompletedAt = timestamp,
+            LastRunTransferredFiles = new List<BackupTransferredFile>()
+        };
+
+        _stateService.WriteState(state);
+        _loggerService.WriteLog(new LogEntry
+        {
+            Timestamp = timestamp,
+            BackupName = backupJob.Name,
+            SourcePath = backupJob.Source,
+            DestinationPath = backupJob.Target,
+            ActionType = "BusinessSoftwareDetected",
+            ErrorMessage = errorMessage,
+            FileSizeBytes = 0,
+            TransferTimeMilliseconds = 0
+        });
+
+        result.Status = BackupExecutionStatus.Stopped;
+        result.ErrorMessage = errorMessage;
+        result.StoppedByBusinessSoftware = true;
+        result.BlockingProcessName = processName;
         return result;
     }
 

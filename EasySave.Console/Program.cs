@@ -2,6 +2,7 @@ var loggerService = new LoggerService();
 var stateService = new StateService();
 var backupHistoryService = new BackupHistoryService();
 var jobRegistry = new BackupJobRegistry();
+var businessSoftwareMonitor = new BusinessSoftwareMonitor();
 
 var menuManager = new ConsoleMenu(
     CreateRuntime,
@@ -32,7 +33,8 @@ ConsoleMenuRuntime CreateRuntime(string? languageCode)
         loggerService,
         stateService,
         backupHistoryService,
-        textService);
+        textService,
+        businessSoftwareMonitor);
 
     return new ConsoleMenuRuntime(
         textService,
