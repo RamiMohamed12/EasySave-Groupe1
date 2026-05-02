@@ -161,7 +161,24 @@ Temps ecoule : {2}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Le format des logs a ete change en {0} avec succes.</value></data>
   <data name="Wpf.WindowTitle" xml:space="preserve"><value>EasySave - Interface WPF</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - Version WPF</value></data>
+  <data name="Wpf.SidebarTitle" xml:space="preserve"><value>EasySave</value></data>
+  <data name="Wpf.NavOverview" xml:space="preserve"><value>Vue d'ensemble</value></data>
+  <data name="Wpf.NavTasks" xml:space="preserve"><value>Taches</value></data>
+  <data name="Wpf.NavExecution" xml:space="preserve"><value>Execution</value></data>
+  <data name="Wpf.NavStateLogs" xml:space="preserve"><value>Etat et logs</value></data>
+  <data name="Wpf.NavSettings" xml:space="preserve"><value>Parametres</value></data>
+  <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Vue globale des sauvegardes et des taches configurees</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Gerer les taches (ajout, edition, suppression)</value></data>
+  <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Lancer les sauvegardes rapidement</value></data>
+  <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Consulter l'etat runtime et les journaux</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Parametrer la langue de l'application</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Taches configurees</value></data>
+  <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Liste des taches</value></data>
+  <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Taches disponibles pour execution</value></data>
+  <data name="Wpf.KpiTotalJobs" xml:space="preserve"><value>Taches totales</value></data>
+  <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Taches configurees</value></data>
+  <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Taches selectionnees</value></data>
+  <data name="Wpf.KpiStorage" xml:space="preserve"><value>Dossier de stockage</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Lancer</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>N°</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Nom</value></data>
@@ -175,6 +192,7 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.StateHeader" xml:space="preserve"><value>Etat (state.json)</value></data>
   <data name="Wpf.LogHeader" xml:space="preserve"><value>Log du jour</value></data>
   <data name="Wpf.LanguageLabel" xml:space="preserve"><value>Langue</value></data>
+  <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Parametres</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Actualiser</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Lancer selection</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Lancer tous</value></data>

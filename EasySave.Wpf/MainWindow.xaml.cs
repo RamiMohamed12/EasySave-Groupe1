@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Text.Json;
 using System.IO;
+using System.Windows.Media;
 
 namespace EasySave.Wpf;
 
@@ -15,6 +16,7 @@ public partial class MainWindow : Window
     private bool _isBusy;
     private bool _isApplyingLanguage;
     private List<BackupTypeOption> _backupTypeOptions = new();
+    private DashboardSection _activeSection = DashboardSection.Overview;
 
     public MainWindow()
     {
@@ -29,6 +31,7 @@ public partial class MainWindow : Window
         ConfigureLanguageSelector();
         ApplyTexts();
         LoadJobsIntoGrid();
+        SetActiveSection(DashboardSection.Overview);
         RefreshStateAndLog();
     }
 
@@ -63,7 +66,12 @@ public partial class MainWindow : Window
 
         JobsDataGrid.ItemsSource = null;
         JobsDataGrid.ItemsSource = _jobRows;
+        OverviewJobsDataGrid.ItemsSource = null;
+        OverviewJobsDataGrid.ItemsSource = _jobRows;
+        ExecutionJobsDataGrid.ItemsSource = null;
+        ExecutionJobsDataGrid.ItemsSource = _jobRows;
         _stateService.SynchronizeConfiguredJobs(jobs);
+        UpdateDashboardMetrics();
     }
 
     private async void RunSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -163,6 +171,8 @@ public partial class MainWindow : Window
         selectedRow.Target = TargetTextBox.Text.Trim();
         selectedRow.Type = _textService.GetBackupTypeDisplayName(selectedType);
         JobsDataGrid.Items.Refresh();
+        OverviewJobsDataGrid.Items.Refresh();
+        ExecutionJobsDataGrid.Items.Refresh();
 
         _jobRegistry.UpdateJob(selectedRow.JobNumber, new BackupJob
         {
@@ -174,6 +184,7 @@ public partial class MainWindow : Window
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
         StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
+        UpdateDashboardMetrics();
         RefreshStateAndLog();
     }
 
@@ -200,6 +211,7 @@ public partial class MainWindow : Window
         }
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+        UpdateDashboardMetrics();
     }
 
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -263,6 +275,7 @@ public partial class MainWindow : Window
             SourceTextBox.Text = string.Empty;
             TargetTextBox.Text = string.Empty;
             TypeComboBox.SelectedIndex = -1;
+            UpdateDashboardMetrics();
             return;
         }
 
@@ -271,6 +284,7 @@ public partial class MainWindow : Window
         SourceTextBox.Text = selectedRow.Source;
         TargetTextBox.Text = selectedRow.Target;
         TypeComboBox.SelectedValue = selectedJob.Type;
+        UpdateDashboardMetrics();
     }
 
     private void SetBusy(bool busy, string message)
@@ -304,7 +318,16 @@ public partial class MainWindow : Window
     {
         Title = Text("Wpf.WindowTitle");
         HeadingTextBlock.Text = Text("Wpf.Heading");
+        SidebarTitleTextBlock.Text = Text("Wpf.SidebarTitle");
+        OverviewNavButton.Content = Text("Wpf.NavOverview");
+        TasksNavButton.Content = Text("Wpf.NavTasks");
+        ExecutionNavButton.Content = Text("Wpf.NavExecution");
+        StateLogsNavButton.Content = Text("Wpf.NavStateLogs");
+        SettingsNavButton.Content = Text("Wpf.NavSettings");
+        PageSubtitleTextBlock.Text = Text("Wpf.SubtitleOverview");
         ConfiguredJobsGroupBox.Header = Text("Wpf.ConfiguredJobsHeader");
+        OverviewJobsGroupBox.Header = Text("Wpf.OverviewJobsHeader");
+        ExecutionJobsGroupBox.Header = Text("Wpf.ExecutionJobsHeader");
         RunColumn.Header = Text("Wpf.RunColumnHeader");
         NumberColumn.Header = Text("Wpf.NumberColumnHeader");
         NameColumn.Header = Text("Wpf.NameColumnHeader");
@@ -319,6 +342,7 @@ public partial class MainWindow : Window
         EditHintTextBlock.Text = Text("Wpf.EditHint");
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
+        SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
         AddJobButton.Content = Text("Wpf.AddJobButton");
         DeleteJobButton.Content = Text("Wpf.DeleteJobButton");
@@ -326,6 +350,10 @@ public partial class MainWindow : Window
         RunSelectedButton.Content = Text("Wpf.RunSelectedButton");
         RunAllButton.Content = Text("Wpf.RunAllButton");
         SaveAllButton.Content = Text("Wpf.SaveAllButton");
+        KpiTotalJobsLabelTextBlock.Text = Text("Wpf.KpiTotalJobs");
+        KpiConfiguredJobsLabelTextBlock.Text = Text("Wpf.KpiConfiguredJobs");
+        KpiSelectedJobsLabelTextBlock.Text = Text("Wpf.KpiSelectedJobs");
+        KpiStorageLabelTextBlock.Text = Text("Wpf.KpiStorage");
         ConfigureTypeSelector();
 
         if (string.IsNullOrWhiteSpace(StatusTextBlock.Text))
@@ -334,6 +362,8 @@ public partial class MainWindow : Window
         }
 
         UpdateSelectedJobLabel();
+        UpdateDashboardMetrics();
+        UpdateNavigationTexts();
     }
 
     private void ConfigureTypeSelector()
@@ -401,6 +431,7 @@ public partial class MainWindow : Window
         LoadJobsIntoGrid();
         JobsDataGrid.SelectedIndex = _jobRows.Count - 1;
         StatusTextBlock.Text = Format("Wpf.JobAddedStatus", jobNumber);
+        SetActiveSection(DashboardSection.Tasks);
         RefreshStateAndLog();
     }
 
@@ -419,11 +450,110 @@ public partial class MainWindow : Window
 
         _jobRegistry.DeleteJob(selectedRow.JobNumber);
         LoadJobsIntoGrid();
-        JobsDataGrid.SelectedIndex = Math.Min(selectedRow.JobNumber - 1, Math.Max(0, _jobRows.Count - 1));
+        if (_jobRows.Count > 0)
+        {
+            JobsDataGrid.SelectedIndex = Math.Min(selectedRow.JobNumber - 1, _jobRows.Count - 1);
+        }
         StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", selectedRow.JobNumber);
         RefreshStateAndLog();
     }
 
+    private void OverviewNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.Overview);
+    }
+
+    private void TasksNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.Tasks);
+    }
+
+    private void ExecutionNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.Execution);
+    }
+
+    private void StateLogsNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.StateLogs);
+    }
+
+    private void SettingsNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.Settings);
+    }
+
+    private void SetActiveSection(DashboardSection section)
+    {
+        _activeSection = section;
+        OverviewPanel.Visibility = section == DashboardSection.Overview ? Visibility.Visible : Visibility.Collapsed;
+        TasksPanel.Visibility = section == DashboardSection.Tasks ? Visibility.Visible : Visibility.Collapsed;
+        ExecutionPanel.Visibility = section == DashboardSection.Execution ? Visibility.Visible : Visibility.Collapsed;
+        StateLogsPanel.Visibility = section == DashboardSection.StateLogs ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPanel.Visibility = section == DashboardSection.Settings ? Visibility.Visible : Visibility.Collapsed;
+        UpdateNavigationTexts();
+    }
+
+    private void UpdateNavigationTexts()
+    {
+        PageSubtitleTextBlock.Text = _activeSection switch
+        {
+            DashboardSection.Overview => Text("Wpf.SubtitleOverview"),
+            DashboardSection.Tasks => Text("Wpf.SubtitleTasks"),
+            DashboardSection.Execution => Text("Wpf.SubtitleExecution"),
+            DashboardSection.StateLogs => Text("Wpf.SubtitleStateLogs"),
+            DashboardSection.Settings => Text("Wpf.SubtitleSettings"),
+            _ => Text("Wpf.SubtitleOverview")
+        };
+
+        ApplyNavigationButtonStyle(OverviewNavButton, _activeSection == DashboardSection.Overview);
+        ApplyNavigationButtonStyle(TasksNavButton, _activeSection == DashboardSection.Tasks);
+        ApplyNavigationButtonStyle(ExecutionNavButton, _activeSection == DashboardSection.Execution);
+        ApplyNavigationButtonStyle(StateLogsNavButton, _activeSection == DashboardSection.StateLogs);
+        ApplyNavigationButtonStyle(SettingsNavButton, _activeSection == DashboardSection.Settings);
+    }
+
+    private static void ApplyNavigationButtonStyle(Button button, bool isActive)
+    {
+        if (isActive)
+        {
+            button.Background = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            button.Foreground = Brushes.White;
+            button.BorderBrush = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            return;
+        }
+
+        button.Background = new SolidColorBrush(Color.FromRgb(55, 65, 81));
+        button.Foreground = Brushes.WhiteSmoke;
+        button.BorderBrush = new SolidColorBrush(Color.FromRgb(75, 85, 99));
+    }
+
+    private void UpdateDashboardMetrics()
+    {
+        int totalJobs = _jobRows.Count;
+        int configuredJobs = _jobRows.Count(IsConfigured);
+        int selectedJobs = _jobRows.Count(row => row.IsSelected);
+
+        KpiTotalJobsValueTextBlock.Text = totalJobs.ToString();
+        KpiConfiguredJobsValueTextBlock.Text = configuredJobs.ToString();
+        KpiSelectedJobsValueTextBlock.Text = selectedJobs.ToString();
+        KpiStorageValueTextBlock.Text = RuntimeStoragePaths.BackupStateDirectory;
+    }
+
+    private static bool IsConfigured(JobRow row)
+    {
+        return !string.IsNullOrWhiteSpace(row.Source) && !string.IsNullOrWhiteSpace(row.Target);
+    }
+
     private sealed record LanguageOption(string LanguageCode, string DisplayName);
     private sealed record BackupTypeOption(BackupType Value, string DisplayName);
+
+    private enum DashboardSection
+    {
+        Overview,
+        Tasks,
+        Execution,
+        StateLogs,
+        Settings
+    }
 }
