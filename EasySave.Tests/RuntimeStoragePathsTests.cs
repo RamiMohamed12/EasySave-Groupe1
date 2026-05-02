@@ -19,6 +19,7 @@ public class RuntimeStoragePathsTests
         Assert.Equal(Path.Combine(baseDirectory, "state.json"), RuntimeStoragePaths.StateFilePath);
         Assert.Equal(Path.Combine(baseDirectory, "backup-history.json"), RuntimeStoragePaths.BackupHistoryFilePath);
         Assert.Equal("json", RuntimeStoragePaths.GetLogFileFormat());
+        Assert.Equal(RuntimeStoragePaths.DarkThemeMode, RuntimeStoragePaths.GetThemeMode());
     }
 
     [Fact]
@@ -55,6 +56,28 @@ public class RuntimeStoragePathsTests
 
         Assert.Equal("xml", RuntimeStoragePaths.GetLogFileFormat());
         Assert.EndsWith(".xml", RuntimeStoragePaths.GetDailyLogFilePath(new DateTime(2026, 04, 29)));
+    }
+
+    [Fact]
+    public void SetThemeMode_PersistsThemeAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetThemeMode(RuntimeStoragePaths.DarkThemeMode);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(RuntimeStoragePaths.DarkThemeMode, RuntimeStoragePaths.GetThemeMode());
+    }
+
+    [Fact]
+    public void SetThemeMode_NormalizesInvalidThemeToSystem()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetThemeMode("invalid");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(RuntimeStoragePaths.SystemThemeMode, RuntimeStoragePaths.GetThemeMode());
     }
 
     [Fact]

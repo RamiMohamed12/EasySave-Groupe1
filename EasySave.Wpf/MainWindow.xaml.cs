@@ -16,12 +16,15 @@ public partial class MainWindow : Window
     private bool _isBusy;
     private bool _isApplyingLanguage;
     private bool _isApplyingLogFormat;
+    private bool _isApplyingTheme;
     private List<BackupTypeOption> _backupTypeOptions = new();
+    private List<ThemeOption> _themeOptions = new();
     private List<string> _blockedProcessNames = new();
     private DashboardSection _activeSection = DashboardSection.Overview;
 
     public MainWindow()
     {
+        App.ApplyConfiguredTheme();
         InitializeComponent();
         _jobRegistry = new BackupJobRegistry();
         _stateService = new StateService();
@@ -30,6 +33,7 @@ public partial class MainWindow : Window
         _backupController = CreateBackupController();
 
         _jobRows = new List<JobRow>();
+        ConfigureThemeSelector();
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
         ApplyTexts();
@@ -66,7 +70,8 @@ public partial class MainWindow : Window
                 Name = job.Name,
                 Type = _textService.GetBackupTypeDisplayName(job.Type),
                 Source = job.Source,
-                Target = job.Target
+                Target = job.Target,
+                ConfigurationStatus = GetConfigurationStatus(job.Source, job.Target)
             });
         }
 
@@ -176,6 +181,7 @@ public partial class MainWindow : Window
         selectedRow.Source = SourceTextBox.Text.Trim();
         selectedRow.Target = TargetTextBox.Text.Trim();
         selectedRow.Type = _textService.GetBackupTypeDisplayName(selectedType);
+        selectedRow.ConfigurationStatus = GetConfigurationStatus(selectedRow.Source, selectedRow.Target);
         JobsDataGrid.Items.Refresh();
         OverviewJobsDataGrid.Items.Refresh();
         ExecutionJobsDataGrid.Items.Refresh();
@@ -206,17 +212,23 @@ public partial class MainWindow : Window
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
         foreach (JobRow row in _jobRows.OrderBy(row => row.JobNumber))
         {
+            row.Source = row.Source?.Trim() ?? string.Empty;
+            row.Target = row.Target?.Trim() ?? string.Empty;
+            row.ConfigurationStatus = GetConfigurationStatus(row.Source, row.Target);
             BackupType currentType = jobs[row.JobNumber - 1].Type;
             _jobRegistry.UpdateJob(row.JobNumber, new BackupJob
             {
                 Name = row.Name,
-                Source = row.Source?.Trim() ?? string.Empty,
-                Target = row.Target?.Trim() ?? string.Empty,
+                Source = row.Source,
+                Target = row.Target,
                 Type = currentType
             });
         }
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+        JobsDataGrid.Items.Refresh();
+        OverviewJobsDataGrid.Items.Refresh();
+        ExecutionJobsDataGrid.Items.Refresh();
         UpdateDashboardMetrics();
     }
 
@@ -335,6 +347,22 @@ public partial class MainWindow : Window
         _isApplyingLogFormat = false;
     }
 
+    private void ConfigureThemeSelector()
+    {
+        _isApplyingTheme = true;
+        _themeOptions =
+        [
+            new ThemeOption(RuntimeStoragePaths.SystemThemeMode, Text("Wpf.ThemeSystem")),
+            new ThemeOption(RuntimeStoragePaths.LightThemeMode, Text("Wpf.ThemeLight")),
+            new ThemeOption(RuntimeStoragePaths.DarkThemeMode, Text("Wpf.ThemeDark"))
+        ];
+        ThemeComboBox.ItemsSource = _themeOptions;
+        ThemeComboBox.DisplayMemberPath = nameof(ThemeOption.DisplayName);
+        ThemeComboBox.SelectedValuePath = nameof(ThemeOption.Value);
+        ThemeComboBox.SelectedValue = RuntimeStoragePaths.GetThemeMode();
+        _isApplyingTheme = false;
+    }
+
     private void ApplyTexts()
     {
         Title = Text("Wpf.WindowTitle");
@@ -367,6 +395,8 @@ public partial class MainWindow : Window
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
         SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
+        AppearanceSectionTitle.Text = Text("Wpf.AppearanceSectionTitle");
+        ThemeLabel.Text = Text("Wpf.ThemeLabel");
         LanguageSectionTitle.Text = Text("Wpf.LanguageSectionTitle");
         LogFormatSectionTitle.Text = Text("Wpf.LogFormatSectionTitle");
         EncryptionSectionTitle.Text = Text("Wpf.EncryptionSectionTitle");
@@ -388,6 +418,7 @@ public partial class MainWindow : Window
         KpiSelectedJobsLabelTextBlock.Text = Text("Wpf.KpiSelectedJobs");
         KpiStorageLabelTextBlock.Text = Text("Wpf.KpiStorage");
         ConfigureTypeSelector();
+        ConfigureThemeSelector();
 
         if (string.IsNullOrWhiteSpace(StatusTextBlock.Text))
         {
@@ -441,6 +472,19 @@ public partial class MainWindow : Window
         ConfigureLogFormatSelector();
         StatusTextBlock.Text = Format("Wpf.LogFormatUpdatedStatus", _textService.GetLogFileFormatDisplayName(logFormat));
         RefreshStateAndLog();
+    }
+
+    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingTheme || ThemeComboBox.SelectedValue is not string themeMode)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetThemeMode(themeMode);
+        App.ApplyTheme(themeMode);
+        ConfigureThemeSelector();
+        StatusTextBlock.Text = Format("Wpf.ThemeUpdatedStatus", GetThemeDisplayName(themeMode));
     }
 
     private void AddProcessButton_Click(object sender, RoutedEventArgs e)
@@ -618,15 +662,15 @@ public partial class MainWindow : Window
     {
         if (isActive)
         {
-            button.Background = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            button.Background = new SolidColorBrush(Color.FromArgb(120, 103, 199, 218));
             button.Foreground = Brushes.White;
-            button.BorderBrush = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            button.BorderBrush = new SolidColorBrush(Color.FromArgb(120, 154, 198, 218));
             return;
         }
 
-        button.Background = new SolidColorBrush(Color.FromRgb(55, 65, 81));
-        button.Foreground = Brushes.WhiteSmoke;
-        button.BorderBrush = new SolidColorBrush(Color.FromRgb(75, 85, 99));
+        button.Background = Brushes.Transparent;
+        button.Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235));
+        button.BorderBrush = Brushes.Transparent;
     }
 
     private void UpdateDashboardMetrics()
@@ -643,7 +687,24 @@ public partial class MainWindow : Window
 
     private static bool IsConfigured(JobRow row)
     {
-        return !string.IsNullOrWhiteSpace(row.Source) && !string.IsNullOrWhiteSpace(row.Target);
+        return row.IsConfigured;
+    }
+
+    private string GetConfigurationStatus(string source, string target)
+    {
+        return !string.IsNullOrWhiteSpace(source) && !string.IsNullOrWhiteSpace(target)
+            ? Text("Wpf.ConfiguredStatus")
+            : Text("Wpf.IncompleteStatus");
+    }
+
+    private string GetThemeDisplayName(string themeMode)
+    {
+        return themeMode switch
+        {
+            RuntimeStoragePaths.LightThemeMode => Text("Wpf.ThemeLight"),
+            RuntimeStoragePaths.DarkThemeMode => Text("Wpf.ThemeDark"),
+            _ => Text("Wpf.ThemeSystem")
+        };
     }
 
     private void RefreshBlockedProcesses()
@@ -666,6 +727,7 @@ public partial class MainWindow : Window
     private sealed record LanguageOption(string LanguageCode, string DisplayName);
     private sealed record LogFormatOption(string Value, string DisplayName);
     private sealed record BackupTypeOption(BackupType Value, string DisplayName);
+    private sealed record ThemeOption(string Value, string DisplayName);
 
     private enum DashboardSection
     {

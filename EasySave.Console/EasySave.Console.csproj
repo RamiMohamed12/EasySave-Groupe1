@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
 
 
     <AssemblyName>EasySave</AssemblyName>
@@ -17,8 +17,8 @@
 
   <Target Name="CopyCryptoSoftOutput" AfterTargets="Build" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
     <ItemGroup>
-      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
-      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\CryptoSoft.*" />
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\win-x64\CryptoSoft.*" />
     </ItemGroup>
     <Copy SourceFiles="@(CryptoSoftRuntimeFiles)"
           DestinationFolder="$(OutDir)CryptoSoft\"
@@ -28,8 +28,8 @@
 
   <Target Name="CopyCryptoSoftPublishOutput" AfterTargets="Publish" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
     <ItemGroup>
-      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
-      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\CryptoSoft.*" />
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\win-x64\CryptoSoft.*" />
     </ItemGroup>
     <Copy SourceFiles="@(CryptoSoftPublishRuntimeFiles)"
           DestinationFolder="$(PublishDir)CryptoSoft\"

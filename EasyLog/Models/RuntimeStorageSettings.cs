@@ -7,6 +7,7 @@ public class RuntimeStorageSettings
     public string CryptoSoftKey { get; set; }
     public string CryptoSoftPath { get; set; }
     public List<string> BlockedProcessNames { get; set; }
+    public string ThemeMode { get; set; }
 
     public RuntimeStorageSettings()
     {
@@ -17,5 +18,6 @@ public class RuntimeStorageSettings
         CryptoSoftKey = string.Empty;
         CryptoSoftPath = string.Empty;
         BlockedProcessNames = new List<string>();
+        ThemeMode = string.Empty;
     }
 }

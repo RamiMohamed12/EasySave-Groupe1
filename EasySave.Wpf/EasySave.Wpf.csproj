@@ -8,17 +8,18 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
 
   <Target Name="CopyCryptoSoftOutput" AfterTargets="Build" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
     <ItemGroup>
-      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
-      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\CryptoSoft.*" />
+      <CryptoSoftRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\win-x64\CryptoSoft.*" />
     </ItemGroup>
     <Copy SourceFiles="@(CryptoSoftRuntimeFiles)"
           DestinationFolder="$(OutDir)CryptoSoft\"
@@ -28,8 +29,8 @@
 
   <Target Name="CopyCryptoSoftPublishOutput" AfterTargets="Publish" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
     <ItemGroup>
-      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\CryptoSoft.*" />
-      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net8.0\win-x64\CryptoSoft.*" />
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\CryptoSoft.*" />
+      <CryptoSoftPublishRuntimeFiles Include="..\CryptoSoft\bin\$(Configuration)\net10.0\win-x64\CryptoSoft.*" />
     </ItemGroup>
     <Copy SourceFiles="@(CryptoSoftPublishRuntimeFiles)"
           DestinationFolder="$(PublishDir)CryptoSoft\"
