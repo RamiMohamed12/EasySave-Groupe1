@@ -31,7 +31,7 @@ public partial class App : Application
             dictionaries.Remove(existingTheme);
         }
 
-        dictionaries.Insert(0, themeDictionary);
+        dictionaries.Add(themeDictionary);
     }
 
     private static string ResolveThemeSource(string themeMode)
@@ -56,7 +56,7 @@ public partial class App : Application
             RuntimeStoragePaths.LightThemeMode => ThemeMode.Light,
             RuntimeStoragePaths.DarkThemeMode => ThemeMode.Dark,
             RuntimeStoragePaths.SystemThemeMode => ThemeMode.System,
-            _ => ThemeMode.Dark
+            _ => ThemeMode.System
         };
     }
 

@@ -367,12 +367,12 @@ public partial class MainWindow : Window
     {
         Title = Text("Wpf.WindowTitle");
         HeadingTextBlock.Text = Text("Wpf.Heading");
-        SidebarTitleTextBlock.Text = Text("Wpf.SidebarTitle");
-        OverviewNavButton.Content = Text("Wpf.NavOverview");
-        TasksNavButton.Content = Text("Wpf.NavTasks");
-        ExecutionNavButton.Content = Text("Wpf.NavExecution");
-        StateLogsNavButton.Content = Text("Wpf.NavStateLogs");
-        SettingsNavButton.Content = Text("Wpf.NavSettings");
+        HeroDescriptionTextBlock.Text = Text("Wpf.HeroDescription");
+        SetButtonContent(OverviewNavButton, "\uE80F", Text("Wpf.NavOverview"));
+        SetButtonContent(TasksNavButton, "\uE8FD", Text("Wpf.NavTasks"));
+        SetButtonContent(ExecutionNavButton, "\uE768", Text("Wpf.NavExecution"));
+        SetButtonContent(StateLogsNavButton, "\uE9D2", Text("Wpf.NavStateLogs"));
+        SetButtonContent(SettingsNavButton, "\uE713", Text("Wpf.NavSettings"));
         PageSubtitleTextBlock.Text = Text("Wpf.SubtitleOverview");
         ConfiguredJobsGroupBox.Header = Text("Wpf.ConfiguredJobsHeader");
         OverviewJobsGroupBox.Header = Text("Wpf.OverviewJobsHeader");
@@ -389,8 +389,6 @@ public partial class MainWindow : Window
         TypeLabel.Text = Text("Wpf.TypeColumnHeader");
         EncryptedExtensionsLabel.Text = Text("Wpf.EncryptedExtensionsLabel");
         CryptoSoftKeyLabel.Text = Text("Wpf.CryptoSoftKeyLabel");
-        SaveEncryptionSettingsButton.Content = Text("Wpf.SaveEncryptionSettingsButton");
-        SaveSelectedJobButton.Content = Text("Wpf.SaveSelectedJobButton");
         EditHintTextBlock.Text = Text("Wpf.EditHint");
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
@@ -405,14 +403,16 @@ public partial class MainWindow : Window
         LogFormatLabel.Text = Text("Wpf.LogFormatLabel");
         BlockedProcessesLabel.Text = Text("Wpf.BlockedProcessesLabel");
         ProcessNameLabel.Text = Text("Wpf.ProcessNameLabel");
-        AddProcessButton.Content = Text("Wpf.AddBlockedProcessButton");
-        RemoveProcessButton.Content = Text("Wpf.RemoveBlockedProcessButton");
-        AddJobButton.Content = Text("Wpf.AddJobButton");
-        DeleteJobButton.Content = Text("Wpf.DeleteJobButton");
-        RefreshButton.Content = Text("Wpf.RefreshButton");
-        RunSelectedButton.Content = Text("Wpf.RunSelectedButton");
-        RunAllButton.Content = Text("Wpf.RunAllButton");
-        SaveAllButton.Content = Text("Wpf.SaveAllButton");
+        SetButtonContent(AddProcessButton, "\uE710", Text("Wpf.AddBlockedProcessButton"));
+        SetButtonContent(RemoveProcessButton, "\uE74D", Text("Wpf.RemoveBlockedProcessButton"));
+        SetButtonContent(AddJobButton, "\uE710", Text("Wpf.AddJobButton"));
+        SetButtonContent(DeleteJobButton, "\uE74D", Text("Wpf.DeleteJobButton"));
+        SetButtonContent(RefreshButton, "\uE72C", Text("Wpf.RefreshButton"));
+        SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
+        SetButtonContent(RunAllButton, "\uE102", Text("Wpf.RunAllButton"));
+        SetButtonContent(SaveAllButton, "\uE74E", Text("Wpf.SaveAllButton"));
+        SetButtonContent(SaveSelectedJobButton, "\uE74E", Text("Wpf.SaveSelectedJobButton"));
+        SetButtonContent(SaveEncryptionSettingsButton, "\uE74E", Text("Wpf.SaveEncryptionSettingsButton"));
         KpiTotalJobsLabelTextBlock.Text = Text("Wpf.KpiTotalJobs");
         KpiConfiguredJobsLabelTextBlock.Text = Text("Wpf.KpiConfiguredJobs");
         KpiSelectedJobsLabelTextBlock.Text = Text("Wpf.KpiSelectedJobs");
@@ -658,19 +658,50 @@ public partial class MainWindow : Window
         ApplyNavigationButtonStyle(SettingsNavButton, _activeSection == DashboardSection.Settings);
     }
 
-    private static void ApplyNavigationButtonStyle(Button button, bool isActive)
+    private static void SetButtonContent(Button button, string iconGlyph, string label)
+    {
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var icon = new TextBlock
+        {
+            Text = iconGlyph,
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 15,
+            Margin = new Thickness(0, 0, 9, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var text = new TextBlock
+        {
+            Text = label,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+
+        panel.Children.Add(icon);
+        panel.Children.Add(text);
+        button.Content = panel;
+    }
+
+    private void ApplyNavigationButtonStyle(Button button, bool isActive)
     {
         if (isActive)
         {
-            button.Background = new SolidColorBrush(Color.FromArgb(120, 103, 199, 218));
-            button.Foreground = Brushes.White;
-            button.BorderBrush = new SolidColorBrush(Color.FromArgb(120, 154, 198, 218));
+            button.SetResourceReference(Control.BackgroundProperty, "AccentSoftBrush");
+            button.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
+            button.SetResourceReference(Control.BorderBrushProperty, "AccentBrush");
+            button.BorderThickness = new Thickness(4, 0, 0, 0);
             return;
         }
 
         button.Background = Brushes.Transparent;
-        button.Foreground = new SolidColorBrush(Color.FromRgb(229, 231, 235));
+        button.SetResourceReference(Control.ForegroundProperty, "SidebarTextBrush");
         button.BorderBrush = Brushes.Transparent;
+        button.BorderThickness = new Thickness(4, 0, 0, 0);
     }
 
     private void UpdateDashboardMetrics()
@@ -682,7 +713,8 @@ public partial class MainWindow : Window
         KpiTotalJobsValueTextBlock.Text = totalJobs.ToString();
         KpiConfiguredJobsValueTextBlock.Text = configuredJobs.ToString();
         KpiSelectedJobsValueTextBlock.Text = selectedJobs.ToString();
-        KpiStorageValueTextBlock.Text = RuntimeStoragePaths.BackupStateDirectory;
+        KpiStorageValueTextBlock.Text = Text("Wpf.LocalStorageSummary");
+        HeroStatusTextBlock.Text = Format("Wpf.HeroReadySummary", configuredJobs, totalJobs);
     }
 
     private static bool IsConfigured(JobRow row)

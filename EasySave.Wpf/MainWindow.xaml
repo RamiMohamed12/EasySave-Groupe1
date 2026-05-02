@@ -11,142 +11,33 @@
         MinWidth="1080"
         Background="{DynamicResource CanvasBrush}">
     <Grid>
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#101219" Offset="0" />
-                <GradientStop Color="#20222A" Offset="0.52" />
-                <GradientStop Color="#121318" Offset="1" />
-            </LinearGradientBrush>
-        </Grid.Background>
-
-        <Ellipse Width="980"
-                 Height="520"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Top"
-                 Margin="240,-250,0,0"
-                 Fill="#553B1EA4">
-            <Ellipse.Effect>
-                <BlurEffect Radius="95" />
-            </Ellipse.Effect>
-        </Ellipse>
-        <Ellipse Width="680"
-                 Height="420"
-                 HorizontalAlignment="Left"
-                 VerticalAlignment="Bottom"
-                 Margin="-190,0,0,-220"
-                 Fill="#332F2B5D">
-            <Ellipse.Effect>
-                <BlurEffect Radius="80" />
-            </Ellipse.Effect>
-        </Ellipse>
-        <Ellipse Width="520"
-                 Height="420"
-                 HorizontalAlignment="Right"
-                 VerticalAlignment="Bottom"
-                 Margin="0,0,-180,-180"
-                 Fill="#2E8B5CF6">
-            <Ellipse.Effect>
-                <BlurEffect Radius="88" />
-            </Ellipse.Effect>
-        </Ellipse>
-
-        <Grid Margin="32">
+        <Grid Margin="18">
             <Grid.RowDefinitions>
-                <RowDefinition Height="52" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="24"
-                            Height="24"
-                            CornerRadius="6"
-                            Background="{DynamicResource AccentSoftBrush}"
-                            BorderBrush="{DynamicResource BorderBrushToken}"
-                            BorderThickness="1"
-                            Margin="0,0,10,0">
-                        <TextBlock Text="ES"
-                                   FontSize="10"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource AccentHoverBrush}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    </Border>
-                    <TextBlock Name="SidebarTitleTextBlock"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="White"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-
-                <Border Grid.Column="1"
-                        Width="320"
-                        Height="34"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        CornerRadius="2"
-                        Background="{DynamicResource ControlBrush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1"
-                        Padding="10,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Search"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,8,0"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" />
-                        <TextBlock Text="Search backups..."
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <TextBlock Text="Theme"
-                               FontSize="12"
-                               Foreground="{DynamicResource AccentBrush}"
-                               Margin="0,0,10,0"
-                               VerticalAlignment="Center" />
-                    <TextBlock Text="EasySave"
-                               Foreground="White"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
-
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="276" />
+                    <ColumnDefinition Width="244" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0"
                 CornerRadius="0"
-                Padding="24"
-                Margin="0,10,22,0"
-                Background="{DynamicResource SidebarBrush}">
+                Padding="10"
+                Margin="0,10,0,0"
+                Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource BorderBrushToken}"
+                BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="0" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <TextBlock Text="BACKUP MENU"
-                               Margin="0,0,0,24"
-                               FontSize="12"
-                               Foreground="#C6D1DD" />
-                </StackPanel>
+                <Grid />
 
                 <StackPanel Grid.Row="1">
                     <Button Name="OverviewNavButton"
@@ -171,7 +62,7 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Margin="0,10,0,0">
+        <Grid Grid.Column="1" Margin="-1,10,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -207,104 +98,180 @@
                 <Grid Name="OverviewPanel" Visibility="Visible">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Height="210"
+                    <Border Height="282"
                             Margin="0,0,0,16"
-                            CornerRadius="2"
-                            BorderBrush="#55FFFFFF"
+                            CornerRadius="8"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
                             BorderThickness="1"
                             ClipToBounds="True">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#D8CAFF" Offset="0" />
-                                <GradientStop Color="#C7B9FF" Offset="0.48" />
-                                <GradientStop Color="#8061C8" Offset="1" />
+                                <GradientStop Color="{DynamicResource HeroGradientStartColor}" Offset="0" />
+                                <GradientStop Color="{DynamicResource HeroGradientMidColor}" Offset="0.55" />
+                                <GradientStop Color="{DynamicResource HeroGradientEndColor}" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid>
-                            <Ellipse Width="520"
-                                     Height="260"
-                                     HorizontalAlignment="Right"
-                                     VerticalAlignment="Top"
-                                     Margin="0,10,-80,0"
-                                     Fill="#7E4A129F">
-                                <Ellipse.Effect>
-                                    <BlurEffect Radius="16" />
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse Width="520"
-                                     Height="240"
-                                     HorizontalAlignment="Right"
-                                     VerticalAlignment="Bottom"
-                                     Margin="0,0,80,-90"
-                                     Stroke="#D8B4FE"
-                                     StrokeThickness="5"
-                                     Fill="#332C0A5D">
-                                <Ellipse.Effect>
-                                    <BlurEffect Radius="3" />
-                                </Ellipse.Effect>
-                            </Ellipse>
                             <Path Stretch="Fill"
-                                  Opacity="0.55"
-                                  Fill="#3A21184A"
-                                  Data="M 0,150 C 180,120 280,70 430,95 C 580,120 700,190 920,110 L 920,260 L 0,260 Z" />
-                            <StackPanel Margin="42,34,0,0"
-                                        Width="440"
+                                  Opacity="0.88"
+                                  Fill="{DynamicResource HeroShapePrimaryBrush}"
+                                  Data="M 660,0 C 780,18 900,70 1008,150 C 1112,226 1190,260 1240,242 L 1240,0 Z" />
+                            <Path Stretch="Fill"
+                                  Opacity="0.62"
+                                  Stroke="{DynamicResource HeroShapeHighlightBrush}"
+                                  StrokeThickness="3"
+                                  Fill="{DynamicResource HeroShapeSecondaryBrush}"
+                                  Data="M 720,282 C 774,172 858,126 980,148 C 1095,170 1180,228 1240,210 L 1240,282 Z" />
+                            <Path Stretch="Fill"
+                                  Opacity="0.48"
+                                  Fill="{DynamicResource HeroWaveBrush}"
+                                  Data="M 0,238 C 210,218 350,235 514,248 C 708,262 840,225 1016,205 C 1120,193 1190,202 1240,220 L 1240,282 L 0,282 Z" />
+                            <StackPanel Margin="38,42,0,0"
+                                        Width="420"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Top">
                                 <TextBlock Text=".NET 10"
-                                           FontSize="18"
+                                           FontSize="15"
                                            FontWeight="SemiBold"
-                                           Foreground="#1A1523" />
+                                           Foreground="{DynamicResource HeroTextBrush}" />
                                 <TextBlock Text="EasySave"
-                                           Margin="0,10,0,0"
-                                           FontSize="44"
-                                           FontWeight="Bold"
-                                           Foreground="#0D0B12" />
-                                <TextBlock Text="A modern Fluent backup workspace for running jobs, tracking state, and reviewing logs."
-                                           Margin="0,18,0,0"
-                                           FontSize="17"
+                                           Margin="0,8,0,0"
+                                           FontSize="38"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource HeroTextBrush}" />
+                                <TextBlock Name="HeroDescriptionTextBlock"
+                                           Margin="0,14,0,0"
+                                           FontSize="15"
                                            FontWeight="SemiBold"
                                            TextWrapping="Wrap"
-                                           Foreground="#1E1A27" />
+                                           Foreground="{DynamicResource HeroTextBrush}" />
+                                <Border Margin="0,22,0,0"
+                                        Padding="12,7"
+                                        CornerRadius="8"
+                                        HorizontalAlignment="Left"
+                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                        BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE9D2;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Margin="0,0,8,0" />
+                                        <TextBlock Name="HeroStatusTextBlock"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
+                            <UniformGrid Rows="2"
+                                         Columns="2"
+                                         Width="500"
+                                         Height="214"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center"
+                                         Margin="0,12,38,0">
+                                <Border Margin="0,0,10,10"
+                                        CornerRadius="8"
+                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="16">
+                                    <StackPanel>
+                                        <TextBlock Text="&#xE8FD;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="20"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBlock Name="KpiTotalJobsValueTextBlock"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="24"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
+                                        <TextBlock Name="KpiTotalJobsLabelTextBlock"
+                                                   Margin="0,2,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource HeroMetricMutedBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,0,10"
+                                        CornerRadius="8"
+                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="16">
+                                    <StackPanel>
+                                        <TextBlock Text="&#xE73E;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="20"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBlock Name="KpiConfiguredJobsValueTextBlock"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="24"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
+                                        <TextBlock Name="KpiConfiguredJobsLabelTextBlock"
+                                                   Margin="0,2,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource HeroMetricMutedBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,10,0"
+                                        CornerRadius="8"
+                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="16">
+                                    <StackPanel>
+                                        <TextBlock Text="&#xE7C3;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="20"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBlock Name="KpiSelectedJobsValueTextBlock"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="24"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
+                                        <TextBlock Name="KpiSelectedJobsLabelTextBlock"
+                                                   Margin="0,2,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource HeroMetricMutedBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border CornerRadius="8"
+                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="16">
+                                    <StackPanel>
+                                        <TextBlock Text="&#xE8B7;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="20"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBlock Name="KpiStorageLabelTextBlock"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource HeroMetricMutedBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Name="KpiStorageValueTextBlock"
+                                                   Margin="0,2,0,0"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HeroMetricTextBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
                         </Grid>
                     </Border>
 
-                    <UniformGrid Grid.Row="1" Rows="1" Columns="4" Margin="0,0,0,12">
-                        <Border Margin="0,0,8,0" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Name="KpiTotalJobsLabelTextBlock" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Name="KpiTotalJobsValueTextBlock" FontSize="28" FontWeight="Bold" />
-                            </StackPanel>
-                        </Border>
-                        <Border Margin="0,0,8,0" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Name="KpiConfiguredJobsLabelTextBlock" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Name="KpiConfiguredJobsValueTextBlock" FontSize="28" FontWeight="Bold" />
-                            </StackPanel>
-                        </Border>
-                        <Border Margin="0,0,8,0" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Name="KpiSelectedJobsLabelTextBlock" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Name="KpiSelectedJobsValueTextBlock" FontSize="28" FontWeight="Bold" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Name="KpiStorageLabelTextBlock" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Name="KpiStorageValueTextBlock"
-                                           FontSize="12"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-
-                    <GroupBox Grid.Row="2" Name="OverviewJobsGroupBox">
+                    <GroupBox Grid.Row="1" Name="OverviewJobsGroupBox">
                         <DataGrid Name="OverviewJobsDataGrid"
                                   Margin="4"
                                   IsReadOnly="True"
@@ -332,17 +299,17 @@
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
                         <StackPanel Orientation="Horizontal">
                             <Button Name="AddJobButton"
-                                    Width="130"
+                                    Width="160"
                                     Margin="0,0,8,0"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="AddJobButton_Click" />
                             <Button Name="DeleteJobButton"
-                                    Width="150"
+                                    Width="170"
                                     Margin="0,0,8,0"
                                     Style="{StaticResource DangerButtonStyle}"
                                     Click="DeleteJobButton_Click" />
                             <Button Name="SaveAllButton"
-                                    Width="150"
+                                    Width="170"
                                     Click="SaveAllButton_Click" />
                         </StackPanel>
                     </Border>
@@ -420,12 +387,12 @@
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
                         <StackPanel Orientation="Horizontal">
                             <Button Name="RunSelectedButton"
-                                    Width="180"
+                                    Width="210"
                                     Margin="0,0,8,0"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="RunSelectedButton_Click" />
                             <Button Name="RunAllButton"
-                                    Width="150"
+                                    Width="170"
                                     Click="RunAllButton_Click" />
                         </StackPanel>
                     </Border>
@@ -456,7 +423,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Button Name="RefreshButton"
-                            Width="130"
+                            Width="150"
                             Margin="0,0,0,12"
                             HorizontalAlignment="Left"
                             Click="RefreshButton_Click" />
@@ -543,7 +510,7 @@
                                     <TextBlock Name="CryptoSoftKeyLabel" Margin="0,10,0,4" />
                                     <TextBox Name="CryptoSoftKeyTextBox" Width="420" HorizontalAlignment="Left" />
                                     <Button Name="SaveEncryptionSettingsButton"
-                                            Width="210"
+                                            Width="270"
                                             Margin="0,12,0,0"
                                             HorizontalAlignment="Left"
                                             Style="{StaticResource PrimaryButtonStyle}"
@@ -569,12 +536,12 @@
                                              HorizontalAlignment="Left" />
                                     <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                         <Button Name="AddProcessButton"
-                                                Width="150"
+                                                Width="220"
                                                 Margin="0,0,8,0"
                                                 Style="{StaticResource PrimaryButtonStyle}"
                                                 Click="AddProcessButton_Click" />
                                         <Button Name="RemoveProcessButton"
-                                                Width="190"
+                                                Width="240"
                                                 Style="{StaticResource DangerButtonStyle}"
                                                 Click="RemoveProcessButton_Click" />
                                     </StackPanel>

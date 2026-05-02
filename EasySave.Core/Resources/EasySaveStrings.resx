@@ -202,6 +202,9 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Configured jobs</value></data>
   <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Selected jobs</value></data>
   <data name="Wpf.KpiStorage" xml:space="preserve"><value>Storage directory</value></data>
+  <data name="Wpf.HeroDescription" xml:space="preserve"><value>A modern Fluent workspace to manage backups, track state, and review logs.</value></data>
+  <data name="Wpf.HeroReadySummary" xml:space="preserve"><value>{0}/{1} jobs ready</value></data>
+  <data name="Wpf.LocalStorageSummary" xml:space="preserve"><value>Local app data</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Run</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>No.</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Name</value></data>

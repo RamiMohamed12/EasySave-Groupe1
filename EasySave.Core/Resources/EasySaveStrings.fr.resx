@@ -202,6 +202,9 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Taches configurees</value></data>
   <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Taches selectionnees</value></data>
   <data name="Wpf.KpiStorage" xml:space="preserve"><value>Dossier de stockage</value></data>
+  <data name="Wpf.HeroDescription" xml:space="preserve"><value>Espace Fluent moderne pour gerer les sauvegardes, suivre l'etat et consulter les logs.</value></data>
+  <data name="Wpf.HeroReadySummary" xml:space="preserve"><value>{0}/{1} taches pretes</value></data>
+  <data name="Wpf.LocalStorageSummary" xml:space="preserve"><value>Donnees locales</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Lancer</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>N°</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Nom</value></data>
