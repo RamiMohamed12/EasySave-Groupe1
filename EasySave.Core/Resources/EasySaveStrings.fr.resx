@@ -191,10 +191,10 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.NavStateLogs" xml:space="preserve"><value>Etat et logs</value></data>
   <data name="Wpf.NavSettings" xml:space="preserve"><value>Parametres</value></data>
   <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Vue globale des sauvegardes et des taches configurees</value></data>
-  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Gerer les taches (ajout, edition, suppression)</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Creer, mettre a jour, modifier et supprimer les taches de sauvegarde</value></data>
   <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Lancer les sauvegardes rapidement</value></data>
   <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Consulter l'etat runtime et les journaux</value></data>
-  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Parametrer la langue de l'application</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Parametrer l'apparence, la langue, les logs, le cryptage et les processus bloquants</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Taches configurees</value></data>
   <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Liste des taches</value></data>
   <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Taches disponibles pour execution</value></data>
@@ -202,6 +202,9 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Taches configurees</value></data>
   <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Taches selectionnees</value></data>
   <data name="Wpf.KpiStorage" xml:space="preserve"><value>Dossier de stockage</value></data>
+  <data name="Wpf.HeroDescription" xml:space="preserve"><value>Espace Fluent moderne pour gerer les sauvegardes, suivre l'etat et consulter les logs.</value></data>
+  <data name="Wpf.HeroReadySummary" xml:space="preserve"><value>{0}/{1} taches pretes</value></data>
+  <data name="Wpf.LocalStorageSummary" xml:space="preserve"><value>Donnees locales</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Lancer</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>N°</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Nom</value></data>
@@ -228,6 +231,14 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.AddBlockedProcessButton" xml:space="preserve"><value>Ajouter processus</value></data>
   <data name="Wpf.RemoveBlockedProcessButton" xml:space="preserve"><value>Retirer processus selectionne</value></data>
   <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Parametres</value></data>
+  <data name="Wpf.AppearanceSectionTitle" xml:space="preserve"><value>Apparence</value></data>
+  <data name="Wpf.ThemeLabel" xml:space="preserve"><value>Theme</value></data>
+  <data name="Wpf.ThemeLight" xml:space="preserve"><value>Clair</value></data>
+  <data name="Wpf.ThemeDark" xml:space="preserve"><value>Sombre</value></data>
+  <data name="Wpf.ThemeSystem" xml:space="preserve"><value>Systeme</value></data>
+  <data name="Wpf.ThemeUpdatedStatus" xml:space="preserve"><value>Theme mis a jour : {0}</value></data>
+  <data name="Wpf.ConfiguredStatus" xml:space="preserve"><value>Configuree</value></data>
+  <data name="Wpf.IncompleteStatus" xml:space="preserve"><value>Incomplete</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Actualiser</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Lancer selection</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Lancer tous</value></data>

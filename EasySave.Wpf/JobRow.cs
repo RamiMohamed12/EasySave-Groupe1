@@ -8,4 +8,6 @@ public sealed class JobRow
     public string Type { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public string Target { get; set; } = string.Empty;
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(Source) && !string.IsNullOrWhiteSpace(Target);
+    public string ConfigurationStatus { get; set; } = string.Empty;
 }

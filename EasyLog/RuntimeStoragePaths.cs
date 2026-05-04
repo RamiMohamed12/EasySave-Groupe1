@@ -4,6 +4,9 @@ public static class RuntimeStoragePaths
 {
     public const string JsonLogFileFormat = "json";
     public const string XmlLogFileFormat = "xml";
+    public const string LightThemeMode = "Light";
+    public const string DarkThemeMode = "Dark";
+    public const string SystemThemeMode = "System";
     private const string SharedApplicationDirectoryName = "EasySave";
     private const string SharedStorageDirectoryName = "runtime";
 
@@ -48,6 +51,11 @@ public static class RuntimeStoragePaths
         return NormalizeLogFileFormat(GetSettings().LogFileFormat);
     }
 
+    public static string GetThemeMode()
+    {
+        return NormalizeThemeMode(GetSettings().ThemeMode);
+    }
+
     public static IReadOnlyList<string> GetEncryptedExtensions()
     {
         return NormalizeEncryptedExtensions(GetSettings().EncryptedExtensions);
@@ -79,6 +87,12 @@ public static class RuntimeStoragePaths
     {
         string normalizedLogFileFormat = NormalizeLogFileFormat(logFileFormat);
         UpdateSettings(settings => settings.LogFileFormat = normalizedLogFileFormat);
+    }
+
+    public static void SetThemeMode(string themeMode)
+    {
+        string normalizedThemeMode = NormalizeThemeMode(themeMode);
+        UpdateSettings(settings => settings.ThemeMode = normalizedThemeMode);
     }
 
     public static void SetEncryptedExtensions(IEnumerable<string> extensions)
@@ -168,6 +182,7 @@ public static class RuntimeStoragePaths
         settings.CryptoSoftKey ??= string.Empty;
         settings.CryptoSoftPath ??= string.Empty;
         settings.BlockedProcessNames ??= new List<string>();
+        settings.ThemeMode ??= string.Empty;
         return settings;
     }
 
@@ -234,6 +249,27 @@ public static class RuntimeStoragePaths
         return normalizedLogFileFormat == XmlLogFileFormat
             ? XmlLogFileFormat
             : JsonLogFileFormat;
+    }
+
+    private static string NormalizeThemeMode(string? themeMode)
+    {
+        if (string.IsNullOrWhiteSpace(themeMode))
+        {
+            return DarkThemeMode;
+        }
+
+        string normalizedThemeMode = themeMode.Trim();
+        if (normalizedThemeMode.Equals(DarkThemeMode, StringComparison.OrdinalIgnoreCase))
+        {
+            return DarkThemeMode;
+        }
+
+        if (normalizedThemeMode.Equals(LightThemeMode, StringComparison.OrdinalIgnoreCase))
+        {
+            return LightThemeMode;
+        }
+
+        return SystemThemeMode;
     }
 
     private static IReadOnlyList<string> NormalizeEncryptedExtensions(IEnumerable<string>? extensions)

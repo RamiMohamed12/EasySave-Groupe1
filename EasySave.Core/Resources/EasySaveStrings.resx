@@ -186,15 +186,15 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.Heading" xml:space="preserve"><value>EasySave - WPF version</value></data>
   <data name="Wpf.SidebarTitle" xml:space="preserve"><value>EasySave</value></data>
   <data name="Wpf.NavOverview" xml:space="preserve"><value>Overview</value></data>
-  <data name="Wpf.NavTasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Wpf.NavTasks" xml:space="preserve"><value>Jobs</value></data>
   <data name="Wpf.NavExecution" xml:space="preserve"><value>Execution</value></data>
   <data name="Wpf.NavStateLogs" xml:space="preserve"><value>State and logs</value></data>
   <data name="Wpf.NavSettings" xml:space="preserve"><value>Settings</value></data>
   <data name="Wpf.SubtitleOverview" xml:space="preserve"><value>Global overview of backups and configured jobs</value></data>
-  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Manage jobs (create, edit, delete)</value></data>
+  <data name="Wpf.SubtitleTasks" xml:space="preserve"><value>Create, update, edit, and remove backup jobs</value></data>
   <data name="Wpf.SubtitleExecution" xml:space="preserve"><value>Run backups quickly from one place</value></data>
   <data name="Wpf.SubtitleStateLogs" xml:space="preserve"><value>Inspect runtime state and daily logs</value></data>
-  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Configure application language</value></data>
+  <data name="Wpf.SubtitleSettings" xml:space="preserve"><value>Configure appearance, language, logs, encryption, and process blocking</value></data>
   <data name="Wpf.ConfiguredJobsHeader" xml:space="preserve"><value>Configured jobs</value></data>
   <data name="Wpf.OverviewJobsHeader" xml:space="preserve"><value>Job list</value></data>
   <data name="Wpf.ExecutionJobsHeader" xml:space="preserve"><value>Jobs available for execution</value></data>
@@ -202,6 +202,9 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.KpiConfiguredJobs" xml:space="preserve"><value>Configured jobs</value></data>
   <data name="Wpf.KpiSelectedJobs" xml:space="preserve"><value>Selected jobs</value></data>
   <data name="Wpf.KpiStorage" xml:space="preserve"><value>Storage directory</value></data>
+  <data name="Wpf.HeroDescription" xml:space="preserve"><value>A modern Fluent workspace to manage backups, track state, and review logs.</value></data>
+  <data name="Wpf.HeroReadySummary" xml:space="preserve"><value>{0}/{1} jobs ready</value></data>
+  <data name="Wpf.LocalStorageSummary" xml:space="preserve"><value>Local app data</value></data>
   <data name="Wpf.RunColumnHeader" xml:space="preserve"><value>Run</value></data>
   <data name="Wpf.NumberColumnHeader" xml:space="preserve"><value>No.</value></data>
   <data name="Wpf.NameColumnHeader" xml:space="preserve"><value>Name</value></data>
@@ -228,6 +231,14 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.AddBlockedProcessButton" xml:space="preserve"><value>Add process</value></data>
   <data name="Wpf.RemoveBlockedProcessButton" xml:space="preserve"><value>Remove selected process</value></data>
   <data name="Wpf.SettingsHeader" xml:space="preserve"><value>Settings</value></data>
+  <data name="Wpf.AppearanceSectionTitle" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Wpf.ThemeLabel" xml:space="preserve"><value>Theme</value></data>
+  <data name="Wpf.ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="Wpf.ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Wpf.ThemeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="Wpf.ThemeUpdatedStatus" xml:space="preserve"><value>Theme updated: {0}</value></data>
+  <data name="Wpf.ConfiguredStatus" xml:space="preserve"><value>Configured</value></data>
+  <data name="Wpf.IncompleteStatus" xml:space="preserve"><value>Incomplete</value></data>
   <data name="Wpf.RefreshButton" xml:space="preserve"><value>Refresh</value></data>
   <data name="Wpf.RunSelectedButton" xml:space="preserve"><value>Run selected</value></data>
   <data name="Wpf.RunAllButton" xml:space="preserve"><value>Run all</value></data>
