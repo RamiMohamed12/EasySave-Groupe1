@@ -400,18 +400,18 @@
                     <GroupBox Grid.Row="1" Name="ExecutionJobsGroupBox">
                         <DataGrid Name="ExecutionJobsDataGrid"
                                   Margin="4"
-                                  IsReadOnly="True"
+                                  IsReadOnly="False"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False">
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Run" Binding="{Binding IsSelected}" Width="55" />
-                                <DataGridTextColumn Header="No." Binding="{Binding JobNumber}" Width="60" />
-                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                                <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" Width="120" />
-                                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="140" />
-                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" />
-                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" />
+                                <DataGridCheckBoxColumn Header="Run" Binding="{Binding IsSelected}" Width="55" IsReadOnly="False" />
+                                <DataGridTextColumn Header="No." Binding="{Binding JobNumber}" Width="60" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" Width="120" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="140" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" IsReadOnly="True" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </GroupBox>
