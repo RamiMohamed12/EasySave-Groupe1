@@ -2,9 +2,14 @@ using System.Diagnostics;
 
 public class CryptoSoftService : ICryptoService
 {
+    public const long ProcessTimeoutErrorCode = -93;
+    public const long InvalidKeyErrorCode = -94;
+    public const long InvalidArgumentsErrorCode = -95;
+    public const long BusyTimeoutErrorCode = -96;
     public const long CryptoSoftMissingErrorCode = -97;
     public const long MissingKeyErrorCode = -98;
     public const long LaunchErrorCode = -99;
+    private const int CryptoSoftProcessTimeoutMilliseconds = 10 * 60 * 1000;
 
     public long EncryptIfRequired(string filePath)
     {
@@ -31,9 +36,7 @@ public class CryptoSoftService : ICryptoService
             {
                 FileName = cryptoSoftPath,
                 UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                CreateNoWindow = true
             };
             startInfo.ArgumentList.Add(filePath);
             startInfo.ArgumentList.Add(key);
@@ -45,7 +48,12 @@ public class CryptoSoftService : ICryptoService
                 return LaunchErrorCode;
             }
 
-            process.WaitForExit();
+            if (!process.WaitForExit(CryptoSoftProcessTimeoutMilliseconds))
+            {
+                TryKillProcess(process);
+                return ProcessTimeoutErrorCode;
+            }
+
             long exitCode = process.ExitCode;
 
             if (exitCode < 0)
@@ -58,6 +66,18 @@ public class CryptoSoftService : ICryptoService
         catch
         {
             return LaunchErrorCode;
+        }
+    }
+
+    private static void TryKillProcess(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit();
+        }
+        catch
+        {
         }
     }
 
