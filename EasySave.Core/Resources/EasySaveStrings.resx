@@ -25,6 +25,9 @@
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Invalid lang command. Use: EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Invalid language code. Use en or fr.</value></data>
   <data name="BackupBlockedByBusinessSoftwareMessage" xml:space="preserve"><value>Backup stopped: blocked process detected ({0}.exe).</value></data>
+  <data name="BackupPausedByBusinessSoftwareMessage" xml:space="preserve"><value>Backup paused: blocked process detected ({0}.exe). Waiting for process to close...</value></data>
+  <data name="BackupResumedAfterBusinessSoftwareMessage" xml:space="preserve"><value>Backup resumed: blocked process ({0}.exe) has closed.</value></data>
+  <data name="BackupStoppedByBusinessSoftwareTimeoutMessage" xml:space="preserve"><value>Backup stopped: blocked process ({0}.exe) did not close within timeout.</value></data>
   <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave without arguments displays all configured jobs.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Use --help to display this help.</value></data>
   <data name="HelpJobNumbersLine" xml:space="preserve"><value>Job numbers start at 1.</value></data>

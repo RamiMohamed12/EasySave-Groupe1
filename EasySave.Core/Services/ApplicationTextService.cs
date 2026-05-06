@@ -105,6 +105,21 @@ public class ApplicationTextService
         return FormatText("BackupBlockedByBusinessSoftwareMessage", processName);
     }
 
+    public string GetBackupPausedByBusinessSoftwareMessage(string processName)
+    {
+        return FormatText("BackupPausedByBusinessSoftwareMessage", processName);
+    }
+
+    public string GetBackupResumedAfterBusinessSoftwareMessage(string processName)
+    {
+        return FormatText("BackupResumedAfterBusinessSoftwareMessage", processName);
+    }
+
+    public string GetBackupStoppedByBusinessSoftwareTimeoutMessage(string processName)
+    {
+        return FormatText("BackupStoppedByBusinessSoftwareTimeoutMessage", processName);
+    }
+
     public IReadOnlyList<string> GetHelpLines()
     {
         return

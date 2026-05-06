@@ -9,6 +9,9 @@ public class BackupService : IBackupService
     private readonly ICryptoService _cryptoService;
     private readonly IBusinessSoftwareMonitor _businessSoftwareMonitor;
 
+    private const int BusinessSoftwareCheckIntervalMs = 500;
+    private const int BusinessSoftwareMaxWaitTimeMs = 3600000; // 1 hour max wait
+
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
@@ -66,7 +69,7 @@ public class BackupService : IBackupService
 
         if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string startupBlockedProcess))
         {
-            return CompleteWithBusinessSoftwareStop(result, backupJob, startupBlockedProcess);
+            return WaitForBusinessSoftwareAndResume(result, backupJob, selectedBackupJob, startupBlockedProcess);
         }
 
         if (string.IsNullOrWhiteSpace(backupJob.Source))
@@ -217,34 +220,7 @@ public class BackupService : IBackupService
 
             if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string runningBlockedProcess))
             {
-                state.IsRunning = false;
-                state.LastBackupUpdateTime = DateTime.Now;
-                state.LastRunCompletedAt = state.LastBackupUpdateTime;
-                state.Status = BackupExecutionStatus.Stopped;
-                state.ErrorMessage = _textService.GetBackupBlockedByBusinessSoftwareMessage(runningBlockedProcess);
-                _stateService.WriteState(state);
-
-                _loggerService.WriteLog(new LogEntry
-                {
-                    Timestamp = state.LastBackupUpdateTime,
-                    BackupName = backupJob.Name,
-                    SourcePath = state.CurrentSourcePath,
-                    DestinationPath = state.CurrentTargetPath,
-                    ActionType = "BusinessSoftwareDetected",
-                    ErrorMessage = state.ErrorMessage,
-                    FileSizeBytes = 0,
-                    TransferTimeMilliseconds = 0
-                });
-
-                globalStopwatch.Stop();
-                result.Status = BackupExecutionStatus.Stopped;
-                result.TransferredFileCount = state.LastRunTransferredFiles.Count;
-                result.TransferredBytes = state.TransferredBytes;
-                result.ErrorMessage = state.ErrorMessage;
-                result.ElapsedTime = globalStopwatch.Elapsed;
-                result.StoppedByBusinessSoftware = true;
-                result.BlockingProcessName = runningBlockedProcess;
-                return result;
+                WaitForBusinessSoftwareResume(state, backupJob, runningBlockedProcess);
             }
         }
 
@@ -428,5 +404,145 @@ public class BackupService : IBackupService
             FileSizeBytes = 0,
             TransferTimeMilliseconds = 0
         });
+    }
+
+    private BackupResult WaitForBusinessSoftwareAndResume(BackupResult result, BackupJob backupJob, SelectedBackupJob selectedBackupJob, string blockedProcessName)
+    {
+        DateTime pauseStartTime = DateTime.Now;
+        _loggerService.WriteLog(new LogEntry
+        {
+            Timestamp = pauseStartTime,
+            BackupName = backupJob.Name,
+            SourcePath = string.Empty,
+            DestinationPath = string.Empty,
+            ActionType = "BusinessSoftwarePaused",
+            ErrorMessage = _textService.GetBackupPausedByBusinessSoftwareMessage(blockedProcessName),
+            FileSizeBytes = 0,
+            TransferTimeMilliseconds = 0
+        });
+
+        if (WaitForBusinessSoftwareToClose(blockedProcessName))
+        {
+            DateTime resumeTime = DateTime.Now;
+            _loggerService.WriteLog(new LogEntry
+            {
+                Timestamp = resumeTime,
+                BackupName = backupJob.Name,
+                SourcePath = string.Empty,
+                DestinationPath = string.Empty,
+                ActionType = "BusinessSoftwareResumed",
+                ErrorMessage = _textService.GetBackupResumedAfterBusinessSoftwareMessage(blockedProcessName),
+                FileSizeBytes = 0,
+                TransferTimeMilliseconds = 0
+            });
+
+            // Restart the backup
+            return StartBackup(selectedBackupJob);
+        }
+
+        // If timeout reached, complete with stop status
+        DateTime timeoutTime = DateTime.Now;
+        result.Status = BackupExecutionStatus.Stopped;
+        result.ErrorMessage = _textService.GetBackupStoppedByBusinessSoftwareTimeoutMessage(blockedProcessName);
+        result.StoppedByBusinessSoftware = true;
+        result.BlockingProcessName = blockedProcessName;
+
+        _loggerService.WriteLog(new LogEntry
+        {
+            Timestamp = timeoutTime,
+            BackupName = backupJob.Name,
+            SourcePath = string.Empty,
+            DestinationPath = string.Empty,
+            ActionType = "BusinessSoftwareTimeout",
+            ErrorMessage = result.ErrorMessage,
+            FileSizeBytes = 0,
+            TransferTimeMilliseconds = 0
+        });
+
+        return result;
+    }
+
+    private void WaitForBusinessSoftwareResume(BackupState state, BackupJob backupJob, string blockedProcessName)
+    {
+        DateTime pauseTime = DateTime.Now;
+        state.Status = BackupExecutionStatus.Paused;
+        state.ErrorMessage = _textService.GetBackupPausedByBusinessSoftwareMessage(blockedProcessName);
+        state.IsRunning = false;
+        state.LastBackupUpdateTime = pauseTime;
+        _stateService.WriteState(state);
+
+        _loggerService.WriteLog(new LogEntry
+        {
+            Timestamp = pauseTime,
+            BackupName = backupJob.Name,
+            SourcePath = state.CurrentSourcePath,
+            DestinationPath = state.CurrentTargetPath,
+            ActionType = "BusinessSoftwarePaused",
+            ErrorMessage = state.ErrorMessage,
+            FileSizeBytes = 0,
+            TransferTimeMilliseconds = 0
+        });
+
+        if (WaitForBusinessSoftwareToClose(blockedProcessName))
+        {
+            DateTime resumeTime = DateTime.Now;
+            state.Status = BackupExecutionStatus.Active;
+            state.IsRunning = true;
+            state.ErrorMessage = string.Empty;
+            state.LastBackupUpdateTime = resumeTime;
+            _stateService.WriteState(state);
+
+            _loggerService.WriteLog(new LogEntry
+            {
+                Timestamp = resumeTime,
+                BackupName = backupJob.Name,
+                SourcePath = state.CurrentSourcePath,
+                DestinationPath = state.CurrentTargetPath,
+                ActionType = "BusinessSoftwareResumed",
+                ErrorMessage = _textService.GetBackupResumedAfterBusinessSoftwareMessage(blockedProcessName),
+                FileSizeBytes = 0,
+                TransferTimeMilliseconds = 0
+            });
+        }
+        else
+        {
+            // Timeout reached
+            DateTime timeoutTime = DateTime.Now;
+            state.Status = BackupExecutionStatus.Stopped;
+            state.IsRunning = false;
+            state.ErrorMessage = _textService.GetBackupStoppedByBusinessSoftwareTimeoutMessage(blockedProcessName);
+            state.LastBackupUpdateTime = timeoutTime;
+            state.LastRunCompletedAt = timeoutTime;
+            _stateService.WriteState(state);
+
+            _loggerService.WriteLog(new LogEntry
+            {
+                Timestamp = timeoutTime,
+                BackupName = backupJob.Name,
+                SourcePath = state.CurrentSourcePath,
+                DestinationPath = state.CurrentTargetPath,
+                ActionType = "BusinessSoftwareTimeout",
+                ErrorMessage = state.ErrorMessage,
+                FileSizeBytes = 0,
+                TransferTimeMilliseconds = 0
+            });
+        }
+    }
+
+    private bool WaitForBusinessSoftwareToClose(string blockedProcessName)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        while (stopwatch.ElapsedMilliseconds < BusinessSoftwareMaxWaitTimeMs)
+        {
+            if (!_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string runningProcess) || runningProcess != blockedProcessName)
+            {
+                return true;
+            }
+
+            Thread.Sleep(BusinessSoftwareCheckIntervalMs);
+        }
+
+        return false;
     }
 }

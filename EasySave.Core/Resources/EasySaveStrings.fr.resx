@@ -25,6 +25,9 @@
   <data name="InvalidLanguageCommandMessage" xml:space="preserve"><value>Commande lang invalide. Utilisez : EasySave --lang en|fr.</value></data>
   <data name="InvalidLanguageCodeMessage" xml:space="preserve"><value>Code de langue invalide. Utilisez en ou fr.</value></data>
   <data name="BackupBlockedByBusinessSoftwareMessage" xml:space="preserve"><value>Sauvegarde arretee : processus bloquant detecte ({0}.exe).</value></data>
+  <data name="BackupPausedByBusinessSoftwareMessage" xml:space="preserve"><value>Sauvegarde mise en pause : processus bloquant detecte ({0}.exe). Attente de la fermeture du processus...</value></data>
+  <data name="BackupResumedAfterBusinessSoftwareMessage" xml:space="preserve"><value>Sauvegarde reprise : processus bloquant ({0}.exe) a ete ferme.</value></data>
+  <data name="BackupStoppedByBusinessSoftwareTimeoutMessage" xml:space="preserve"><value>Sauvegarde arretee : processus bloquant ({0}.exe) n'a pas ete ferme dans le delai imparti.</value></data>
   <data name="HelpNoArgumentLine" xml:space="preserve"><value>EasySave sans argument affiche toutes les taches configurees.</value></data>
   <data name="HelpDisplayLine" xml:space="preserve"><value>Utilisez --help pour afficher cette aide.</value></data>
   <data name="HelpJobNumbersLine" xml:space="preserve"><value>Les numeros de tache commencent a 1.</value></data>
