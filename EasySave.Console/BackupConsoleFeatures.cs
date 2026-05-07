@@ -254,16 +254,49 @@ public class BackupConsoleFeatures
 
         try
         {
+            // Afficher l'écran d'attente
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetRunBackupsLabel(TextService),
+                new List<InteractiveConsole.ScreenLine>
+                {
+                    AccentLine("⏳ Sauvegarde en cours..."),
+                    BlankLine(),
+                    NormalLine("Si un logiciel métier est lancé, la sauvegarde se mettra automatiquement en PAUSE."),
+                    NormalLine("Fermez l'application pour que la sauvegarde reprenne."),
+                    BlankLine()
+                },
+                null);
+
+            // Lancer le backup
             IReadOnlyList<BackupResult> results = BackupController.StartBackups(selectedJobs);
+
+            outputLines.Clear();
+            outputLines.Add(AccentLine("=== RÉSULTATS DES SAUVEGARDES ==="));
+            outputLines.Add(BlankLine());
 
             for (int index = 0; index < results.Count; index++)
             {
                 BackupResult result = results[index];
                 bool showHeader = results.Count > 1;
 
+                // Afficher différemment selon le statut
                 if (result.Status == BackupExecutionStatus.Finished)
                 {
                     outputLines.AddRange(BuildMessageLines(BuildBackupSuccessMessage(result, showHeader), InteractiveConsole.ScreenLineKind.Success));
+                    outputLines.Add(NormalLine("✅ Sauvegarde terminée avec succès!"));
+                }
+                else if (result.Status == BackupExecutionStatus.Paused)
+                {
+                    outputLines.Add(NormalLine($"⏸️ [Job {result.JobNumber}] {result.BackupName}"));
+                    outputLines.Add(NormalLine($"   Statut: PAUSE"));
+                    outputLines.Add(NormalLine($"   Raison: {result.ErrorMessage}"));
+                }
+                else if (result.StoppedByBusinessSoftware)
+                {
+                    outputLines.Add(NormalLine($"⏹️ [Job {result.JobNumber}] {result.BackupName}"));
+                    outputLines.Add(NormalLine($"   ARRÊTÉ à cause de: {result.BlockingProcessName}.exe"));
+                    outputLines.Add(NormalLine($"   Raison: {result.ErrorMessage}"));
+                    outputLines.AddRange(BuildMessageLines(BuildBackupErrorMessage(result, false), InteractiveConsole.ScreenLineKind.Error));
                 }
                 else
                 {
@@ -278,6 +311,9 @@ public class BackupConsoleFeatures
         }
         catch (Exception ex)
         {
+            outputLines.Clear();
+            outputLines.Add(AccentLine("=== ERREUR LORS DE LA SAUVEGARDE ==="));
+            outputLines.Add(BlankLine());
             outputLines.AddRange(BuildMessageLines(
                 _translationService.BuildErrorMessage(TextService, ex.Message),
                 InteractiveConsole.ScreenLineKind.Error));
