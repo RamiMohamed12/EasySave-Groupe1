@@ -99,6 +99,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        BackupProgressWindow? progressWindow = null;
         try
         {
             SetBusy(true, Text("Wpf.RunningSelectedStatus"));
@@ -113,6 +114,13 @@ public partial class MainWindow : Window
                 })
                 .ToList();
 
+            // Show progress window
+            progressWindow = new BackupProgressWindow(_textService)
+            {
+                Owner = this
+            };
+            progressWindow.Show();
+
             IReadOnlyList<BackupResult> results = await Task.Run(() => _backupController.StartBackups(selectedJobs));
             int successCount = results.Count(result => result.Status == BackupExecutionStatus.Finished);
             int errorCount = results.Count - successCount;
@@ -124,6 +132,7 @@ public partial class MainWindow : Window
         }
         finally
         {
+            progressWindow?.Close();
             SetBusy(false, StatusTextBlock.Text);
             RefreshStateAndLog();
         }
@@ -136,6 +145,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        BackupProgressWindow? progressWindow = null;
         try
         {
             SetBusy(true, Text("Wpf.RunningAllStatus"));
@@ -148,6 +158,13 @@ public partial class MainWindow : Window
                 Job = job
             }).ToList();
 
+            // Show progress window
+            progressWindow = new BackupProgressWindow(_textService)
+            {
+                Owner = this
+            };
+            progressWindow.Show();
+
             IReadOnlyList<BackupResult> results = await Task.Run(() => _backupController.StartBackups(all));
             int successCount = results.Count(result => result.Status == BackupExecutionStatus.Finished);
             int errorCount = results.Count - successCount;
@@ -159,6 +176,7 @@ public partial class MainWindow : Window
         }
         finally
         {
+            progressWindow?.Close();
             SetBusy(false, StatusTextBlock.Text);
             RefreshStateAndLog();
         }

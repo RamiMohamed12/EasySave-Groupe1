@@ -271,4 +271,16 @@ Elapsed time: {2}</value></data>
   <data name="Wpf.ProcessAddedStatus" xml:space="preserve"><value>Process added: {0}</value></data>
   <data name="Wpf.ProcessRemovedStatus" xml:space="preserve"><value>Process removed: {0}</value></data>
   <data name="Wpf.LogFormatUpdatedStatus" xml:space="preserve"><value>Log format updated: {0}</value></data>
+  <data name="Wpf.BackupProgressTitle" xml:space="preserve"><value>Backup Progress</value></data>
+  <data name="Wpf.BackupProgressRunning" xml:space="preserve"><value>⏳  BACKUP IN PROGRESS</value></data>
+  <data name="Wpf.BackupProgressPaused" xml:space="preserve"><value>⏸️  PAUSED</value></data>
+  <data name="Wpf.BackupProgressCompleted" xml:space="preserve"><value>✅  COMPLETED</value></data>
+  <data name="Wpf.BackupProgressReason" xml:space="preserve"><value>Reason: {0}</value></data>
+  <data name="Wpf.BackupProgressAction" xml:space="preserve"><value>Action: Close the application to resume the backup automatically</value></data>
+  <data name="Wpf.BackupProgressBusinessSoftware" xml:space="preserve"><value>If a business software is launched, the backup will automatically pause.</value></data>
+  <data name="Wpf.BackupProgressDetails" xml:space="preserve"><value>Details:</value></data>
+  <data name="Wpf.BackupProgressCurrentJob" xml:space="preserve"><value>Backup: {0}</value></data>
+  <data name="Wpf.BackupProgressPercentage" xml:space="preserve"><value>Progress: {0:F1}% ({1}/{2} files)</value></data>
+  <data name="Wpf.BackupProgressTransferred" xml:space="preserve"><value>Transferred: {0} / {1}</value></data>
+  <data name="Wpf.BackupProgressClose" xml:space="preserve"><value>Close</value></data>
 </root>

@@ -271,4 +271,16 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.ProcessAddedStatus" xml:space="preserve"><value>Processus ajoute : {0}</value></data>
   <data name="Wpf.ProcessRemovedStatus" xml:space="preserve"><value>Processus retire : {0}</value></data>
   <data name="Wpf.LogFormatUpdatedStatus" xml:space="preserve"><value>Format de log mis a jour : {0}</value></data>
+  <data name="Wpf.BackupProgressTitle" xml:space="preserve"><value>Progression de la Sauvegarde</value></data>
+  <data name="Wpf.BackupProgressRunning" xml:space="preserve"><value>⏳  SAUVEGARDE EN COURS</value></data>
+  <data name="Wpf.BackupProgressPaused" xml:space="preserve"><value>⏸️  EN PAUSE</value></data>
+  <data name="Wpf.BackupProgressCompleted" xml:space="preserve"><value>✅  TERMINÉE</value></data>
+  <data name="Wpf.BackupProgressReason" xml:space="preserve"><value>Raison: {0}</value></data>
+  <data name="Wpf.BackupProgressAction" xml:space="preserve"><value>Action: Fermez l'application pour reprendre la sauvegarde automatiquement</value></data>
+  <data name="Wpf.BackupProgressBusinessSoftware" xml:space="preserve"><value>Si un logiciel métier est lancé, la sauvegarde se mettra automatiquement en pause.</value></data>
+  <data name="Wpf.BackupProgressDetails" xml:space="preserve"><value>Détails:</value></data>
+  <data name="Wpf.BackupProgressCurrentJob" xml:space="preserve"><value>Sauvegarde: {0}</value></data>
+  <data name="Wpf.BackupProgressPercentage" xml:space="preserve"><value>Progression: {0:F1}% ({1}/{2} fichiers)</value></data>
+  <data name="Wpf.BackupProgressTransferred" xml:space="preserve"><value>Transféré: {0} / {1}</value></data>
+  <data name="Wpf.BackupProgressClose" xml:space="preserve"><value>Fermer</value></data>
 </root>
