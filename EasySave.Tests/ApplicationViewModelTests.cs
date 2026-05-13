@@ -108,7 +108,7 @@ public class ApplicationViewModelTests
         viewModel.Load(["1;3"]);
         viewModel.StartBackups();
 
-        Assert.Equal([1, 3], fakeBackupService.ReceivedJobs.Select(job => job.JobNumber).ToArray());
+        Assert.Equal([1, 3], fakeBackupService.ReceivedJobs.Select(job => job.JobNumber).OrderBy(jobNumber => jobNumber).ToArray());
         Assert.Equal(3, viewModel.Messages.Count);
         Assert.StartsWith("Transferred files:", viewModel.Messages[0], StringComparison.OrdinalIgnoreCase);
         Assert.Equal("Backup completed successfully!", viewModel.Messages[^1]);
@@ -148,11 +148,15 @@ public class ApplicationViewModelTests
 
     private sealed class FakeBackupService : IBackupService
     {
+        private readonly object _syncRoot = new();
         public List<SelectedBackupJob> ReceivedJobs { get; } = new();
 
         public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
         {
-            ReceivedJobs.Add(selectedBackupJob);
+            lock (_syncRoot)
+            {
+                ReceivedJobs.Add(selectedBackupJob);
+            }
             return new BackupResult
             {
                 JobNumber = selectedBackupJob.JobNumber,

@@ -135,4 +135,37 @@ public class RuntimeStoragePathsTests
 
         Assert.Equal(["calc", "winword"], RuntimeStoragePaths.GetBlockedProcessNames());
     }
+
+    [Fact]
+    public void SetPriorityExtensions_NormalizesAndPersistsExtensions()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetPriorityExtensions(["log; .TXT, csv"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal([".csv", ".log", ".txt"], RuntimeStoragePaths.GetPriorityExtensions());
+    }
+
+    [Fact]
+    public void SetLargeFileThresholdKb_PersistsAndNormalizesNegativeValues()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLargeFileThresholdKb(-50);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(0, RuntimeStoragePaths.GetLargeFileThresholdKb());
+    }
+
+    [Fact]
+    public void SetMaxConcurrentJobs_PersistsAndNormalizesInvalidValues()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetMaxConcurrentJobs(0);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(2, RuntimeStoragePaths.GetMaxConcurrentJobs());
+    }
 }

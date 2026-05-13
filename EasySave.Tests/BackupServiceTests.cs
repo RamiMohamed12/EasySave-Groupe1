@@ -143,7 +143,7 @@ public class BackupServiceTests
     }
 
     [Fact]
-    public void StartBackup_ReturnsStopped_WhenBusinessSoftwareIsDetectedBeforeStart()
+    public void StartBackup_AutoPausesAndResumes_WhenBusinessSoftwareIsDetectedBeforeStart()
     {
         using var workspace = new TestWorkspace();
         string sourceDirectory = workspace.CreateDirectory("source");
@@ -154,11 +154,8 @@ public class BackupServiceTests
 
         BackupResult result = CreateBackupService(monitor: monitor).StartBackup(CreateSelectedJob(1, job));
 
-        Assert.Equal(BackupExecutionStatus.Stopped, result.Status);
-        Assert.True(result.StoppedByBusinessSoftware);
-        Assert.Equal("winword", result.BlockingProcessName);
-        Assert.False(File.Exists(Path.Combine(targetDirectory, "a.txt")));
-        Assert.Contains("BusinessSoftwareDetected", LoadLogEntries().Select(entry => entry.ActionType));
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.True(File.Exists(Path.Combine(targetDirectory, "a.txt")));
     }
 
     private static BackupService CreateBackupService(

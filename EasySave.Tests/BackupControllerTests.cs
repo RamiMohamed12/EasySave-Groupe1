@@ -15,29 +15,23 @@ public class BackupControllerTests
 
         IReadOnlyList<BackupResult> results = controller.StartBackups(jobs);
 
-        Assert.Equal([1, 3], fakeService.ReceivedJobNumbers);
+        Assert.Equal([1, 3], fakeService.ReceivedJobNumbers.OrderBy(jobNumber => jobNumber).ToArray());
         Assert.Equal(["Job1", "Job3"], results.Select(result => result.BackupName).ToArray());
     }
 
     [Fact]
-    public void StartBackups_StopsSequence_WhenBusinessSoftwareIsDetected()
+    public void PauseResumeStop_ForwardCommandsToExecutionController()
     {
-        var fakeService = new FakeBackupService
-        {
-            StopOnJobNumber = 1
-        };
-        var controller = new BackupController(fakeService);
-        SelectedBackupJob[] jobs =
-        {
-            new() { JobNumber = 1, Job = new BackupJob { Name = "Job1" } },
-            new() { JobNumber = 2, Job = new BackupJob { Name = "Job2" } }
-        };
+        var fakeController = new FakeExecutionController();
+        var controller = new BackupController(new FakeBackupService(), new BackupJobRegistry(), fakeController);
 
-        IReadOnlyList<BackupResult> results = controller.StartBackups(jobs);
+        controller.PauseJob(2);
+        controller.ResumeJob(2);
+        controller.StopJob(2);
 
-        Assert.Single(results);
-        Assert.Equal([1], fakeService.ReceivedJobNumbers);
-        Assert.True(results[0].StoppedByBusinessSoftware);
+        Assert.Equal(
+            [BackupControlAction.Pause, BackupControlAction.Resume, BackupControlAction.Stop],
+            fakeController.RecordedActions);
     }
 
     [Fact]
@@ -73,21 +67,63 @@ public class BackupControllerTests
 
     private sealed class FakeBackupService : IBackupService
     {
+        private readonly object _syncRoot = new();
         public List<int> ReceivedJobNumbers { get; } = new();
-        public int? StopOnJobNumber { get; set; }
 
         public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
         {
-            ReceivedJobNumbers.Add(selectedBackupJob.JobNumber);
-            bool shouldStop = StopOnJobNumber.HasValue && StopOnJobNumber.Value == selectedBackupJob.JobNumber;
+            lock (_syncRoot)
+            {
+                ReceivedJobNumbers.Add(selectedBackupJob.JobNumber);
+            }
             return new BackupResult
             {
                 JobNumber = selectedBackupJob.JobNumber,
                 BackupName = selectedBackupJob.Job.Name,
-                Status = shouldStop ? BackupExecutionStatus.Stopped : BackupExecutionStatus.Finished,
-                StoppedByBusinessSoftware = shouldStop,
-                BlockingProcessName = shouldStop ? "winword" : string.Empty
+                Status = BackupExecutionStatus.Finished
             };
+        }
+    }
+
+    private sealed class FakeExecutionController : IBackupExecutionController
+    {
+        public List<BackupControlAction> RecordedActions { get; } = new();
+
+        public void BeginJobRun(int jobNumber)
+        {
+        }
+
+        public void RequestPause(int jobNumber)
+        {
+            RecordedActions.Add(BackupControlAction.Pause);
+        }
+
+        public void RequestResume(int jobNumber)
+        {
+            RecordedActions.Add(BackupControlAction.Resume);
+        }
+
+        public void RequestStop(int jobNumber)
+        {
+            RecordedActions.Add(BackupControlAction.Stop);
+        }
+
+        public void RequestAutomaticPause(int jobNumber, string reasonDetails)
+        {
+            RecordedActions.Add(BackupControlAction.Pause);
+        }
+
+        public BackupExecutionCommandState GetCommandState(int jobNumber)
+        {
+            return new BackupExecutionCommandState
+            {
+                JobNumber = jobNumber,
+                RequestedAction = BackupControlAction.None
+            };
+        }
+
+        public void CompleteJob(int jobNumber)
+        {
         }
     }
 }
