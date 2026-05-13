@@ -10,4 +10,8 @@ public sealed class JobRow
     public string Target { get; set; } = string.Empty;
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Source) && !string.IsNullOrWhiteSpace(Target);
     public string ConfigurationStatus { get; set; } = string.Empty;
+    public string RuntimeStatus { get; set; } = string.Empty;
+    public double ProgressPercentage { get; set; }
+    public string CurrentFile { get; set; } = string.Empty;
+    public string TransferMode { get; set; } = string.Empty;
 }

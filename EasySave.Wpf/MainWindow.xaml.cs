@@ -3,6 +3,8 @@ using System.Windows.Controls;
 using System.Text.Json;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Threading;
+using System.Text.Json.Serialization;
 
 namespace EasySave.Wpf;
 
@@ -12,6 +14,9 @@ public partial class MainWindow : Window
     private readonly StateService _stateService;
     private BackupController _backupController;
     private readonly List<JobRow> _jobRows;
+    private readonly IBackupExecutionController _executionController;
+    private readonly IBackupExecutionCoordinator _executionCoordinator;
+    private readonly DispatcherTimer _refreshTimer;
     private ApplicationTextService _textService;
     private bool _isBusy;
     private bool _isApplyingLanguage;
@@ -28,6 +33,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         _jobRegistry = new BackupJobRegistry();
         _stateService = new StateService();
+        _executionController = new InMemoryBackupExecutionController();
+        _executionCoordinator = new PriorityTransferCoordinator();
 
         _textService = ApplicationTextService.Create();
         _backupController = CreateBackupController();
@@ -37,11 +44,18 @@ public partial class MainWindow : Window
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
         ApplyTexts();
+        LoadRuntimeRulesIntoForm();
         LoadEncryptionSettingsIntoForm();
         RefreshBlockedProcesses();
         LoadJobsIntoGrid();
         SetActiveSection(DashboardSection.Overview);
         RefreshStateAndLog();
+        _refreshTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _refreshTimer.Tick += (_, _) => RefreshStateAndLog();
+        _refreshTimer.Start();
     }
 
     private BackupController CreateBackupController()
@@ -51,7 +65,10 @@ public partial class MainWindow : Window
             _stateService,
             new BackupHistoryService(),
             _textService,
-            new BusinessSoftwareMonitor());
+            new CryptoSoftService(),
+            new BusinessSoftwareMonitor(),
+            _executionController,
+            _executionCoordinator);
         return new BackupController(backupService);
     }
 
@@ -71,7 +88,11 @@ public partial class MainWindow : Window
                 Type = _textService.GetBackupTypeDisplayName(job.Type),
                 Source = job.Source,
                 Target = job.Target,
-                ConfigurationStatus = GetConfigurationStatus(job.Source, job.Target)
+                ConfigurationStatus = GetConfigurationStatus(job.Source, job.Target),
+                RuntimeStatus = TranslateRuntimeStatus(BackupExecutionStatus.Inactive, BackupPauseReason.None),
+                ProgressPercentage = 0,
+                CurrentFile = string.Empty,
+                TransferMode = UiText("Idle", "En attente")
             });
         }
 
@@ -82,6 +103,7 @@ public partial class MainWindow : Window
         ExecutionJobsDataGrid.ItemsSource = null;
         ExecutionJobsDataGrid.ItemsSource = _jobRows;
         _stateService.SynchronizeConfiguredJobs(jobs);
+        ApplyRuntimeStateToRows();
         UpdateDashboardMetrics();
     }
 
@@ -249,6 +271,7 @@ public partial class MainWindow : Window
         StateTextBox.Text = ReadFileSafely(RuntimeStoragePaths.StateFilePath);
         string todayLogPath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
         LogTextBox.Text = ReadFileSafely(todayLogPath);
+        ApplyRuntimeStateToRows();
     }
 
     private string ReadFileSafely(string path)
@@ -313,9 +336,14 @@ public partial class MainWindow : Window
         RunAllButton.IsEnabled = !busy;
         SaveAllButton.IsEnabled = !busy;
         SaveEncryptionSettingsButton.IsEnabled = !busy;
+        SaveRuntimeRulesButton.IsEnabled = !busy;
         AddJobButton.IsEnabled = !busy;
         DeleteJobButton.IsEnabled = !busy;
         JobsDataGrid.IsEnabled = !busy;
+        PauseSelectedButton.IsEnabled = true;
+        ResumeSelectedButton.IsEnabled = true;
+        StopSelectedButton.IsEnabled = true;
+        ExecutionJobsDataGrid.IsEnabled = true;
         StatusTextBlock.Text = message;
     }
 
@@ -398,6 +426,10 @@ public partial class MainWindow : Window
         LanguageSectionTitle.Text = Text("Wpf.LanguageSectionTitle");
         LogFormatSectionTitle.Text = Text("Wpf.LogFormatSectionTitle");
         EncryptionSectionTitle.Text = Text("Wpf.EncryptionSectionTitle");
+        RuntimeRulesSectionTitle.Text = UiText("Runtime scheduling", "Ordonnancement runtime");
+        PriorityExtensionsLabel.Text = UiText("Priority extensions (; or , separated)", "Extensions prioritaires (separees par ; ou ,)");
+        LargeFileThresholdLabel.Text = UiText("Large file threshold (KB)", "Seuil gros fichiers (Ko)");
+        MaxConcurrencyLabel.Text = UiText("Max concurrent jobs", "Nombre max de jobs concurrents");
         BusinessSoftwareSectionTitle.Text = Text("Wpf.BusinessSoftwareSectionTitle");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
         LogFormatLabel.Text = Text("Wpf.LogFormatLabel");
@@ -410,9 +442,13 @@ public partial class MainWindow : Window
         SetButtonContent(RefreshButton, "\uE72C", Text("Wpf.RefreshButton"));
         SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetButtonContent(RunAllButton, "\uE102", Text("Wpf.RunAllButton"));
+        SetButtonContent(PauseSelectedButton, "\uE769", UiText("Pause selected", "Pause selection"));
+        SetButtonContent(ResumeSelectedButton, "\uE768", UiText("Resume selected", "Reprendre selection"));
+        SetButtonContent(StopSelectedButton, "\uE71A", UiText("Stop selected", "Arreter selection"));
         SetButtonContent(SaveAllButton, "\uE74E", Text("Wpf.SaveAllButton"));
         SetButtonContent(SaveSelectedJobButton, "\uE74E", Text("Wpf.SaveSelectedJobButton"));
         SetButtonContent(SaveEncryptionSettingsButton, "\uE74E", Text("Wpf.SaveEncryptionSettingsButton"));
+        SetButtonContent(SaveRuntimeRulesButton, "\uE74E", UiText("Save runtime rules", "Enregistrer regles runtime"));
         KpiTotalJobsLabelTextBlock.Text = Text("Wpf.KpiTotalJobs");
         KpiConfiguredJobsLabelTextBlock.Text = Text("Wpf.KpiConfiguredJobs");
         KpiSelectedJobsLabelTextBlock.Text = Text("Wpf.KpiSelectedJobs");
@@ -545,6 +581,13 @@ public partial class MainWindow : Window
         CryptoSoftKeyTextBox.Text = RuntimeStoragePaths.GetCryptoSoftKey();
     }
 
+    private void LoadRuntimeRulesIntoForm()
+    {
+        PriorityExtensionsTextBox.Text = string.Join("; ", RuntimeStoragePaths.GetPriorityExtensions());
+        LargeFileThresholdTextBox.Text = RuntimeStoragePaths.GetLargeFileThresholdKb().ToString();
+        MaxConcurrencyTextBox.Text = RuntimeStoragePaths.GetMaxConcurrentJobs().ToString();
+    }
+
     private void SaveEncryptionSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         RuntimeStoragePaths.SetEncryptedExtensions([EncryptedExtensionsTextBox.Text]);
@@ -552,6 +595,27 @@ public partial class MainWindow : Window
         LoadEncryptionSettingsIntoForm();
         StatusTextBlock.Text = Text("Wpf.EncryptionSettingsSavedStatus");
         RefreshStateAndLog();
+    }
+
+    private void SaveRuntimeRulesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(LargeFileThresholdTextBox.Text.Trim(), out int thresholdKb) || thresholdKb < 0)
+        {
+            StatusTextBlock.Text = UiText("Large file threshold must be a number >= 0.", "Le seuil gros fichiers doit etre un nombre >= 0.");
+            return;
+        }
+
+        if (!int.TryParse(MaxConcurrencyTextBox.Text.Trim(), out int maxConcurrentJobs) || maxConcurrentJobs <= 0)
+        {
+            StatusTextBlock.Text = UiText("Max concurrent jobs must be a number > 0.", "Le nombre max de jobs concurrents doit etre > 0.");
+            return;
+        }
+
+        RuntimeStoragePaths.SetPriorityExtensions([PriorityExtensionsTextBox.Text]);
+        RuntimeStoragePaths.SetLargeFileThresholdKb(thresholdKb);
+        RuntimeStoragePaths.SetMaxConcurrentJobs(maxConcurrentJobs);
+        LoadRuntimeRulesIntoForm();
+        StatusTextBlock.Text = UiText("Runtime scheduling rules saved.", "Regles runtime enregistrees.");
     }
 
     private void AddJobButton_Click(object sender, RoutedEventArgs e)
@@ -601,6 +665,36 @@ public partial class MainWindow : Window
         }
         StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", selectedRow.JobNumber);
         RefreshStateAndLog();
+    }
+
+    private void PauseSelectedButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (JobRow row in GetCheckedRows())
+        {
+            _backupController.PauseJob(row.JobNumber);
+        }
+
+        StatusTextBlock.Text = UiText("Pause requested for selected jobs.", "Pause demandee pour les jobs selectionnes.");
+    }
+
+    private void ResumeSelectedButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (JobRow row in GetCheckedRows())
+        {
+            _backupController.ResumeJob(row.JobNumber);
+        }
+
+        StatusTextBlock.Text = UiText("Resume requested for selected jobs.", "Reprise demandee pour les jobs selectionnes.");
+    }
+
+    private void StopSelectedButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (JobRow row in GetCheckedRows())
+        {
+            _backupController.StopJob(row.JobNumber);
+        }
+
+        StatusTextBlock.Text = UiText("Stop requested for selected jobs.", "Arret demande pour les jobs selectionnes.");
     }
 
     private void OverviewNavButton_Click(object sender, RoutedEventArgs e)
@@ -754,6 +848,97 @@ public partial class MainWindow : Window
         return normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
             ? normalized[..^4]
             : normalized;
+    }
+
+    private void ApplyRuntimeStateToRows()
+    {
+        IReadOnlyDictionary<string, BackupState> statesByJobName = LoadStatesByJobName();
+
+        foreach (JobRow row in _jobRows)
+        {
+            if (!statesByJobName.TryGetValue(row.Name, out BackupState? state))
+            {
+                row.RuntimeStatus = TranslateRuntimeStatus(BackupExecutionStatus.Inactive, BackupPauseReason.None);
+                row.ProgressPercentage = 0;
+                row.CurrentFile = string.Empty;
+                row.TransferMode = UiText("Idle", "En attente");
+                continue;
+            }
+
+            row.RuntimeStatus = TranslateRuntimeStatus(state.Status, state.PauseReason);
+            row.ProgressPercentage = Math.Round(state.Progress, 1);
+            row.CurrentFile = string.IsNullOrWhiteSpace(state.CurrentSourcePath)
+                ? string.Empty
+                : Path.GetFileName(state.CurrentSourcePath);
+            row.TransferMode = BuildTransferMode(state);
+        }
+
+        JobsDataGrid.Items.Refresh();
+        OverviewJobsDataGrid.Items.Refresh();
+        ExecutionJobsDataGrid.Items.Refresh();
+    }
+
+    private IReadOnlyDictionary<string, BackupState> LoadStatesByJobName()
+    {
+        if (!File.Exists(RuntimeStoragePaths.StateFilePath))
+        {
+            return new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+        options.Converters.Add(new JsonStringEnumConverter());
+        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json, options);
+
+        return (states ?? new List<BackupState>())
+            .ToDictionary(state => state.BackupName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private string TranslateRuntimeStatus(BackupExecutionStatus status, BackupPauseReason pauseReason)
+    {
+        return status switch
+        {
+            BackupExecutionStatus.Active => UiText("Active", "Actif"),
+            BackupExecutionStatus.Paused when pauseReason == BackupPauseReason.UserRequested => UiText("Paused", "En pause"),
+            BackupExecutionStatus.PausedByBusinessSoftware => UiText("Paused by business software", "Pause logiciel metier"),
+            BackupExecutionStatus.Stopping => UiText("Stopping", "Arret en cours"),
+            BackupExecutionStatus.Stopped => UiText("Stopped", "Arrete"),
+            BackupExecutionStatus.Finished => UiText("Finished", "Termine"),
+            BackupExecutionStatus.Error => UiText("Error", "Erreur"),
+            _ => UiText("Inactive", "Inactif")
+        };
+    }
+
+    private string BuildTransferMode(BackupState state)
+    {
+        string priorityLabel = state.CurrentFilePriority == FileTransferPriority.Priority
+            ? UiText("Priority", "Prioritaire")
+            : UiText("Normal", "Normal");
+        string sizeLabel = state.IsLargeFileTransfer
+            ? UiText("Large file", "Gros fichier")
+            : UiText("Standard", "Standard");
+
+        if (state.IsPriorityWorkPending)
+        {
+            return $"{priorityLabel} | {sizeLabel} | {UiText("priority queue", "file prioritaire active")}";
+        }
+
+        return $"{priorityLabel} | {sizeLabel}";
+    }
+
+    private IReadOnlyList<JobRow> GetCheckedRows()
+    {
+        return _jobRows.Where(row => row.IsSelected).ToList();
+    }
+
+    private string UiText(string english, string french)
+    {
+        return _textService.GetLanguageCode() == ApplicationTextService.FrenchLanguageCode
+            ? french
+            : english;
     }
 
     private sealed record LanguageOption(string LanguageCode, string DisplayName);
