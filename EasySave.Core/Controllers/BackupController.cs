@@ -2,16 +2,24 @@ public class BackupController
 {
     private readonly IBackupService _backupService;
     private readonly BackupJobRegistry _jobRegistry;
+    private readonly IBackupExecutionController? _executionController;
 
     public BackupController(IBackupService backupService)
-        : this(backupService, new BackupJobRegistry())
+        : this(
+            backupService,
+            new BackupJobRegistry(),
+            backupService is BackupService concreteBackupService ? concreteBackupService.ExecutionController : null)
     {
     }
 
-    public BackupController(IBackupService backupService, BackupJobRegistry jobRegistry)
+    public BackupController(
+        IBackupService backupService,
+        BackupJobRegistry jobRegistry,
+        IBackupExecutionController? executionController = null)
     {
         _backupService = backupService;
         _jobRegistry = jobRegistry;
+        _executionController = executionController;
     }
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
@@ -21,20 +29,31 @@ public class BackupController
 
     public IReadOnlyList<BackupResult> StartBackups(IEnumerable<SelectedBackupJob> backupJobs)
     {
-        var results = new List<BackupResult>();
+        List<SelectedBackupJob> orderedJobs = backupJobs.ToList();
+        Task<BackupResult>[] tasks = orderedJobs
+            .Select(backupJob => Task.Run(() => _backupService.StartBackup(backupJob)))
+            .ToArray();
 
-        foreach (SelectedBackupJob backupJob in backupJobs)
-        {
-            BackupResult result = _backupService.StartBackup(backupJob);
-            results.Add(result);
+        Task.WaitAll(tasks);
 
-            if (result.StoppedByBusinessSoftware)
-            {
-                break;
-            }
-        }
+        return tasks
+            .Select(task => task.Result)
+            .ToList();
+    }
 
-        return results;
+    public void PauseJob(int jobNumber)
+    {
+        _executionController?.RequestPause(jobNumber);
+    }
+
+    public void ResumeJob(int jobNumber)
+    {
+        _executionController?.RequestResume(jobNumber);
+    }
+
+    public void StopJob(int jobNumber)
+    {
+        _executionController?.RequestStop(jobNumber);
     }
 
     public BackupJob CreateJob(int jobNumber, BackupJob job)

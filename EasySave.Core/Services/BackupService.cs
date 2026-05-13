@@ -2,19 +2,31 @@ using System.Diagnostics;
 
 public class BackupService : IBackupService
 {
+    private const int CopyBufferSize = 64 * 1024;
+
     private readonly BackupHistoryService _backupHistoryService;
     private readonly LoggerService _loggerService;
     private readonly StateService _stateService;
     private readonly ApplicationTextService _textService;
     private readonly ICryptoService _cryptoService;
     private readonly IBusinessSoftwareMonitor _businessSoftwareMonitor;
+    private readonly IBackupExecutionController _executionController;
+    private readonly IBackupExecutionCoordinator _executionCoordinator;
 
     public BackupService(
         LoggerService loggerService,
         StateService stateService,
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService)
-        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService(), new BusinessSoftwareMonitor())
+        : this(
+            loggerService,
+            stateService,
+            backupHistoryService,
+            textService,
+            new CryptoSoftService(),
+            new BusinessSoftwareMonitor(),
+            new InMemoryBackupExecutionController(),
+            new PriorityTransferCoordinator())
     {
     }
 
@@ -24,7 +36,15 @@ public class BackupService : IBackupService
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService,
         ICryptoService cryptoService)
-        : this(loggerService, stateService, backupHistoryService, textService, cryptoService, new BusinessSoftwareMonitor())
+        : this(
+            loggerService,
+            stateService,
+            backupHistoryService,
+            textService,
+            cryptoService,
+            new BusinessSoftwareMonitor(),
+            new InMemoryBackupExecutionController(),
+            new PriorityTransferCoordinator())
     {
     }
 
@@ -34,7 +54,15 @@ public class BackupService : IBackupService
         BackupHistoryService backupHistoryService,
         ApplicationTextService textService,
         IBusinessSoftwareMonitor businessSoftwareMonitor)
-        : this(loggerService, stateService, backupHistoryService, textService, new CryptoSoftService(), businessSoftwareMonitor)
+        : this(
+            loggerService,
+            stateService,
+            backupHistoryService,
+            textService,
+            new CryptoSoftService(),
+            businessSoftwareMonitor,
+            new InMemoryBackupExecutionController(),
+            new PriorityTransferCoordinator())
     {
     }
 
@@ -45,6 +73,27 @@ public class BackupService : IBackupService
         ApplicationTextService textService,
         ICryptoService cryptoService,
         IBusinessSoftwareMonitor businessSoftwareMonitor)
+        : this(
+            loggerService,
+            stateService,
+            backupHistoryService,
+            textService,
+            cryptoService,
+            businessSoftwareMonitor,
+            new InMemoryBackupExecutionController(),
+            new PriorityTransferCoordinator())
+    {
+    }
+
+    public BackupService(
+        LoggerService loggerService,
+        StateService stateService,
+        BackupHistoryService backupHistoryService,
+        ApplicationTextService textService,
+        ICryptoService cryptoService,
+        IBusinessSoftwareMonitor businessSoftwareMonitor,
+        IBackupExecutionController executionController,
+        IBackupExecutionCoordinator executionCoordinator)
     {
         _loggerService = loggerService;
         _stateService = stateService;
@@ -52,7 +101,11 @@ public class BackupService : IBackupService
         _textService = textService;
         _cryptoService = cryptoService;
         _businessSoftwareMonitor = businessSoftwareMonitor;
+        _executionController = executionController;
+        _executionCoordinator = executionCoordinator;
     }
+
+    public IBackupExecutionController ExecutionController => _executionController;
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
     {
@@ -64,34 +117,247 @@ public class BackupService : IBackupService
             BackupName = backupJob.Name
         };
 
-        if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string startupBlockedProcess))
+        _executionController.BeginJobRun(selectedBackupJob.JobNumber);
+
+        try
         {
-            return CompleteWithBusinessSoftwareStop(result, backupJob, startupBlockedProcess);
-        }
+            if (string.IsNullOrWhiteSpace(backupJob.Source))
+            {
+                return CompleteWithValidationError(result, backupJob, _textService.GetSourcePathRequiredMessage());
+            }
 
-        if (string.IsNullOrWhiteSpace(backupJob.Source))
+            if (string.IsNullOrWhiteSpace(backupJob.Target))
+            {
+                return CompleteWithValidationError(result, backupJob, _textService.GetTargetPathRequiredMessage());
+            }
+
+            if (!Directory.Exists(backupJob.Source))
+            {
+                return CompleteWithValidationError(result, backupJob, _textService.GetSourceDirectoryMissingMessage(selectedBackupJob));
+            }
+
+            string[] sourceFiles = Directory.GetFiles(backupJob.Source, "*", SearchOption.AllDirectories);
+            DateTime? lastFullBackupUtc = backupJob.Type == BackupType.Differential
+                ? _backupHistoryService.GetLastFullBackupUtc(backupJob.Name)
+                : null;
+            List<TransferWorkItem> workItems = BuildTransferWorkItems(selectedBackupJob, sourceFiles, lastFullBackupUtc);
+            long totalBytes = workItems.Sum(item => item.FileSizeBytes);
+
+            var state = CreateInitialState(backupJob, totalBytes, workItems.Count);
+            _executionCoordinator.RegisterPendingWork(workItems);
+            _stateService.WriteState(state);
+
+            var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool hasErrors = false;
+
+            foreach (TransferWorkItem workItem in workItems)
+            {
+                BackupControlAction controlAction = WaitUntilJobCanProceed(selectedBackupJob, state);
+                if (controlAction == BackupControlAction.Stop)
+                {
+                    globalStopwatch.Stop();
+                    return CompleteWithStop(result, state, globalStopwatch.Elapsed, selectedBackupJob, manualStop: true);
+                }
+
+                bool slotAcquired = false;
+                long fileTransferredBytes = 0;
+                bool fileCopiedCompletely = false;
+                long transferTimeMilliseconds = 0;
+                long encryptionTimeMilliseconds = 0;
+                var fileStopwatch = Stopwatch.StartNew();
+
+                try
+                {
+                    _executionCoordinator.AcquireTransferSlotAsync(workItem, CancellationToken.None).GetAwaiter().GetResult();
+                    slotAcquired = true;
+                    state.IsPriorityWorkPending = _executionCoordinator.HasPendingPriorityWork();
+                    state.CurrentSourcePath = workItem.SourcePath;
+                    state.CurrentTargetPath = workItem.DestinationPath;
+                    state.CurrentFileSize = workItem.FileSizeBytes;
+                    state.CurrentFilePriority = workItem.Priority;
+                    state.IsLargeFileTransfer = workItem.IsLargeFile;
+                    state.LastBackupUpdateTime = DateTime.Now;
+                    state.Status = BackupExecutionStatus.Active;
+                    state.IsRunning = true;
+                    state.RequestedAction = BackupControlAction.Run;
+                    state.PauseReason = BackupPauseReason.None;
+                    state.PauseReasonDetails = string.Empty;
+                    _stateService.WriteState(state);
+
+                    EnsureDestinationDirectoryExists(
+                        backupJob.Name,
+                        workItem.SourcePath,
+                        Path.GetDirectoryName(workItem.DestinationPath),
+                        createdDirectories);
+
+                    CopyFileWithRuntimeControl(selectedBackupJob, workItem, state, ref fileTransferredBytes);
+                    fileCopiedCompletely = true;
+                    fileStopwatch.Stop();
+                    transferTimeMilliseconds = fileStopwatch.ElapsedMilliseconds;
+                    encryptionTimeMilliseconds = _cryptoService.EncryptIfRequired(workItem.DestinationPath);
+
+                    if (encryptionTimeMilliseconds < 0)
+                    {
+                        throw new InvalidOperationException($"CryptoSoft failed with code {encryptionTimeMilliseconds}.");
+                    }
+
+                    DateTime transferTimestamp = DateTime.Now;
+                    state.RemainingFileCount -= 1;
+                    state.ErrorMessage = string.Empty;
+                    state.LastBackupUpdateTime = transferTimestamp;
+                    var transferredFile = new BackupTransferredFile
+                    {
+                        Timestamp = transferTimestamp,
+                        SourcePath = workItem.SourcePath,
+                        DestinationPath = workItem.DestinationPath,
+                        FileSizeBytes = workItem.FileSizeBytes,
+                        TransferTimeMilliseconds = transferTimeMilliseconds,
+                        EncryptionTimeMilliseconds = encryptionTimeMilliseconds
+                    };
+                    state.LastRunTransferredFiles.Add(transferredFile);
+
+                    _stateService.WriteState(state);
+                    _loggerService.WriteLog(new LogEntry
+                    {
+                        Timestamp = transferTimestamp,
+                        BackupName = backupJob.Name,
+                        SourcePath = workItem.SourcePath,
+                        DestinationPath = workItem.DestinationPath,
+                        ActionType = "FileTransfer",
+                        FileSizeBytes = workItem.FileSizeBytes,
+                        TransferTimeMilliseconds = transferTimeMilliseconds,
+                        EncryptionTimeMilliseconds = encryptionTimeMilliseconds
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    fileStopwatch.Stop();
+                    RollBackCurrentFileProgress(state, fileTransferredBytes);
+                    DeletePartialFile(workItem.DestinationPath);
+                    _executionCoordinator.MarkWorkCompleted(workItem);
+                    if (slotAcquired)
+                    {
+                        _executionCoordinator.ReleaseTransferSlot(workItem);
+                    }
+
+                    globalStopwatch.Stop();
+                    return CompleteWithStop(result, state, globalStopwatch.Elapsed, selectedBackupJob, manualStop: true);
+                }
+                catch (Exception exception)
+                {
+                    if (fileStopwatch.IsRunning)
+                    {
+                        fileStopwatch.Stop();
+                    }
+
+                    if (!fileCopiedCompletely)
+                    {
+                        RollBackCurrentFileProgress(state, fileTransferredBytes);
+                        DeletePartialFile(workItem.DestinationPath);
+                    }
+
+                    hasErrors = true;
+                    DateTime transferTimestamp = DateTime.Now;
+                    long loggedTransferTime = fileCopiedCompletely
+                        ? Math.Max(0, fileStopwatch.ElapsedMilliseconds)
+                        : -Math.Max(1, fileStopwatch.ElapsedMilliseconds);
+                    long loggedEncryptionTime = encryptionTimeMilliseconds < 0
+                        ? encryptionTimeMilliseconds
+                        : 0;
+
+                    state.LastBackupUpdateTime = transferTimestamp;
+                    state.RemainingFileCount = Math.Max(0, state.RemainingFileCount - 1);
+                    state.Status = BackupExecutionStatus.Error;
+                    state.IsRunning = false;
+                    state.ErrorMessage = exception.Message;
+                    state.IsLargeFileTransfer = false;
+                    state.CurrentFilePriority = workItem.Priority;
+
+                    _stateService.WriteState(state);
+                    _loggerService.WriteLog(new LogEntry
+                    {
+                        Timestamp = transferTimestamp,
+                        BackupName = backupJob.Name,
+                        SourcePath = workItem.SourcePath,
+                        DestinationPath = workItem.DestinationPath,
+                        ActionType = "Error",
+                        ErrorMessage = exception.Message,
+                        FileSizeBytes = workItem.FileSizeBytes,
+                        TransferTimeMilliseconds = loggedTransferTime,
+                        EncryptionTimeMilliseconds = loggedEncryptionTime
+                    });
+                }
+                finally
+                {
+                    _executionCoordinator.MarkWorkCompleted(workItem);
+                    if (slotAcquired)
+                    {
+                        _executionCoordinator.ReleaseTransferSlot(workItem);
+                    }
+
+                    state.IsPriorityWorkPending = _executionCoordinator.HasPendingPriorityWork();
+                    state.IsLargeFileTransfer = false;
+                }
+            }
+
+            state.IsRunning = false;
+            state.LastBackupUpdateTime = DateTime.Now;
+            state.LastRunCompletedAt = state.LastBackupUpdateTime;
+            state.Status = hasErrors ? BackupExecutionStatus.Error : BackupExecutionStatus.Finished;
+            state.RequestedAction = BackupControlAction.Run;
+            state.PauseReason = BackupPauseReason.None;
+            state.PauseReasonDetails = string.Empty;
+            _stateService.WriteState(state);
+
+            if (backupJob.Type == BackupType.Full && !hasErrors)
+            {
+                _backupHistoryService.SetLastFullBackupUtc(backupJob.Name, DateTime.UtcNow);
+            }
+
+            globalStopwatch.Stop();
+            result.Status = state.Status;
+            result.TransferredFileCount = state.LastRunTransferredFiles.Count;
+            result.TransferredBytes = state.TransferredBytes;
+            result.ErrorMessage = state.ErrorMessage;
+            result.ElapsedTime = globalStopwatch.Elapsed;
+            return result;
+        }
+        finally
         {
-            return CompleteWithValidationError(result, backupJob, _textService.GetSourcePathRequiredMessage());
+            _executionController.CompleteJob(selectedBackupJob.JobNumber);
         }
+    }
 
-        if (string.IsNullOrWhiteSpace(backupJob.Target))
-        {
-            return CompleteWithValidationError(result, backupJob, _textService.GetTargetPathRequiredMessage());
-        }
+    private List<TransferWorkItem> BuildTransferWorkItems(
+        SelectedBackupJob selectedBackupJob,
+        IEnumerable<string> sourceFiles,
+        DateTime? lastFullBackupUtc)
+    {
+        IEnumerable<string> filesToCopy = FilterFilesToCopy(sourceFiles, selectedBackupJob.Job, lastFullBackupUtc);
 
-        if (!Directory.Exists(backupJob.Source))
-        {
-            return CompleteWithValidationError(result, backupJob, _textService.GetSourceDirectoryMissingMessage(selectedBackupJob));
-        }
+        return filesToCopy
+            .Select(sourceFilePath =>
+            {
+                string relativePath = Path.GetRelativePath(selectedBackupJob.Job.Source, sourceFilePath);
+                string destinationFilePath = Path.Combine(selectedBackupJob.Job.Target, relativePath);
+                return new TransferWorkItem
+                {
+                    JobNumber = selectedBackupJob.JobNumber,
+                    BackupName = selectedBackupJob.Job.Name,
+                    SourcePath = sourceFilePath,
+                    DestinationPath = destinationFilePath,
+                    FileSizeBytes = new FileInfo(sourceFilePath).Length,
+                    Priority = GetFilePriority(sourceFilePath)
+                };
+            })
+            .OrderByDescending(item => item.Priority)
+            .ThenBy(item => item.SourcePath, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
 
-        string[] sourceFiles = Directory.GetFiles(backupJob.Source, "*", SearchOption.AllDirectories);
-        DateTime? lastFullBackupUtc = backupJob.Type == BackupType.Differential
-            ? _backupHistoryService.GetLastFullBackupUtc(backupJob.Name)
-            : null;
-        var filesToCopy = FilterFilesToCopy(sourceFiles, backupJob, lastFullBackupUtc);
-
-        long totalBytes = filesToCopy.Sum(filePath => new FileInfo(filePath).Length);
-        var state = new BackupState
+    private BackupState CreateInitialState(BackupJob backupJob, long totalBytes, int fileCount)
+    {
+        return new BackupState
         {
             BackupName = backupJob.Name,
             CurrentSourcePath = string.Empty,
@@ -99,213 +365,152 @@ public class BackupService : IBackupService
             IsRunning = true,
             Status = BackupExecutionStatus.Active,
             LastBackupUpdateTime = DateTime.Now,
-            TotalEligibleFileCount = filesToCopy.Count,
-            RemainingFileCount = filesToCopy.Count,
+            TotalEligibleFileCount = fileCount,
+            RemainingFileCount = fileCount,
             TotalEligibleBytes = totalBytes,
             RemainingBytes = totalBytes,
             TransferredBytes = 0,
             ProcessedBytes = 0,
             LastRunStartedAt = DateTime.Now,
             LastRunCompletedAt = null,
-            LastRunTransferredFiles = new List<BackupTransferredFile>()
+            LastRunTransferredFiles = new List<BackupTransferredFile>(),
+            IsPriorityWorkPending = false,
+            CurrentFilePriority = FileTransferPriority.Normal,
+            IsLargeFileTransfer = false,
+            PauseReason = BackupPauseReason.None,
+            RequestedAction = BackupControlAction.Run,
+            PauseReasonDetails = string.Empty
         };
-
-        _stateService.WriteState(state);
-        var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        bool hasErrors = false;
-
-        foreach (string sourceFilePath in filesToCopy)
-        {
-            string relativePath = Path.GetRelativePath(backupJob.Source, sourceFilePath);
-            string destinationFilePath = Path.Combine(backupJob.Target, relativePath);
-            string? destinationDirectory = Path.GetDirectoryName(destinationFilePath);
-            long currentFileSize = new FileInfo(sourceFilePath).Length;
-            var stopwatch = Stopwatch.StartNew();
-            long transferTimeMilliseconds = 0;
-            long encryptionTimeMilliseconds = 0;
-            bool fileWasCopied = false;
-
-            try
-            {
-                EnsureDestinationDirectoryExists(backupJob.Name, sourceFilePath, destinationDirectory, createdDirectories);
-                File.Copy(sourceFilePath, destinationFilePath, true);
-                stopwatch.Stop();
-                transferTimeMilliseconds = stopwatch.ElapsedMilliseconds;
-                fileWasCopied = true;
-                encryptionTimeMilliseconds = _cryptoService.EncryptIfRequired(destinationFilePath);
-
-                if (encryptionTimeMilliseconds < 0)
-                {
-                    throw new InvalidOperationException($"CryptoSoft failed with code {encryptionTimeMilliseconds}.");
-                }
-
-                DateTime transferTimestamp = DateTime.Now;
-                state.CurrentSourcePath = sourceFilePath;
-                state.CurrentTargetPath = destinationFilePath;
-                state.CurrentFileSize = currentFileSize;
-                state.LastBackupUpdateTime = transferTimestamp;
-                state.TransferredBytes += currentFileSize;
-                state.ProcessedBytes += currentFileSize;
-                state.RemainingBytes -= currentFileSize;
-                state.RemainingFileCount -= 1;
-                state.ErrorMessage = string.Empty;
-                var transferredFile = new BackupTransferredFile
-                {
-                    Timestamp = transferTimestamp,
-                    SourcePath = sourceFilePath,
-                    DestinationPath = destinationFilePath,
-                    FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = transferTimeMilliseconds,
-                    EncryptionTimeMilliseconds = encryptionTimeMilliseconds
-                };
-                state.LastRunTransferredFiles.Add(transferredFile);
-
-                _stateService.WriteState(state);
-                _loggerService.WriteLog(new LogEntry
-                {
-                    Timestamp = transferTimestamp,
-                    BackupName = backupJob.Name,
-                    SourcePath = sourceFilePath,
-                    DestinationPath = destinationFilePath,
-                    ActionType = "FileTransfer",
-                    FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = transferTimeMilliseconds,
-                    EncryptionTimeMilliseconds = encryptionTimeMilliseconds
-                });
-            }
-            catch (Exception exception)
-            {
-                if (stopwatch.IsRunning)
-                {
-                    stopwatch.Stop();
-                }
-
-                hasErrors = true;
-                DateTime transferTimestamp = DateTime.Now;
-                long loggedTransferTime = fileWasCopied
-                    ? transferTimeMilliseconds
-                    : -Math.Max(1, stopwatch.ElapsedMilliseconds);
-                long loggedEncryptionTime = encryptionTimeMilliseconds < 0
-                    ? encryptionTimeMilliseconds
-                    : 0;
-
-                state.CurrentSourcePath = sourceFilePath;
-                state.CurrentTargetPath = destinationFilePath;
-                state.CurrentFileSize = currentFileSize;
-                state.LastBackupUpdateTime = transferTimestamp;
-                state.TransferredBytes += fileWasCopied ? currentFileSize : 0;
-                state.ProcessedBytes += currentFileSize;
-                state.RemainingBytes -= currentFileSize;
-                state.RemainingFileCount -= 1;
-                state.Status = BackupExecutionStatus.Error;
-                state.ErrorMessage = exception.Message;
-
-                _stateService.WriteState(state);
-                _loggerService.WriteLog(new LogEntry
-                {
-                    Timestamp = transferTimestamp,
-                    BackupName = backupJob.Name,
-                    SourcePath = sourceFilePath,
-                    DestinationPath = destinationFilePath,
-                    ActionType = "Error",
-                    ErrorMessage = exception.Message,
-                    FileSizeBytes = currentFileSize,
-                    TransferTimeMilliseconds = loggedTransferTime,
-                    EncryptionTimeMilliseconds = loggedEncryptionTime
-                });
-            }
-
-            if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string runningBlockedProcess))
-            {
-                state.IsRunning = false;
-                state.LastBackupUpdateTime = DateTime.Now;
-                state.LastRunCompletedAt = state.LastBackupUpdateTime;
-                state.Status = BackupExecutionStatus.Stopped;
-                state.ErrorMessage = _textService.GetBackupBlockedByBusinessSoftwareMessage(runningBlockedProcess);
-                _stateService.WriteState(state);
-
-                _loggerService.WriteLog(new LogEntry
-                {
-                    Timestamp = state.LastBackupUpdateTime,
-                    BackupName = backupJob.Name,
-                    SourcePath = state.CurrentSourcePath,
-                    DestinationPath = state.CurrentTargetPath,
-                    ActionType = "BusinessSoftwareDetected",
-                    ErrorMessage = state.ErrorMessage,
-                    FileSizeBytes = 0,
-                    TransferTimeMilliseconds = 0
-                });
-
-                globalStopwatch.Stop();
-                result.Status = BackupExecutionStatus.Stopped;
-                result.TransferredFileCount = state.LastRunTransferredFiles.Count;
-                result.TransferredBytes = state.TransferredBytes;
-                result.ErrorMessage = state.ErrorMessage;
-                result.ElapsedTime = globalStopwatch.Elapsed;
-                result.StoppedByBusinessSoftware = true;
-                result.BlockingProcessName = runningBlockedProcess;
-                return result;
-            }
-        }
-
-        state.IsRunning = false;
-        state.LastBackupUpdateTime = DateTime.Now;
-        state.LastRunCompletedAt = state.LastBackupUpdateTime;
-        state.Status = hasErrors ? BackupExecutionStatus.Error : BackupExecutionStatus.Finished;
-        _stateService.WriteState(state);
-
-        if (backupJob.Type == BackupType.Full && !hasErrors)
-        {
-            _backupHistoryService.SetLastFullBackupUtc(backupJob.Name, DateTime.UtcNow);
-        }
-
-        globalStopwatch.Stop();
-        result.Status = state.Status;
-        result.TransferredFileCount = state.LastRunTransferredFiles.Count;
-        result.TransferredBytes = state.TransferredBytes;
-        result.ErrorMessage = state.ErrorMessage;
-        result.ElapsedTime = globalStopwatch.Elapsed;
-
-        return result;
     }
 
-    private List<string> FilterFilesToCopy(
+    private void CopyFileWithRuntimeControl(
+        SelectedBackupJob selectedBackupJob,
+        TransferWorkItem workItem,
+        BackupState state,
+        ref long fileTransferredBytes)
+    {
+        using FileStream sourceStream = new FileStream(workItem.SourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using FileStream destinationStream = new FileStream(workItem.DestinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
+        byte[] buffer = new byte[CopyBufferSize];
+
+        while (true)
+        {
+            BackupControlAction controlAction = WaitUntilJobCanProceed(selectedBackupJob, state);
+            if (controlAction == BackupControlAction.Stop)
+            {
+                throw new OperationCanceledException("Backup job was stopped.");
+            }
+
+            int bytesRead = sourceStream.Read(buffer, 0, buffer.Length);
+            if (bytesRead == 0)
+            {
+                break;
+            }
+
+            destinationStream.Write(buffer, 0, bytesRead);
+            destinationStream.Flush();
+
+            fileTransferredBytes += bytesRead;
+            state.TransferredBytes += bytesRead;
+            state.ProcessedBytes += bytesRead;
+            state.RemainingBytes = Math.Max(0, state.RemainingBytes - bytesRead);
+            state.LastBackupUpdateTime = DateTime.Now;
+            state.IsRunning = true;
+            state.Status = BackupExecutionStatus.Active;
+            state.RequestedAction = BackupControlAction.Run;
+            state.PauseReason = BackupPauseReason.None;
+            state.PauseReasonDetails = string.Empty;
+            _stateService.WriteState(state);
+        }
+    }
+
+    private BackupControlAction WaitUntilJobCanProceed(SelectedBackupJob selectedBackupJob, BackupState state)
+    {
+        while (true)
+        {
+            BackupExecutionCommandState commandState = _executionController.GetCommandState(selectedBackupJob.JobNumber);
+
+            if (commandState.RequestedAction == BackupControlAction.Stop)
+            {
+                state.IsRunning = false;
+                state.Status = BackupExecutionStatus.Stopping;
+                state.RequestedAction = BackupControlAction.Stop;
+                state.LastBackupUpdateTime = DateTime.Now;
+                _stateService.WriteState(state);
+                return BackupControlAction.Stop;
+            }
+
+            if (_businessSoftwareMonitor.TryGetRunningBlockedProcess(out string blockingProcessName))
+            {
+                _executionController.RequestAutomaticPause(
+                    selectedBackupJob.JobNumber,
+                    _textService.GetBackupBlockedByBusinessSoftwareMessage(blockingProcessName));
+                commandState = _executionController.GetCommandState(selectedBackupJob.JobNumber);
+            }
+
+            if (commandState.RequestedAction == BackupControlAction.Pause)
+            {
+                state.IsRunning = false;
+                state.Status = commandState.PauseReason == BackupPauseReason.BusinessSoftwareDetected
+                    ? BackupExecutionStatus.PausedByBusinessSoftware
+                    : BackupExecutionStatus.Paused;
+                state.RequestedAction = BackupControlAction.Pause;
+                state.PauseReason = commandState.PauseReason;
+                state.PauseReasonDetails = commandState.PauseReasonDetails;
+                state.LastBackupUpdateTime = DateTime.Now;
+                _stateService.WriteState(state);
+
+                if (commandState.PauseReason == BackupPauseReason.BusinessSoftwareDetected
+                    && !_businessSoftwareMonitor.TryGetRunningBlockedProcess(out _))
+                {
+                    _executionController.RequestResume(selectedBackupJob.JobNumber);
+                }
+
+                Thread.Sleep(50);
+                continue;
+            }
+
+            state.IsRunning = true;
+            state.Status = BackupExecutionStatus.Active;
+            state.RequestedAction = BackupControlAction.Run;
+            state.PauseReason = BackupPauseReason.None;
+            state.PauseReasonDetails = string.Empty;
+            return BackupControlAction.Run;
+        }
+    }
+
+    private IEnumerable<string> FilterFilesToCopy(
         IEnumerable<string> sourceFiles,
         BackupJob backupJob,
         DateTime? lastFullBackupUtc)
     {
-        if (backupJob.Type == BackupType.Full)
+        if (backupJob.Type == BackupType.Full || !lastFullBackupUtc.HasValue)
         {
-            return sourceFiles.ToList();
+            return sourceFiles;
         }
 
-        if (!lastFullBackupUtc.HasValue)
-        {
-            return sourceFiles.ToList();
-        }
-
-        var filesToCopy = new List<string>();
-
-        foreach (string sourceFilePath in sourceFiles)
+        return sourceFiles.Where(sourceFilePath =>
         {
             string relativePath = Path.GetRelativePath(backupJob.Source, sourceFilePath);
             string destinationFilePath = Path.Combine(backupJob.Target, relativePath);
 
             if (!File.Exists(destinationFilePath))
             {
-                filesToCopy.Add(sourceFilePath);
-                continue;
+                return true;
             }
 
             DateTime sourceWriteTime = File.GetLastWriteTimeUtc(sourceFilePath);
+            return sourceWriteTime > lastFullBackupUtc.Value;
+        });
+    }
 
-            if (sourceWriteTime > lastFullBackupUtc.Value)
-            {
-                filesToCopy.Add(sourceFilePath);
-            }
-        }
-
-        return filesToCopy;
+    private FileTransferPriority GetFilePriority(string filePath)
+    {
+        string extension = Path.GetExtension(filePath);
+        return RuntimeStoragePaths.GetPriorityExtensions()
+            .Contains(extension, StringComparer.OrdinalIgnoreCase)
+            ? FileTransferPriority.Priority
+            : FileTransferPriority.Normal;
     }
 
     private BackupResult CompleteWithValidationError(BackupResult result, BackupJob backupJob, string errorMessage)
@@ -329,7 +534,8 @@ public class BackupService : IBackupService
             RemainingBytes = 0,
             LastRunStartedAt = timestamp,
             LastRunCompletedAt = timestamp,
-            LastRunTransferredFiles = new List<BackupTransferredFile>()
+            LastRunTransferredFiles = new List<BackupTransferredFile>(),
+            RequestedAction = BackupControlAction.None
         };
 
         _stateService.WriteState(state);
@@ -350,48 +556,40 @@ public class BackupService : IBackupService
         return result;
     }
 
-    private BackupResult CompleteWithBusinessSoftwareStop(BackupResult result, BackupJob backupJob, string processName)
+    private BackupResult CompleteWithStop(
+        BackupResult result,
+        BackupState state,
+        TimeSpan elapsedTime,
+        SelectedBackupJob selectedBackupJob,
+        bool manualStop)
     {
-        DateTime timestamp = DateTime.Now;
-        string errorMessage = _textService.GetBackupBlockedByBusinessSoftwareMessage(processName);
-        var state = new BackupState
-        {
-            BackupName = backupJob.Name,
-            CurrentSourcePath = backupJob.Source,
-            CurrentTargetPath = backupJob.Target,
-            IsRunning = false,
-            Status = BackupExecutionStatus.Stopped,
-            ErrorMessage = errorMessage,
-            CurrentFileSize = 0,
-            LastBackupUpdateTime = timestamp,
-            TransferredBytes = 0,
-            ProcessedBytes = 0,
-            TotalEligibleFileCount = 0,
-            RemainingFileCount = 0,
-            TotalEligibleBytes = 0,
-            RemainingBytes = 0,
-            LastRunStartedAt = timestamp,
-            LastRunCompletedAt = timestamp,
-            LastRunTransferredFiles = new List<BackupTransferredFile>()
-        };
-
+        state.IsRunning = false;
+        state.Status = BackupExecutionStatus.Stopped;
+        state.RequestedAction = BackupControlAction.Stop;
+        state.LastBackupUpdateTime = DateTime.Now;
+        state.LastRunCompletedAt = state.LastBackupUpdateTime;
+        state.ErrorMessage = manualStop
+            ? $"Backup job {selectedBackupJob.JobNumber} was stopped."
+            : state.PauseReasonDetails;
         _stateService.WriteState(state);
+
         _loggerService.WriteLog(new LogEntry
         {
-            Timestamp = timestamp,
-            BackupName = backupJob.Name,
-            SourcePath = backupJob.Source,
-            DestinationPath = backupJob.Target,
-            ActionType = "BusinessSoftwareDetected",
-            ErrorMessage = errorMessage,
-            FileSizeBytes = 0,
+            Timestamp = state.LastBackupUpdateTime,
+            BackupName = selectedBackupJob.Job.Name,
+            SourcePath = state.CurrentSourcePath,
+            DestinationPath = state.CurrentTargetPath,
+            ActionType = "Stopped",
+            ErrorMessage = state.ErrorMessage,
+            FileSizeBytes = state.CurrentFileSize,
             TransferTimeMilliseconds = 0
         });
 
         result.Status = BackupExecutionStatus.Stopped;
-        result.ErrorMessage = errorMessage;
-        result.StoppedByBusinessSoftware = true;
-        result.BlockingProcessName = processName;
+        result.TransferredFileCount = state.LastRunTransferredFiles.Count;
+        result.TransferredBytes = state.TransferredBytes;
+        result.ErrorMessage = state.ErrorMessage;
+        result.ElapsedTime = elapsedTime;
         return result;
     }
 
@@ -428,5 +626,32 @@ public class BackupService : IBackupService
             FileSizeBytes = 0,
             TransferTimeMilliseconds = 0
         });
+    }
+
+    private static void RollBackCurrentFileProgress(BackupState state, long fileTransferredBytes)
+    {
+        if (fileTransferredBytes <= 0)
+        {
+            return;
+        }
+
+        state.TransferredBytes = Math.Max(0, state.TransferredBytes - fileTransferredBytes);
+        state.ProcessedBytes = Math.Max(0, state.ProcessedBytes - fileTransferredBytes);
+        state.RemainingBytes += fileTransferredBytes;
+    }
+
+    private static void DeletePartialFile(string destinationPath)
+    {
+        try
+        {
+            if (File.Exists(destinationPath))
+            {
+                File.Delete(destinationPath);
+            }
+        }
+        catch
+        {
+            // Best effort cleanup for interrupted transfers.
+        }
     }
 }
