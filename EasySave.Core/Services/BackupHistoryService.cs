@@ -3,10 +3,17 @@ using System.Text.Json;
 public class BackupHistoryService
 {
     private readonly string _historyFilePath;
+    private readonly AtomicRuntimeFileStore _fileStore;
+    private readonly JsonSerializerOptions _serializerOptions;
 
     public BackupHistoryService()
     {
         _historyFilePath = RuntimeStoragePaths.BackupHistoryFilePath;
+        _fileStore = new AtomicRuntimeFileStore();
+        _serializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
     }
 
     public DateTime? GetLastFullBackupUtc(string backupName)
@@ -22,26 +29,14 @@ public class BackupHistoryService
     {
         Dictionary<string, DateTime> history = LoadHistory();
         history[backupName] = timestampUtc;
-
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-
-        string json = JsonSerializer.Serialize(history, options);
-        File.WriteAllText(_historyFilePath, json);
+        _fileStore.WriteJson(_historyFilePath, history, _serializerOptions);
     }
 
     private Dictionary<string, DateTime> LoadHistory()
     {
-        if (!File.Exists(_historyFilePath))
-        {
-            return new Dictionary<string, DateTime>();
-        }
-
-        string json = File.ReadAllText(_historyFilePath);
-        Dictionary<string, DateTime>? history = JsonSerializer.Deserialize<Dictionary<string, DateTime>>(json);
-
-        return history ?? new Dictionary<string, DateTime>();
+        return _fileStore.ReadJson(
+            _historyFilePath,
+            _serializerOptions,
+            static () => new Dictionary<string, DateTime>());
     }
 }

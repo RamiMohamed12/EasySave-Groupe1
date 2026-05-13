@@ -8,10 +8,12 @@ public class BackupJobRegistry
 
     private readonly string _jobsFilePath;
     private readonly JsonSerializerOptions _serializerOptions;
+    private readonly AtomicRuntimeFileStore _fileStore;
 
     public BackupJobRegistry()
     {
         _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
+        _fileStore = new AtomicRuntimeFileStore();
         _serializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true
@@ -23,8 +25,7 @@ public class BackupJobRegistry
     {
         EnsureJobsFileExists();
 
-        string json = File.ReadAllText(_jobsFilePath);
-        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json, _serializerOptions);
+        List<BackupJob>? jobs = _fileStore.ReadJson(_jobsFilePath, _serializerOptions, static () => new List<BackupJob>());
         List<BackupJob> normalizedJobs = NormalizeJobs(jobs ?? new List<BackupJob>());
 
         SaveJobs(normalizedJobs);
@@ -79,28 +80,19 @@ public class BackupJobRegistry
 
     private void EnsureJobsFileExists()
     {
-        if (File.Exists(_jobsFilePath))
+        string? existingJson = _fileStore.ReadAllText(_jobsFilePath);
+        if (!string.IsNullOrWhiteSpace(existingJson))
         {
             return;
         }
 
         List<BackupJob> defaultJobs = CreateDefaultJobs();
-
-        try
-        {
-            using FileStream stream = new FileStream(_jobsFilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
-            JsonSerializer.Serialize(stream, defaultJobs, _serializerOptions);
-        }
-        catch (IOException) when (File.Exists(_jobsFilePath))
-        {
-            // Another process created the default configuration first.
-        }
+        _fileStore.WriteJson(_jobsFilePath, defaultJobs, _serializerOptions);
     }
 
     private void SaveJobs(List<BackupJob> jobs)
     {
-        string json = JsonSerializer.Serialize(jobs, _serializerOptions);
-        File.WriteAllText(_jobsFilePath, json);
+        _fileStore.WriteJson(_jobsFilePath, jobs, _serializerOptions);
     }
 
     private static List<BackupJob> NormalizeJobs(IReadOnlyList<BackupJob> jobs)

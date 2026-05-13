@@ -7,11 +7,13 @@ public class StateService
     private readonly string _jobsFilePath;
     private readonly Dictionary<string, BackupState> _statesByBackupName;
     private readonly JsonSerializerOptions _serializerOptions;
+    private readonly AtomicRuntimeFileStore _fileStore;
 
     public StateService()
     {
         _stateFilePath = RuntimeStoragePaths.StateFilePath;
         _jobsFilePath = RuntimeStoragePaths.JobsFilePath;
+        _fileStore = new AtomicRuntimeFileStore();
         _serializerOptions = new JsonSerializerOptions
         {
             WriteIndented = true
@@ -69,26 +71,17 @@ public class StateService
 
     private IReadOnlyList<BackupJob> LoadConfiguredJobs()
     {
-        if (!File.Exists(_jobsFilePath))
-        {
-            return Array.Empty<BackupJob>();
-        }
-
-        string json = File.ReadAllText(_jobsFilePath);
-        List<BackupJob>? jobs = JsonSerializer.Deserialize<List<BackupJob>>(json, _serializerOptions);
+        List<BackupJob>? jobs = _fileStore.ReadJson(_jobsFilePath, _serializerOptions, static () => new List<BackupJob>());
 
         return jobs ?? new List<BackupJob>();
     }
 
     private Dictionary<string, BackupState> LoadExistingStates()
     {
-        if (!File.Exists(_stateFilePath))
-        {
-            return new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        string json = File.ReadAllText(_stateFilePath);
-        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json, _serializerOptions);
+        List<BackupState>? states = _fileStore.ReadJson(
+            _stateFilePath,
+            _serializerOptions,
+            static () => new List<BackupState>());
         var statesByBackupName = new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
 
         if (states is null)
@@ -110,8 +103,6 @@ public class StateService
         List<BackupState> stateSnapshot = _statesByBackupName.Values
             .OrderBy(currentState => currentState.BackupName)
             .ToList();
-
-        string json = JsonSerializer.Serialize(stateSnapshot, _serializerOptions);
-        File.WriteAllText(_stateFilePath, json);
+        _fileStore.WriteJson(_stateFilePath, stateSnapshot, _serializerOptions);
     }
 }
