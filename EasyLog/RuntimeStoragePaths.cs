@@ -61,9 +61,24 @@ public static class RuntimeStoragePaths
         return NormalizeEncryptedExtensions(GetSettings().EncryptedExtensions);
     }
 
+    public static IReadOnlyList<string> GetPriorityExtensions()
+    {
+        return NormalizeExtensions(GetSettings().PriorityExtensions);
+    }
+
     public static string GetCryptoSoftKey()
     {
         return GetSettings().CryptoSoftKey ?? string.Empty;
+    }
+
+    public static int GetLargeFileThresholdKb()
+    {
+        return NormalizeLargeFileThresholdKb(GetSettings().LargeFileThresholdKb);
+    }
+
+    public static int GetMaxConcurrentJobs()
+    {
+        return NormalizeMaxConcurrentJobs(GetSettings().MaxConcurrentJobs);
     }
 
     public static string GetCryptoSoftPath()
@@ -101,9 +116,27 @@ public static class RuntimeStoragePaths
         UpdateSettings(settings => settings.EncryptedExtensions = normalizedExtensions);
     }
 
+    public static void SetPriorityExtensions(IEnumerable<string> extensions)
+    {
+        List<string> normalizedExtensions = NormalizeExtensions(extensions).ToList();
+        UpdateSettings(settings => settings.PriorityExtensions = normalizedExtensions);
+    }
+
     public static void SetCryptoSoftKey(string key)
     {
         UpdateSettings(settings => settings.CryptoSoftKey = key?.Trim() ?? string.Empty);
+    }
+
+    public static void SetLargeFileThresholdKb(int thresholdKb)
+    {
+        int normalizedThresholdKb = NormalizeLargeFileThresholdKb(thresholdKb);
+        UpdateSettings(settings => settings.LargeFileThresholdKb = normalizedThresholdKb);
+    }
+
+    public static void SetMaxConcurrentJobs(int maxConcurrentJobs)
+    {
+        int normalizedMaxConcurrentJobs = NormalizeMaxConcurrentJobs(maxConcurrentJobs);
+        UpdateSettings(settings => settings.MaxConcurrentJobs = normalizedMaxConcurrentJobs);
     }
 
     public static void SetCryptoSoftPath(string path)
@@ -179,10 +212,13 @@ public static class RuntimeStoragePaths
         settings.LanguageCode ??= string.Empty;
         settings.LogFileFormat ??= string.Empty;
         settings.EncryptedExtensions ??= new List<string>();
+        settings.PriorityExtensions ??= new List<string>();
         settings.CryptoSoftKey ??= string.Empty;
         settings.CryptoSoftPath ??= string.Empty;
         settings.BlockedProcessNames ??= new List<string>();
         settings.ThemeMode ??= string.Empty;
+        settings.LargeFileThresholdKb = NormalizeLargeFileThresholdKb(settings.LargeFileThresholdKb);
+        settings.MaxConcurrentJobs = NormalizeMaxConcurrentJobs(settings.MaxConcurrentJobs);
         return settings;
     }
 
@@ -274,6 +310,11 @@ public static class RuntimeStoragePaths
 
     private static IReadOnlyList<string> NormalizeEncryptedExtensions(IEnumerable<string>? extensions)
     {
+        return NormalizeExtensions(extensions);
+    }
+
+    private static IReadOnlyList<string> NormalizeExtensions(IEnumerable<string>? extensions)
+    {
         if (extensions is null)
         {
             return Array.Empty<string>();
@@ -287,6 +328,16 @@ public static class RuntimeStoragePaths
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(extension => extension, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static int NormalizeLargeFileThresholdKb(int thresholdKb)
+    {
+        return thresholdKb < 0 ? 0 : thresholdKb;
+    }
+
+    private static int NormalizeMaxConcurrentJobs(int maxConcurrentJobs)
+    {
+        return maxConcurrentJobs <= 0 ? 2 : maxConcurrentJobs;
     }
 
     private static string NormalizeExtension(string extension)
