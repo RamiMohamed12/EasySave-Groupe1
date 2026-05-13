@@ -21,6 +21,12 @@ public class BackupState
     public DateTime? LastRunStartedAt { get; set; }
     public DateTime? LastRunCompletedAt { get; set; }
     public List<BackupTransferredFile> LastRunTransferredFiles { get; set; }
+    public bool IsPriorityWorkPending { get; set; }
+    public FileTransferPriority CurrentFilePriority { get; set; }
+    public bool IsLargeFileTransfer { get; set; }
+    public BackupPauseReason PauseReason { get; set; }
+    public BackupControlAction RequestedAction { get; set; }
+    public string PauseReasonDetails { get; set; }
 
     public double Progress => TotalEligibleBytes > 0 ? (double)ProcessedBytes / TotalEligibleBytes * 100 : 0;
     public BackupState()
@@ -42,6 +48,12 @@ public class BackupState
         LastRunStartedAt = null;
         LastRunCompletedAt = null;
         LastRunTransferredFiles = new List<BackupTransferredFile>();
+        IsPriorityWorkPending = false;
+        CurrentFilePriority = FileTransferPriority.Normal;
+        IsLargeFileTransfer = false;
+        PauseReason = BackupPauseReason.None;
+        RequestedAction = BackupControlAction.None;
+        PauseReasonDetails = string.Empty;
     }
     
 }
