@@ -305,6 +305,10 @@
                                     Margin="0,0,8,0"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="AddJobButton_Click" />
+                            <Button Name="EditJobButton"
+                                    Width="170"
+                                    Margin="0,0,8,0"
+                                    Click="EditJobButton_Click" />
                             <Button Name="DeleteJobButton"
                                     Width="170"
                                     Margin="0,0,8,0"
@@ -316,72 +320,31 @@
                         </StackPanel>
                     </Border>
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="2*" />
-                        </Grid.ColumnDefinitions>
-
-                        <GroupBox Grid.Column="0" Name="ConfiguredJobsGroupBox" Margin="0,0,8,0">
-                            <DataGrid Name="JobsDataGrid"
-                                      Margin="4"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="False"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      SelectionMode="Single"
-                                      SelectionChanged="JobsDataGrid_SelectionChanged">
-                                <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn x:Name="RunColumn" Binding="{Binding IsSelected}" Width="55" />
-                                    <DataGridTextColumn x:Name="NumberColumn" Binding="{Binding JobNumber}" IsReadOnly="True" Width="60" />
-                                    <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="120" />
-                                    <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" IsReadOnly="True" Width="110" />
-                                    <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="130" />
-                                    <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" Width="*" />
-                                    <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" Width="*" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </GroupBox>
-
-                        <GroupBox Grid.Column="1" Name="EditSelectedJobGroupBox" Margin="8,0,0,0">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled">
-                                <Grid Margin="8">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Name="SelectedJobLabel" Margin="0,0,0,12" FontWeight="Bold" />
-                                    <TextBlock Grid.Row="1" Name="SourceLabel" FontWeight="SemiBold" />
-                                    <TextBox Grid.Row="2" Name="SourceTextBox" Margin="0,4,0,10" />
-                                    <TextBlock Grid.Row="3" Name="TargetLabel" FontWeight="SemiBold" />
-                                    <TextBox Grid.Row="4" Name="TargetTextBox" Margin="0,4,0,10" />
-                                    <TextBlock Grid.Row="5" Name="TypeLabel" FontWeight="SemiBold" />
-                                    <ComboBox Grid.Row="6" Name="TypeComboBox" Margin="0,4,0,12" />
-                                    <Button Grid.Row="7"
-                                            Name="SaveSelectedJobButton"
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Click="SaveSelectedJobButton_Click" />
-                                    <TextBlock Grid.Row="8"
-                                               Name="EditHintTextBlock"
-                                               Margin="0,10,0,0"
-                                               TextWrapping="Wrap"
-                                               Style="{StaticResource MutedTextStyle}" />
-                                </Grid>
-                            </ScrollViewer>
-                        </GroupBox>
-                    </Grid>
+                    <GroupBox Grid.Row="1" Name="ConfiguredJobsGroupBox">
+                        <DataGrid Name="JobsDataGrid"
+                                  Margin="4"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  SelectionMode="Single"
+                                  SelectionChanged="JobsDataGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn x:Name="RunColumn" Binding="{Binding IsSelected}" Width="55" IsReadOnly="False" />
+                                <DataGridTextColumn x:Name="NumberColumn" Binding="{Binding JobNumber}" IsReadOnly="True" Width="60" />
+                                <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="140" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" IsReadOnly="True" Width="110" />
+                                <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="130" />
+                                <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" IsReadOnly="True" Width="*" />
+                                <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" IsReadOnly="True" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
                 </Grid>
 
                 <Grid Name="ExecutionPanel" Visibility="Collapsed">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
@@ -412,7 +375,27 @@
                         </StackPanel>
                     </Border>
 
-                    <GroupBox Grid.Row="1" Name="ExecutionJobsGroupBox">
+                    <Border Grid.Row="1"
+                            Name="BusinessSoftwareBanner"
+                            Visibility="Collapsed"
+                            Background="{DynamicResource WarningBrush}"
+                            CornerRadius="4"
+                            Padding="12,8"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠ "
+                                       FontWeight="SemiBold"
+                                       Foreground="White"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Name="BusinessSoftwareBannerText"
+                                       Foreground="White"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <GroupBox Grid.Row="2" Name="ExecutionJobsGroupBox">
                         <DataGrid Name="ExecutionJobsDataGrid"
                                   Margin="4"
                                   IsReadOnly="False"
@@ -587,6 +570,73 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+                <!-- Popup overlay edition de tache -->
+                <Grid Name="EditJobOverlay" Visibility="Collapsed" Panel.ZIndex="100">
+                    <Rectangle Fill="Black" Opacity="0.45" />
+                    <Border MaxWidth="480"
+                            MaxHeight="520"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            CornerRadius="8"
+                            Padding="24"
+                            Background="{DynamicResource SidebarBrush}"
+                            BorderBrush="{DynamicResource BorderBrushToken}"
+                            BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Titre + bouton fermer -->
+                            <Grid Grid.Row="0" Margin="0,0,0,16">
+                                <TextBlock Name="SelectedJobLabel" FontWeight="Bold" FontSize="15"
+                                           VerticalAlignment="Center" />
+                                <Button HorizontalAlignment="Right"
+                                        Width="28" Height="28"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        Content="&#xE711;"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Click="CloseEditPopup_Click" />
+                            </Grid>
+
+                            <TextBlock Grid.Row="1" Name="NameLabel" FontWeight="SemiBold" />
+                            <TextBox Grid.Row="2" Name="NameTextBox" Margin="0,4,0,10" MinWidth="380" />
+                            <TextBlock Grid.Row="3" Name="SourceLabel" FontWeight="SemiBold" />
+                            <TextBox Grid.Row="4" Name="SourceTextBox" Margin="0,4,0,10" />
+                            <TextBlock Grid.Row="5" Name="TargetLabel" FontWeight="SemiBold" />
+                            <TextBox Grid.Row="6" Name="TargetTextBox" Margin="0,4,0,10" />
+                            <TextBlock Grid.Row="7" Name="TypeLabel" FontWeight="SemiBold" />
+                            <ComboBox Grid.Row="8" Name="TypeComboBox" Margin="0,4,0,16" />
+                            <Grid Grid.Row="9">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Name="SaveSelectedJobButton"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Click="SaveSelectedJobButton_Click" />
+                                <Button Grid.Column="2"
+                                        Width="110"
+                                        Name="CancelEditButton"
+                                        Click="CloseEditPopup_Click" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
             </Grid>
         </Grid>
     </Grid>

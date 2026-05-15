@@ -29,6 +29,15 @@ public class StateService
         WriteStateSnapshot();
     }
 
+    public IReadOnlyList<BackupState> ReadAllStates()
+    {
+        List<BackupState>? states = _fileStore.ReadJson(
+            _stateFilePath,
+            _serializerOptions,
+            static () => new List<BackupState>());
+        return states ?? new List<BackupState>();
+    }
+
     public void SynchronizeConfiguredJobs(IEnumerable<BackupJob> jobs)
     {
         SynchronizeConfiguredJobsCore(jobs);

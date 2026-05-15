@@ -215,34 +215,41 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="32" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Bouton couvre toute la largeur pour le clic et le style -->
                                 <ToggleButton x:Name="Toggle"
+                                              Grid.ColumnSpan="2"
                                               Focusable="False"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                               ClickMode="Press"
                                               Background="{TemplateBinding Background}"
                                               BorderBrush="{TemplateBinding BorderBrush}"
                                               BorderThickness="{TemplateBinding BorderThickness}"
-                                              Foreground="{TemplateBinding Foreground}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="32" />
-                                        </Grid.ColumnDefinitions>
-                                        <ContentPresenter Margin="{TemplateBinding Padding}"
-                                                          VerticalAlignment="Center"
-                                                          HorizontalAlignment="Left"
-                                                          Content="{TemplateBinding SelectionBoxItem}"
-                                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="&#xE70D;"
-                                                   FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="10"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="{TemplateBinding Foreground}" />
-                                    </Grid>
-                                </ToggleButton>
+                                              Foreground="{TemplateBinding Foreground}" />
+
+                                <!-- Affichage de l'élément sélectionné — voisin du ToggleButton -->
+                                <ContentPresenter Grid.Column="0"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  IsHitTestVisible="False"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
+
+                                <!-- Flèche -->
+                                <TextBlock Grid.Column="1"
+                                           Text="&#xE70D;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="10"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           Foreground="{TemplateBinding Foreground}" />
                                 <Popup x:Name="Popup"
                                        Placement="Bottom"
                                        IsOpen="{TemplateBinding IsDropDownOpen}"

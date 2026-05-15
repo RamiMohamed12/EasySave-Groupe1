@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private List<ThemeOption> _themeOptions = new();
     private List<string> _blockedProcessNames = new();
     private DashboardSection _activeSection = DashboardSection.Overview;
+    private bool _isAddingNewJob;
 
     public MainWindow()
     {
@@ -188,9 +189,24 @@ public partial class MainWindow : Window
 
     private void SaveSelectedJobButton_Click(object sender, RoutedEventArgs e)
     {
-        if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
+        string jobName = NameTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(jobName))
         {
-            StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
+            StatusTextBlock.Text = UiText("Please enter a job name.", "Veuillez saisir un nom de job.");
+            return;
+        }
+
+        string jobSource = SourceTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(jobSource))
+        {
+            StatusTextBlock.Text = UiText("Please enter a source path.", "Veuillez saisir un chemin source.");
+            return;
+        }
+
+        string jobTarget = TargetTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(jobTarget))
+        {
+            StatusTextBlock.Text = UiText("Please enter a target path.", "Veuillez saisir un chemin cible.");
             return;
         }
 
@@ -200,13 +216,59 @@ public partial class MainWindow : Window
             return;
         }
 
-        selectedRow.Source = SourceTextBox.Text.Trim();
-        selectedRow.Target = TargetTextBox.Text.Trim();
+        if (!Directory.Exists(jobSource))
+        {
+            StatusTextBlock.Text = UiText($"Source path does not exist: {jobSource}", $"Le chemin source n'existe pas : {jobSource}");
+            return;
+        }
+
+        if (!Directory.Exists(jobTarget))
+        {
+            StatusTextBlock.Text = UiText($"Target path does not exist: {jobTarget}", $"Le chemin cible n'existe pas : {jobTarget}");
+            return;
+        }
+
+        if (string.Equals(Path.GetFullPath(jobSource), Path.GetFullPath(jobTarget), StringComparison.OrdinalIgnoreCase))
+        {
+            StatusTextBlock.Text = UiText("Source and target paths must be different.", "La source et la cible ne peuvent pas être identiques.");
+            return;
+        }
+
+        if (_isAddingNewJob)
+        {
+            _isAddingNewJob = false;
+            int jobNumber = _jobRegistry.LoadJobs().Count + 1;
+            _jobRegistry.CreateJob(jobNumber, new BackupJob
+            {
+                Name = jobName,
+                Source = jobSource,
+                Target = jobTarget,
+                Type = selectedType
+            });
+            _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+            LoadJobsIntoGrid();
+            JobsDataGrid.SelectedIndex = _jobRows.Count - 1;
+            EditJobOverlay.Visibility = Visibility.Collapsed;
+            StatusTextBlock.Text = Format("Wpf.JobAddedStatus", jobNumber);
+            SetActiveSection(DashboardSection.Tasks);
+            RefreshStateAndLog();
+            return;
+        }
+
+        if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
+        {
+            StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
+            return;
+        }
+
+        selectedRow.Name = jobName;
+        selectedRow.Source = jobSource;
+        selectedRow.Target = jobTarget;
         selectedRow.Type = _textService.GetBackupTypeDisplayName(selectedType);
         selectedRow.ConfigurationStatus = GetConfigurationStatus(selectedRow.Source, selectedRow.Target);
-        JobsDataGrid.Items.Refresh();
-        OverviewJobsDataGrid.Items.Refresh();
-        ExecutionJobsDataGrid.Items.Refresh();
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
 
         _jobRegistry.UpdateJob(selectedRow.JobNumber, new BackupJob
         {
@@ -217,6 +279,7 @@ public partial class MainWindow : Window
         });
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+        EditJobOverlay.Visibility = Visibility.Collapsed;
         StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
         UpdateDashboardMetrics();
         RefreshStateAndLog();
@@ -248,9 +311,9 @@ public partial class MainWindow : Window
         }
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
-        JobsDataGrid.Items.Refresh();
-        OverviewJobsDataGrid.Items.Refresh();
-        ExecutionJobsDataGrid.Items.Refresh();
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
         UpdateDashboardMetrics();
     }
 
@@ -281,7 +344,10 @@ public partial class MainWindow : Window
             return Format("Wpf.FileNotFound", path);
         }
 
-        string content = File.ReadAllText(path);
+        string content;
+        using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var reader = new StreamReader(fs))
+            content = reader.ReadToEnd();
         if (string.IsNullOrWhiteSpace(content))
         {
             return Text("Wpf.EmptyFile");
@@ -310,21 +376,6 @@ public partial class MainWindow : Window
 
     private void JobsDataGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
-        {
-            SelectedJobLabel.Text = Text("Wpf.NoSelectedJob");
-            SourceTextBox.Text = string.Empty;
-            TargetTextBox.Text = string.Empty;
-            TypeComboBox.SelectedIndex = -1;
-            UpdateDashboardMetrics();
-            return;
-        }
-
-        BackupJob selectedJob = _jobRegistry.LoadJobs()[selectedRow.JobNumber - 1];
-        SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", selectedRow.JobNumber, selectedRow.Name, selectedRow.Type);
-        SourceTextBox.Text = selectedRow.Source;
-        TargetTextBox.Text = selectedRow.Target;
-        TypeComboBox.SelectedValue = selectedJob.Type;
         UpdateDashboardMetrics();
     }
 
@@ -411,13 +462,14 @@ public partial class MainWindow : Window
         TypeColumn.Header = Text("Wpf.TypeColumnHeader");
         SourceColumn.Header = Text("Wpf.SourceColumnHeader");
         TargetColumn.Header = Text("Wpf.TargetColumnHeader");
-        EditSelectedJobGroupBox.Header = Text("Wpf.EditSelectedJobHeader");
+        NameLabel.Text = UiText("Name", "Nom");
         SourceLabel.Text = Text("Wpf.SourceColumnHeader");
         TargetLabel.Text = Text("Wpf.TargetColumnHeader");
         TypeLabel.Text = Text("Wpf.TypeColumnHeader");
         EncryptedExtensionsLabel.Text = Text("Wpf.EncryptedExtensionsLabel");
         CryptoSoftKeyLabel.Text = Text("Wpf.CryptoSoftKeyLabel");
-        EditHintTextBlock.Text = Text("Wpf.EditHint");
+        SetButtonContent(EditJobButton, "", UiText("Edit selected", "Modifier selection"));
+        SetButtonContent(CancelEditButton, "", UiText("Cancel", "Annuler"));
         StateGroupBox.Header = Text("Wpf.StateHeader");
         LogGroupBox.Header = Text("Wpf.LogHeader");
         SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
@@ -621,26 +673,66 @@ public partial class MainWindow : Window
     private void AddJobButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isBusy)
+            return;
+
+        _isAddingNewJob = true;
+        SelectedJobLabel.Text = UiText("New job", "Nouvelle tâche");
+        NameTextBox.Text = string.Empty;
+        SourceTextBox.Text = string.Empty;
+        TargetTextBox.Text = string.Empty;
+        TypeComboBox.SelectedIndex = _backupTypeOptions.Count > 0 ? 0 : -1;
+        EditJobOverlay.Visibility = Visibility.Visible;
+        NameTextBox.Focus();
+    }
+
+    private void EditJobButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (JobsDataGrid.SelectedItem is not JobRow row)
         {
+            StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
             return;
         }
+        OpenEditPopup(row);
+    }
 
-        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
-        int jobNumber = jobs.Count + 1;
-        BackupType selectedType = TypeComboBox.SelectedValue is BackupType type ? type : BackupType.Full;
+    private void EditJobInlineButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (((Button)sender).Tag is not JobRow row)
+            return;
+        JobsDataGrid.SelectedItem = row;
+        OpenEditPopup(row);
+    }
 
-        _jobRegistry.CreateJob(jobNumber, new BackupJob
-        {
-            Name = $"Job{jobNumber}",
-            Source = string.Empty,
-            Target = string.Empty,
-            Type = selectedType
-        });
+    private void OpenEditPopup(JobRow row)
+    {
+        BackupJob job = _jobRegistry.LoadJobs()[row.JobNumber - 1];
+        SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", row.JobNumber, row.Name, row.Type);
+        NameTextBox.Text = row.Name;
+        SourceTextBox.Text = row.Source;
+        TargetTextBox.Text = row.Target;
+        TypeComboBox.SelectedValue = job.Type;
+        EditJobOverlay.Visibility = Visibility.Visible;
+        NameTextBox.Focus();
+    }
 
+    private void CloseEditPopup_Click(object sender, RoutedEventArgs e)
+    {
+        _isAddingNewJob = false;
+        EditJobOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void DeleteJobInlineButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+            return;
+        if (((Button)sender).Tag is not JobRow row)
+            return;
+
+        _jobRegistry.DeleteJob(row.JobNumber);
         LoadJobsIntoGrid();
-        JobsDataGrid.SelectedIndex = _jobRows.Count - 1;
-        StatusTextBlock.Text = Format("Wpf.JobAddedStatus", jobNumber);
-        SetActiveSection(DashboardSection.Tasks);
+        if (_jobRows.Count > 0)
+            JobsDataGrid.SelectedIndex = Math.Min(row.JobNumber - 1, _jobRows.Count - 1);
+        StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", row.JobNumber);
         RefreshStateAndLog();
     }
 
@@ -850,6 +942,16 @@ public partial class MainWindow : Window
             : normalized;
     }
 
+    private static void SafeRefresh(DataGrid grid)
+    {
+        // Calling Refresh() during an AddNew/EditItem transaction throws InvalidOperationException.
+        // Skip and let the next timer tick retry instead of committing user's in-progress edits.
+        var view = grid.Items as System.ComponentModel.IEditableCollectionView;
+        if (view != null && (view.IsEditingItem || view.IsAddingNew))
+            return;
+        grid.Items.Refresh();
+    }
+
     private void ApplyRuntimeStateToRows()
     {
         IReadOnlyDictionary<string, BackupState> statesByJobName = LoadStatesByJobName();
@@ -873,27 +975,36 @@ public partial class MainWindow : Window
             row.TransferMode = BuildTransferMode(state);
         }
 
-        JobsDataGrid.Items.Refresh();
-        OverviewJobsDataGrid.Items.Refresh();
-        ExecutionJobsDataGrid.Items.Refresh();
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
+        UpdateBusinessSoftwareBanner(statesByJobName.Values);
+    }
+
+    private void UpdateBusinessSoftwareBanner(IEnumerable<BackupState> states)
+    {
+        BackupState? blocked = _isBusy
+            ? states.FirstOrDefault(s => s.Status == BackupExecutionStatus.PausedByBusinessSoftware)
+            : null;
+        if (blocked != null)
+        {
+            string detail = string.IsNullOrWhiteSpace(blocked.PauseReasonDetails)
+                ? UiText("a business software", "un logiciel métier")
+                : blocked.PauseReasonDetails;
+            BusinessSoftwareBannerText.Text = UiText(
+                $"Execution paused — {detail} is running. It will resume automatically once the software is closed.",
+                $"Exécution suspendue — {detail} est en cours d'exécution. Elle reprendra automatiquement à la fermeture du logiciel.");
+            BusinessSoftwareBanner.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            BusinessSoftwareBanner.Visibility = Visibility.Collapsed;
+        }
     }
 
     private IReadOnlyDictionary<string, BackupState> LoadStatesByJobName()
     {
-        if (!File.Exists(RuntimeStoragePaths.StateFilePath))
-        {
-            return new Dictionary<string, BackupState>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-        options.Converters.Add(new JsonStringEnumConverter());
-        List<BackupState>? states = JsonSerializer.Deserialize<List<BackupState>>(json, options);
-
-        return (states ?? new List<BackupState>())
+        return _stateService.ReadAllStates()
             .ToDictionary(state => state.BackupName, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -941,10 +1052,22 @@ public partial class MainWindow : Window
             : english;
     }
 
-    private sealed record LanguageOption(string LanguageCode, string DisplayName);
-    private sealed record LogFormatOption(string Value, string DisplayName);
-    private sealed record BackupTypeOption(BackupType Value, string DisplayName);
-    private sealed record ThemeOption(string Value, string DisplayName);
+    private sealed record LanguageOption(string LanguageCode, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+    private sealed record LogFormatOption(string Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+    private sealed record BackupTypeOption(BackupType Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+    private sealed record ThemeOption(string Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
 
     private enum DashboardSection
     {

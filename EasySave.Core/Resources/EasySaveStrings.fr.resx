@@ -47,8 +47,8 @@ Octets transferes : {1}
 Temps ecoule : {2}</value></data>
   <data name="BackupResultFailed" xml:space="preserve"><value>Tache {0} en erreur : {1} | {2}</value></data>
   <data name="BackupSuccessMessage" xml:space="preserve"><value>Sauvegarde completee avec succes !</value></data>
-  <data name="BackupTypeFull" xml:space="preserve"><value>Complete</value></data>
-  <data name="BackupTypeDifferential" xml:space="preserve"><value>Differentielle</value></data>
+  <data name="BackupTypeFull" xml:space="preserve"><value>Complète</value></data>
+  <data name="BackupTypeDifferential" xml:space="preserve"><value>Différentielle</value></data>
   <data name="JobStartedTitle" xml:space="preserve"><value>Demarrage de la tache {0} : {1}</value></data>
   <data name="JobCompletedTitle" xml:space="preserve"><value>Tache {0} terminee : {1}</value></data>
   <data name="JobProgressTitle" xml:space="preserve"><value>Progression de la tache {0} : {1}</value></data>

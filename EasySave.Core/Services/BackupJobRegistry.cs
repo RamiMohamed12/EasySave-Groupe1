@@ -166,10 +166,11 @@ public class BackupJobRegistry
     private static BackupJob NormalizeJob(BackupJob job, int jobIndex)
     {
         BackupJob template = CreateDefaultJob(jobIndex);
+        string name = string.IsNullOrWhiteSpace(job.Name) ? template.Name : job.Name.Trim();
 
         return new BackupJob
         {
-            Name = template.Name,
+            Name = name,
             Source = job.Source?.Trim() ?? string.Empty,
             Target = job.Target?.Trim() ?? string.Empty,
             Type = job.Type
