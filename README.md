@@ -5,6 +5,15 @@ Elle prend en charge les sauvegardes complètes et différentielles, conserve l'
 
 La version `1.1.0` introduit une nouvelle interface TUI plus graphique, basée sur des menus interactifs au clavier.
 
+La branche de travail Livrable 3 introduit aussi des capacités runtime avancées :
+
+* planification parallèle contrôlée des sauvegardes
+* extensions prioritaires configurables
+* seuil configurable pour les gros fichiers
+* commandes `Pause`, `Resume` et `Stop` par travail
+* pause automatique si un logiciel métier bloquant est détecté
+* affichage temps réel de l'état et de la progression dans l'interface WPF
+
 ---
 
 ## Sommaire
@@ -164,6 +173,10 @@ Le mode WPF permet de :
 - Ajouter ou supprimer une tâche depuis l’interface ;
 - Configurer les extensions à chiffrer avec CryptoSoft ;
 - Renseigner la clé CryptoSoft utilisée pour le chiffrement ;
+- Définir des extensions prioritaires ;
+- Définir un seuil de gros fichiers en Ko ;
+- Définir le nombre maximal de travaux concurrents ;
+- Mettre en pause, reprendre ou arrêter les travaux sélectionnés ;
 - Consulter directement le contenu de state.json ;
 - Consulter le journal du jour au format JSON ou XML ;
 - Changer la langue de l’interface entre français et anglais ;

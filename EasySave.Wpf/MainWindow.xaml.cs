@@ -6,11 +6,13 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Text.Json.Serialization;
+using System.Globalization;
 
 namespace EasySave.Wpf;
 
 public partial class MainWindow : Window
 {
+    private static readonly AtomicRuntimeFileStore RuntimeFileStore = new();
     private readonly BackupJobRegistry _jobRegistry;
     private readonly StateService _stateService;
     private BackupController _backupController;
@@ -27,6 +29,8 @@ public partial class MainWindow : Window
     private List<BackupTypeOption> _backupTypeOptions = new();
     private List<ThemeOption> _themeOptions = new();
     private List<string> _blockedProcessNames = new();
+    private List<string> _priorityExtensions = new();
+    private List<ThresholdUnitOption> _thresholdUnitOptions = new();
     private DashboardSection _activeSection = DashboardSection.Overview;
     private bool _isAddingNewJob;
 
@@ -46,6 +50,7 @@ public partial class MainWindow : Window
         ConfigureThemeSelector();
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
+        ConfigureThresholdUnitSelector();
         ApplyTexts();
         LoadRuntimeRulesIntoForm();
         LoadEncryptionSettingsIntoForm();
@@ -347,10 +352,7 @@ public partial class MainWindow : Window
             return Format("Wpf.FileNotFound", path);
         }
 
-        string content;
-        using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-        using (var reader = new StreamReader(fs))
-            content = reader.ReadToEnd();
+        string? content = RuntimeFileStore.ReadAllText(path);
         if (string.IsNullOrWhiteSpace(content))
         {
             return Text("Wpf.EmptyFile");
@@ -511,6 +513,19 @@ public partial class MainWindow : Window
         _isApplyingTheme = false;
     }
 
+    private void ConfigureThresholdUnitSelector()
+    {
+        _thresholdUnitOptions =
+        [
+            new ThresholdUnitOption("KB", 1),
+            new ThresholdUnitOption("MB", 1024),
+            new ThresholdUnitOption("GB", 1024 * 1024)
+        ];
+        LargeFileThresholdUnitComboBox.ItemsSource = _thresholdUnitOptions;
+        LargeFileThresholdUnitComboBox.DisplayMemberPath = nameof(ThresholdUnitOption.DisplayName);
+        LargeFileThresholdUnitComboBox.SelectedValuePath = nameof(ThresholdUnitOption.ValueInKb);
+    }
+
     private void ApplyTexts()
     {
         Title = Text("Wpf.WindowTitle");
@@ -548,8 +563,10 @@ public partial class MainWindow : Window
         LogFormatSectionTitle.Text = Text("Wpf.LogFormatSectionTitle");
         EncryptionSectionTitle.Text = Text("Wpf.EncryptionSectionTitle");
         RuntimeRulesSectionTitle.Text = UiText("Runtime scheduling", "Ordonnancement runtime");
-        PriorityExtensionsLabel.Text = UiText("Priority extensions (; or , separated)", "Extensions prioritaires (separees par ; ou ,)");
-        LargeFileThresholdLabel.Text = UiText("Large file threshold (KB)", "Seuil gros fichiers (Ko)");
+        PriorityExtensionsLabel.Text = UiText("Priority extensions", "Extensions prioritaires");
+        PriorityExtensionInputLabel.Text = UiText("Add an extension", "Ajouter une extension");
+        PriorityPreviewLabel.Text = UiText("Effective priority order", "Ordre effectif des priorites");
+        LargeFileThresholdLabel.Text = UiText("Large file threshold", "Seuil gros fichiers");
         MaxConcurrencyLabel.Text = UiText("Max concurrent jobs", "Nombre max de jobs concurrents");
         BusinessSoftwareSectionTitle.Text = Text("Wpf.BusinessSoftwareSectionTitle");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
@@ -558,6 +575,8 @@ public partial class MainWindow : Window
         ProcessNameLabel.Text = Text("Wpf.ProcessNameLabel");
         SetButtonContent(AddProcessButton, "\uE710", Text("Wpf.AddBlockedProcessButton"));
         SetButtonContent(RemoveProcessButton, "\uE74D", Text("Wpf.RemoveBlockedProcessButton"));
+        SetButtonContent(AddPriorityExtensionButton, "\uE710", UiText("Add extension", "Ajouter extension"));
+        SetButtonContent(RemovePriorityExtensionButton, "\uE74D", UiText("Remove selected", "Supprimer selection"));
         SetButtonContent(AddJobButton, "\uE710", Text("Wpf.AddJobButton"));
         SetButtonContent(DeleteJobButton, "\uE74D", Text("Wpf.DeleteJobButton"));
         SetButtonContent(SelectAllJobsButton, "\uE8B3", UiText("Select all", "Tout cocher"));
@@ -616,6 +635,7 @@ public partial class MainWindow : Window
         RefreshBlockedProcesses();
         ApplyTexts();
         LoadEncryptionSettingsIntoForm();
+        LoadRuntimeRulesIntoForm();
         StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
         RefreshStateAndLog();
     }
@@ -706,8 +726,15 @@ public partial class MainWindow : Window
 
     private void LoadRuntimeRulesIntoForm()
     {
-        PriorityExtensionsTextBox.Text = string.Join("; ", RuntimeStoragePaths.GetPriorityExtensions());
-        LargeFileThresholdTextBox.Text = RuntimeStoragePaths.GetLargeFileThresholdKb().ToString();
+        _priorityExtensions = RuntimeStoragePaths.GetPriorityExtensions().ToList();
+        PriorityExtensionsListBox.ItemsSource = null;
+        PriorityExtensionsListBox.ItemsSource = _priorityExtensions;
+        PriorityPreviewTextBlock.Text = BuildPriorityPreview();
+        int thresholdKb = RuntimeStoragePaths.GetLargeFileThresholdKb();
+        ThresholdUnitOption selectedUnit = SelectBestThresholdUnit(thresholdKb);
+        LargeFileThresholdUnitComboBox.SelectedValue = selectedUnit.ValueInKb;
+        LargeFileThresholdTextBox.Text = FormatThresholdValue(thresholdKb, selectedUnit.ValueInKb);
+        UpdateLargeFileThresholdSummary();
         MaxConcurrencyTextBox.Text = RuntimeStoragePaths.GetMaxConcurrentJobs().ToString();
     }
 
@@ -722,7 +749,7 @@ public partial class MainWindow : Window
 
     private void SaveRuntimeRulesButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!int.TryParse(LargeFileThresholdTextBox.Text.Trim(), out int thresholdKb) || thresholdKb < 0)
+        if (!TryParseThresholdKb(out int thresholdKb))
         {
             StatusTextBlock.Text = UiText("Large file threshold must be a number >= 0.", "Le seuil gros fichiers doit etre un nombre >= 0.");
             return;
@@ -734,11 +761,69 @@ public partial class MainWindow : Window
             return;
         }
 
-        RuntimeStoragePaths.SetPriorityExtensions([PriorityExtensionsTextBox.Text]);
+        RuntimeStoragePaths.SetPriorityExtensions(_priorityExtensions);
         RuntimeStoragePaths.SetLargeFileThresholdKb(thresholdKb);
         RuntimeStoragePaths.SetMaxConcurrentJobs(maxConcurrentJobs);
         LoadRuntimeRulesIntoForm();
-        StatusTextBlock.Text = UiText("Runtime scheduling rules saved.", "Regles runtime enregistrees.");
+        StatusTextBlock.Text = UiText("Runtime scheduling rules saved. Priority order preserved.", "Regles runtime enregistrees. L'ordre des priorites est conserve.");
+    }
+
+    private void AddPriorityExtensionButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? extension = NormalizePriorityExtension(PriorityExtensionTextBox.Text);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            StatusTextBlock.Text = UiText("Enter a valid extension like .txt or pdf.", "Saisissez une extension valide comme .txt ou pdf.");
+            return;
+        }
+
+        if (_priorityExtensions.Any(existing => string.Equals(existing, extension, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusTextBlock.Text = UiText("This extension is already in the priority list.", "Cette extension est deja dans la liste prioritaire.");
+            return;
+        }
+
+        _priorityExtensions.Add(extension);
+        RefreshPriorityExtensionsList();
+        PriorityExtensionTextBox.Text = string.Empty;
+        PriorityExtensionTextBox.Focus();
+        StatusTextBlock.Text = UiText($"Added {extension} to the priority list.", $"{extension} a ete ajoutee a la liste prioritaire.");
+    }
+
+    private void PriorityExtensionTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        AddPriorityExtensionButton_Click(sender, e);
+        e.Handled = true;
+    }
+
+    private void RemovePriorityExtensionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (PriorityExtensionsListBox.SelectedItem is not string selectedExtension)
+        {
+            StatusTextBlock.Text = UiText("Select a priority extension first.", "Selectionnez d'abord une extension prioritaire.");
+            return;
+        }
+
+        _priorityExtensions = _priorityExtensions
+            .Where(extension => !string.Equals(extension, selectedExtension, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        RefreshPriorityExtensionsList();
+        StatusTextBlock.Text = UiText($"Removed {selectedExtension} from the priority list.", $"{selectedExtension} a ete retiree de la liste prioritaire.");
+    }
+
+    private void LargeFileThresholdUnitComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateLargeFileThresholdSummary();
+    }
+
+    private void LargeFileThresholdTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateLargeFileThresholdSummary();
     }
 
     private void AddJobButton_Click(object sender, RoutedEventArgs e)
@@ -1106,10 +1191,150 @@ public partial class MainWindow : Window
         };
     }
 
+    private string BuildPriorityPreview()
+    {
+        if (_priorityExtensions.Count == 0)
+        {
+            return UiText(
+                "No priority extensions configured.\nExample: .txt; .pdf; .docx",
+                "Aucune extension prioritaire configuree.\nExemple : .txt; .pdf; .docx");
+        }
+
+        return string.Join(
+            Environment.NewLine,
+            _priorityExtensions.Select((extension, index) => $"{index + 1}. {extension}"));
+    }
+
+    private void RefreshPriorityExtensionsList()
+    {
+        PriorityExtensionsListBox.ItemsSource = null;
+        PriorityExtensionsListBox.ItemsSource = _priorityExtensions;
+        PriorityPreviewTextBlock.Text = BuildPriorityPreview();
+    }
+
+    private string? NormalizePriorityExtension(string? rawExtension)
+    {
+        if (string.IsNullOrWhiteSpace(rawExtension))
+        {
+            return null;
+        }
+
+        string normalized = rawExtension.Trim().ToLowerInvariant();
+        return normalized.StartsWith('.')
+            ? normalized
+            : $".{normalized}";
+    }
+
+    private ThresholdUnitOption SelectBestThresholdUnit(int thresholdKb)
+    {
+        if (thresholdKb > 0 && thresholdKb % (1024 * 1024) == 0)
+        {
+            return _thresholdUnitOptions.First(option => option.ValueInKb == 1024 * 1024);
+        }
+
+        if (thresholdKb > 0 && thresholdKb % 1024 == 0)
+        {
+            return _thresholdUnitOptions.First(option => option.ValueInKb == 1024);
+        }
+
+        return _thresholdUnitOptions.First(option => option.ValueInKb == 1);
+    }
+
+    private string FormatThresholdValue(int thresholdKb, int unitSizeInKb)
+    {
+        if (unitSizeInKb <= 0)
+        {
+            return thresholdKb.ToString(CultureInfo.CurrentCulture);
+        }
+
+        decimal value = thresholdKb / (decimal)unitSizeInKb;
+        return value == decimal.Truncate(value)
+            ? decimal.Truncate(value).ToString(CultureInfo.CurrentCulture)
+            : value.ToString("0.##", CultureInfo.CurrentCulture);
+    }
+
+    private bool TryParseThresholdKb(out int thresholdKb)
+    {
+        thresholdKb = 0;
+        string rawValue = LargeFileThresholdTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return true;
+        }
+
+        if (!TryParseDecimal(rawValue, out decimal value) || value < 0)
+        {
+            return false;
+        }
+
+        int unitSizeInKb = LargeFileThresholdUnitComboBox.SelectedValue is int selectedUnit && selectedUnit > 0
+            ? selectedUnit
+            : 1;
+
+        decimal thresholdValueInKb = value * unitSizeInKb;
+        if (thresholdValueInKb > int.MaxValue)
+        {
+            return false;
+        }
+
+        thresholdKb = (int)Math.Round(thresholdValueInKb, MidpointRounding.AwayFromZero);
+        return true;
+    }
+
+    private void UpdateLargeFileThresholdSummary()
+    {
+        if (!TryParseThresholdKb(out int thresholdKb))
+        {
+            LargeFileThresholdSummaryTextBlock.Text = UiText(
+                "Enter a valid threshold to see the effective large-file rule.",
+                "Saisissez un seuil valide pour voir la regle effective.");
+            return;
+        }
+
+        if (thresholdKb == 0)
+        {
+            LargeFileThresholdSummaryTextBlock.Text = UiText(
+                "Large-file rule disabled. Any file size is allowed in the standard flow.",
+                "Regle gros fichiers desactivee. Toutes les tailles passent dans le flux standard.");
+            return;
+        }
+
+        decimal thresholdInMb = thresholdKb / 1024m;
+        decimal thresholdInGb = thresholdKb / 1024m / 1024m;
+        LargeFileThresholdSummaryTextBlock.Text = UiText(
+            $"Files larger than {FormatDecimal(thresholdInMb)} MB ({FormatDecimal(thresholdInGb)} GB) are treated as large files.",
+            $"Les fichiers de plus de {FormatDecimal(thresholdInMb)} Mo ({FormatDecimal(thresholdInGb)} Go) sont traites comme gros fichiers.");
+    }
+
+    private static bool TryParseDecimal(string rawValue, out decimal value)
+    {
+        return decimal.TryParse(rawValue, NumberStyles.Number, CultureInfo.CurrentCulture, out value)
+            || decimal.TryParse(rawValue, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static string FormatDecimal(decimal value)
+    {
+        return value == decimal.Truncate(value)
+            ? decimal.Truncate(value).ToString(CultureInfo.CurrentCulture)
+            : value.ToString("0.##", CultureInfo.CurrentCulture);
+    }
+
     private string BuildTransferMode(BackupState state)
     {
+        IReadOnlyList<string> priorityExtensions = _priorityExtensions.Count > 0
+            ? _priorityExtensions
+            : RuntimeStoragePaths.GetPriorityExtensions();
+        int priorityRank = priorityExtensions
+            .Select((extension, index) => new { extension, index })
+            .Where(item => string.Equals(item.extension, state.CurrentPriorityExtension, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item.index + 1)
+            .DefaultIfEmpty(0)
+            .First();
+
         string priorityLabel = state.CurrentFilePriority == FileTransferPriority.Priority
-            ? UiText("Priority", "Prioritaire")
+            ? priorityRank > 0
+                ? $"P{priorityRank} {state.CurrentPriorityExtension}"
+                : UiText("Priority", "Prioritaire")
             : UiText("Normal", "Normal");
         string sizeLabel = state.IsLargeFileTransfer
             ? UiText("Large file", "Gros fichier")
@@ -1117,7 +1342,7 @@ public partial class MainWindow : Window
 
         if (state.IsPriorityWorkPending)
         {
-            return $"{priorityLabel} | {sizeLabel} | {UiText("priority queue", "file prioritaire active")}";
+            return $"{priorityLabel} | {sizeLabel} | {UiText("priority queue active", "file prioritaire active")}";
         }
 
         return $"{priorityLabel} | {sizeLabel}";
@@ -1148,6 +1373,10 @@ public partial class MainWindow : Window
         public override string ToString() => DisplayName;
     }
     private sealed record ThemeOption(string Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+    private sealed record ThresholdUnitOption(string DisplayName, int ValueInKb)
     {
         public override string ToString() => DisplayName;
     }

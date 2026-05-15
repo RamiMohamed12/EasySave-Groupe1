@@ -63,7 +63,7 @@ public static class RuntimeStoragePaths
 
     public static IReadOnlyList<string> GetPriorityExtensions()
     {
-        return NormalizeExtensions(GetSettings().PriorityExtensions);
+        return NormalizeExtensionsPreservingOrder(GetSettings().PriorityExtensions);
     }
 
     public static string GetCryptoSoftKey()
@@ -118,7 +118,7 @@ public static class RuntimeStoragePaths
 
     public static void SetPriorityExtensions(IEnumerable<string> extensions)
     {
-        List<string> normalizedExtensions = NormalizeExtensions(extensions).ToList();
+        List<string> normalizedExtensions = NormalizeExtensionsPreservingOrder(extensions).ToList();
         UpdateSettings(settings => settings.PriorityExtensions = normalizedExtensions);
     }
 
@@ -311,6 +311,31 @@ public static class RuntimeStoragePaths
     private static IReadOnlyList<string> NormalizeEncryptedExtensions(IEnumerable<string>? extensions)
     {
         return NormalizeExtensions(extensions);
+    }
+
+    private static IReadOnlyList<string> NormalizeExtensionsPreservingOrder(IEnumerable<string>? extensions)
+    {
+        if (extensions is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        List<string> normalized = new();
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string extension in extensions
+            .SelectMany(extension => (extension ?? string.Empty)
+                .Split([';', ',', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Select(NormalizeExtension)
+            .Where(extension => !string.IsNullOrWhiteSpace(extension)))
+        {
+            if (seen.Add(extension))
+            {
+                normalized.Add(extension);
+            }
+        }
+
+        return normalized;
     }
 
     private static IReadOnlyList<string> NormalizeExtensions(IEnumerable<string>? extensions)

@@ -509,7 +509,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Current file" Binding="{Binding CurrentFile}" Width="2*" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Transfer mode" Binding="{Binding TransferMode}" Width="150" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Transfer mode" Binding="{Binding TransferMode}" Width="220" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="140" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" IsReadOnly="True" />
@@ -563,257 +563,261 @@
                 </Grid>
 
                 <Grid Name="SettingsPanel" Visibility="Collapsed">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                        <StackPanel>
-                            <!-- Hidden section titles kept for code-behind compatibility -->
-                            <TextBlock Name="LanguageSectionTitle" Visibility="Collapsed" />
-                            <TextBlock Name="LogFormatSectionTitle" Visibility="Collapsed" />
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                            <TextBlock Name="SettingsTitleTextBlock" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16" />
+                    <!-- Hidden helpers kept for code-behind text bindings -->
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Name="LanguageSectionTitle" Visibility="Collapsed" />
+                        <TextBlock Name="LogFormatSectionTitle" Visibility="Collapsed" />
+                        <TextBlock Name="SettingsTitleTextBlock"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,16" />
+                    </StackPanel>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="14" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                    <TabControl Grid.Row="1" Name="SettingsTabControl">
 
-                                <!-- Left column: Preferences + Encryption -->
-                                <StackPanel Grid.Column="0">
+                        <!-- Appearance tab -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Name="AppearanceSectionTitle" />
+                            </TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="640" HorizontalAlignment="Left">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Name="ThemeLabel"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource MutedTextStyle}" />
+                                            <ComboBox Grid.Column="1"
+                                                      Name="ThemeComboBox"
+                                                      MinWidth="220"
+                                                      HorizontalAlignment="Left"
+                                                      SelectionChanged="ThemeComboBox_SelectionChanged" />
+                                        </Grid>
+                                        <Grid Margin="0,0,0,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Name="LanguageLabel"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource MutedTextStyle}" />
+                                            <ComboBox Grid.Column="1"
+                                                      Name="LanguageComboBox"
+                                                      MinWidth="220"
+                                                      HorizontalAlignment="Left"
+                                                      SelectionChanged="LanguageComboBox_SelectionChanged" />
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Name="LogFormatLabel"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource MutedTextStyle}" />
+                                            <ComboBox Grid.Column="1"
+                                                      Name="LogFormatComboBox"
+                                                      MinWidth="220"
+                                                      HorizontalAlignment="Left"
+                                                      SelectionChanged="LogFormatComboBox_SelectionChanged" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+                        </TabItem>
 
-                                    <!-- Preferences card: Theme + Language + Log Format -->
-                                    <Border Style="{StaticResource SectionBorderStyle}" Margin="0,0,0,12">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                <Border Width="30" Height="30" CornerRadius="6"
-                                                        Background="{DynamicResource AccentSoftBrush}"
-                                                        Margin="0,0,10,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xE771;"
-                                                               FontFamily="Segoe MDL2 Assets"
-                                                               FontSize="13"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource AccentBrush}" />
-                                                </Border>
-                                                <TextBlock Name="AppearanceSectionTitle"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="13"
-                                                           VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <Rectangle Height="1" Fill="{DynamicResource BorderSoftBrush}" Margin="0,0,0,14" />
+                        <!-- Encryption tab -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Name="EncryptionSectionTitle" />
+                            </TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                    <StackPanel>
+                                        <TextBlock Name="EncryptedExtensionsLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="EncryptedExtensionsTextBox" Margin="0,0,0,18" />
 
-                                            <!-- Theme row -->
-                                            <Grid Margin="0,0,0,12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="130" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Name="ThemeLabel"
-                                                           VerticalAlignment="Center"
-                                                           Style="{StaticResource MutedTextStyle}" />
-                                                <ComboBox Grid.Column="1"
-                                                          Name="ThemeComboBox"
-                                                          SelectionChanged="ThemeComboBox_SelectionChanged" />
-                                            </Grid>
+                                        <TextBlock Name="CryptoSoftKeyLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="CryptoSoftKeyTextBox" Margin="0,0,0,20" />
 
-                                            <!-- Language row -->
-                                            <Grid Margin="0,0,0,12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="130" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Name="LanguageLabel"
-                                                           VerticalAlignment="Center"
-                                                           Style="{StaticResource MutedTextStyle}" />
-                                                <ComboBox Grid.Column="1"
-                                                          Name="LanguageComboBox"
-                                                          SelectionChanged="LanguageComboBox_SelectionChanged" />
-                                            </Grid>
+                                        <Button Name="SaveEncryptionSettingsButton"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="200"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Click="SaveEncryptionSettingsButton_Click" />
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+                        </TabItem>
 
-                                            <!-- Log Format row -->
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="130" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Name="LogFormatLabel"
-                                                           VerticalAlignment="Center"
-                                                           Style="{StaticResource MutedTextStyle}" />
-                                                <ComboBox Grid.Column="1"
-                                                          Name="LogFormatComboBox"
-                                                          SelectionChanged="LogFormatComboBox_SelectionChanged" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Encryption card -->
-                                    <Border Style="{StaticResource SectionBorderStyle}">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                <Border Width="30" Height="30" CornerRadius="6"
-                                                        Background="{DynamicResource DangerSoftBrush}"
-                                                        Margin="0,0,10,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xE72E;"
-                                                               FontFamily="Segoe MDL2 Assets"
-                                                               FontSize="13"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource DangerBrush}" />
-                                                </Border>
-                                                <TextBlock Name="EncryptionSectionTitle"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="13"
-                                                           VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <Rectangle Height="1" Fill="{DynamicResource BorderSoftBrush}" Margin="0,0,0,14" />
-
-                                            <TextBlock Name="EncryptedExtensionsLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <TextBox Name="EncryptedExtensionsTextBox" Margin="0,0,0,14" />
-
-                                            <TextBlock Name="CryptoSoftKeyLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <TextBox Name="CryptoSoftKeyTextBox" Margin="0,0,0,16" />
-
-                                            <Button Name="SaveEncryptionSettingsButton"
-                                                    HorizontalAlignment="Stretch"
+                        <!-- Runtime rules tab -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Name="RuntimeRulesSectionTitle" />
+                            </TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="780" HorizontalAlignment="Left">
+                                    <StackPanel>
+                                        <TextBlock Name="PriorityExtensionsLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <ListBox Name="PriorityExtensionsListBox"
+                                                 MinHeight="100"
+                                                 MaxHeight="180"
+                                                 Margin="0,0,0,12" />
+                                        <TextBlock Name="PriorityExtensionInputLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="PriorityExtensionTextBox"
+                                                 Margin="0,0,0,12"
+                                                 KeyDown="PriorityExtensionTextBox_KeyDown" />
+                                        <Grid Margin="0,0,0,18">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Name="AddPriorityExtensionButton"
+                                                    Grid.Column="0"
+                                                    MinWidth="160"
                                                     Style="{StaticResource PrimaryButtonStyle}"
-                                                    Click="SaveEncryptionSettingsButton_Click" />
-                                        </StackPanel>
-                                    </Border>
+                                                    Click="AddPriorityExtensionButton_Click" />
+                                            <Button Name="RemovePriorityExtensionButton"
+                                                    Grid.Column="2"
+                                                    MinWidth="160"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Click="RemovePriorityExtensionButton_Click" />
+                                        </Grid>
+                                        <TextBlock Name="PriorityPreviewLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <Border Margin="0,0,0,18"
+                                                Padding="12"
+                                                CornerRadius="8"
+                                                Background="{DynamicResource SurfaceRaisedBrush}"
+                                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                BorderThickness="1">
+                                            <TextBlock Name="PriorityPreviewTextBlock"
+                                                       TextWrapping="Wrap"
+                                                       FontFamily="Consolas" />
+                                        </Border>
 
-                                </StackPanel>
-
-                                <!-- Right column: Runtime Rules + Business Software -->
-                                <StackPanel Grid.Column="2">
-
-                                    <!-- Runtime Rules card -->
-                                    <Border Style="{StaticResource SectionBorderStyle}" Margin="0,0,0,12">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                <Border Width="30" Height="30" CornerRadius="6"
-                                                        Background="{DynamicResource AccentSoftBrush}"
-                                                        Margin="0,0,10,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xE945;"
-                                                               FontFamily="Segoe MDL2 Assets"
-                                                               FontSize="13"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource AccentBrush}" />
-                                                </Border>
-                                                <TextBlock Name="RuntimeRulesSectionTitle"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="13"
-                                                           VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <Rectangle Height="1" Fill="{DynamicResource BorderSoftBrush}" Margin="0,0,0,14" />
-
-                                            <TextBlock Name="PriorityExtensionsLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <TextBox Name="PriorityExtensionsTextBox" Margin="0,0,0,14" />
-
-                                            <TextBlock Name="LargeFileThresholdLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
+                                        <TextBlock Name="LargeFileThresholdLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="120" />
+                                            </Grid.ColumnDefinitions>
                                             <TextBox Name="LargeFileThresholdTextBox"
-                                                     Width="160"
-                                                     HorizontalAlignment="Left"
-                                                     Margin="0,0,0,14" />
+                                                     Grid.Column="0"
+                                                     HorizontalAlignment="Stretch"
+                                                     TextChanged="LargeFileThresholdTextBox_TextChanged" />
+                                            <ComboBox Name="LargeFileThresholdUnitComboBox"
+                                                      Grid.Column="2"
+                                                      SelectionChanged="LargeFileThresholdUnitComboBox_SelectionChanged" />
+                                        </Grid>
+                                        <TextBlock Name="LargeFileThresholdSummaryTextBlock"
+                                                   Margin="0,0,0,18"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap" />
 
-                                            <TextBlock Name="MaxConcurrencyLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <TextBox Name="MaxConcurrencyTextBox"
-                                                     Width="160"
-                                                     HorizontalAlignment="Left"
-                                                     Margin="0,0,0,16" />
+                                        <TextBlock Name="MaxConcurrencyLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="MaxConcurrencyTextBox"
+                                                 Width="180"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="0,0,0,20" />
 
-                                            <Button Name="SaveRuntimeRulesButton"
-                                                    HorizontalAlignment="Stretch"
+                                        <Button Name="SaveRuntimeRulesButton"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="220"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Click="SaveRuntimeRulesButton_Click" />
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- Business software tab -->
+                        <TabItem>
+                            <TabItem.Header>
+                                <TextBlock Name="BusinessSoftwareSectionTitle" />
+                            </TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                    <StackPanel>
+                                        <TextBlock Name="BlockedProcessesLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <ListBox Name="BlockedProcessesListBox"
+                                                 MinHeight="120"
+                                                 MaxHeight="220"
+                                                 Margin="0,0,0,18" />
+
+                                        <TextBlock Name="ProcessNameLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="ProcessNameTextBox" Margin="0,0,0,14" />
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Name="AddProcessButton"
+                                                    Grid.Column="0"
+                                                    MinWidth="160"
                                                     Style="{StaticResource PrimaryButtonStyle}"
-                                                    Click="SaveRuntimeRulesButton_Click" />
-                                        </StackPanel>
-                                    </Border>
+                                                    Click="AddProcessButton_Click" />
+                                            <Button Name="RemoveProcessButton"
+                                                    Grid.Column="2"
+                                                    MinWidth="160"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Click="RemoveProcessButton_Click" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+                        </TabItem>
 
-                                    <!-- Business Software card -->
-                                    <Border Style="{StaticResource SectionBorderStyle}">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                                <Border Width="30" Height="30" CornerRadius="6"
-                                                        Background="{DynamicResource WarningSurfaceBrush}"
-                                                        Margin="0,0,10,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xECAA;"
-                                                               FontFamily="Segoe MDL2 Assets"
-                                                               FontSize="13"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource WarningBrush}" />
-                                                </Border>
-                                                <TextBlock Name="BusinessSoftwareSectionTitle"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="13"
-                                                           VerticalAlignment="Center" />
-                                            </StackPanel>
-                                            <Rectangle Height="1" Fill="{DynamicResource BorderSoftBrush}" Margin="0,0,0,12" />
-
-                                            <TextBlock Name="BlockedProcessesLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <ListBox Name="BlockedProcessesListBox"
-                                                     MinHeight="100"
-                                                     MaxHeight="180"
-                                                     Margin="0,0,0,14" />
-
-                                            <TextBlock Name="ProcessNameLabel"
-                                                       Margin="0,0,0,6"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       FontSize="12" />
-                                            <TextBox Name="ProcessNameTextBox" Margin="0,0,0,12" />
-
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="8" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Button Name="AddProcessButton"
-                                                        Grid.Column="0"
-                                                        Style="{StaticResource PrimaryButtonStyle}"
-                                                        Click="AddProcessButton_Click" />
-                                                <Button Name="RemoveProcessButton"
-                                                        Grid.Column="2"
-                                                        Style="{StaticResource DangerButtonStyle}"
-                                                        Click="RemoveProcessButton_Click" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </ScrollViewer>
+                    </TabControl>
                 </Grid>
                 <!-- Popup overlay edition de tache -->
                 <Grid Name="EditJobOverlay" Visibility="Collapsed" Panel.ZIndex="100">
-                    <Rectangle Fill="Black" Opacity="0.45" />
-                    <Border MaxWidth="480"
-                            MaxHeight="520"
+                    <Rectangle Fill="Black" Opacity="0.55" />
+                    <Border Style="{StaticResource ModalCardStyle}"
+                            MaxWidth="520"
+                            MaxHeight="600"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            CornerRadius="8"
-                            Padding="24"
-                            Background="{DynamicResource SidebarBrush}"
-                            BorderBrush="{DynamicResource BorderBrushToken}"
-                            BorderThickness="1">
+                            VerticalAlignment="Center">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -826,44 +830,60 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <!-- Titre + bouton fermer -->
-                            <Grid Grid.Row="0" Margin="0,0,0,16">
-                                <TextBlock Name="SelectedJobLabel" FontWeight="Bold" FontSize="15"
+                            <!-- Header -->
+                            <Grid Grid.Row="0">
+                                <TextBlock Name="SelectedJobLabel"
+                                           FontWeight="SemiBold"
+                                           FontSize="16"
                                            VerticalAlignment="Center" />
                                 <Button HorizontalAlignment="Right"
-                                        Width="28" Height="28"
-                                        FontFamily="Segoe MDL2 Assets"
+                                        Style="{StaticResource ModalCloseButtonStyle}"
                                         Content="&#xE711;"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        Cursor="Hand"
                                         Click="CloseEditPopup_Click" />
                             </Grid>
+                            <Rectangle Grid.Row="1"
+                                       Height="1"
+                                       Margin="0,16,0,20"
+                                       Fill="{DynamicResource BorderSoftBrush}" />
 
-                            <TextBlock Grid.Row="1" Name="NameLabel" FontWeight="SemiBold" />
-                            <TextBox Grid.Row="2" Name="NameTextBox" Margin="0,4,0,10" MinWidth="380" />
-                            <TextBlock Grid.Row="3" Name="SourceLabel" FontWeight="SemiBold" />
-                            <TextBox Grid.Row="4" Name="SourceTextBox" Margin="0,4,0,10" />
-                            <TextBlock Grid.Row="5" Name="TargetLabel" FontWeight="SemiBold" />
-                            <TextBox Grid.Row="6" Name="TargetTextBox" Margin="0,4,0,10" />
-                            <TextBlock Grid.Row="7" Name="TypeLabel" FontWeight="SemiBold" />
-                            <ComboBox Grid.Row="8" Name="TypeComboBox" Margin="0,4,0,16" />
-                            <Grid Grid.Row="9">
+                            <TextBlock Grid.Row="2"
+                                       Name="NameLabel"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                            <TextBox Grid.Row="3" Name="NameTextBox" Margin="0,6,0,14" MinWidth="380" />
+                            <TextBlock Grid.Row="4"
+                                       Name="SourceLabel"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                            <TextBox Grid.Row="5" Name="SourceTextBox" Margin="0,6,0,14" />
+                            <TextBlock Grid.Row="6"
+                                       Name="TargetLabel"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                            <TextBox Grid.Row="7" Name="TargetTextBox" Margin="0,6,0,14" />
+                            <TextBlock Grid.Row="8"
+                                       Name="TypeLabel"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                            <ComboBox Grid.Row="9" Name="TypeComboBox" Margin="0,6,0,22" />
+                            <Grid Grid.Row="10">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="8" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Button Grid.Column="0"
+                                        Name="CancelEditButton"
+                                        MinWidth="120"
+                                        Click="CloseEditPopup_Click" />
+                                <Button Grid.Column="2"
                                         Name="SaveSelectedJobButton"
+                                        MinWidth="160"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Click="SaveSelectedJobButton_Click" />
-                                <Button Grid.Column="2"
-                                        Width="110"
-                                        Name="CancelEditButton"
-                                        Click="CloseEditPopup_Click" />
                             </Grid>
                         </Grid>
                     </Border>

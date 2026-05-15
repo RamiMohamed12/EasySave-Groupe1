@@ -27,6 +27,7 @@ public class BackupState
     public BackupPauseReason PauseReason { get; set; }
     public BackupControlAction RequestedAction { get; set; }
     public string PauseReasonDetails { get; set; }
+    public string CurrentPriorityExtension { get; set; }
 
     public double Progress => TotalEligibleBytes > 0 ? (double)ProcessedBytes / TotalEligibleBytes * 100 : 0;
     public BackupState()
@@ -54,6 +55,7 @@ public class BackupState
         PauseReason = BackupPauseReason.None;
         RequestedAction = BackupControlAction.None;
         PauseReasonDetails = string.Empty;
+        CurrentPriorityExtension = string.Empty;
     }
     
 }

@@ -144,7 +144,7 @@ public class RuntimeStoragePathsTests
         RuntimeStoragePaths.SetPriorityExtensions(["log; .TXT, csv"]);
         RuntimeStoragePaths.Reload();
 
-        Assert.Equal([".csv", ".log", ".txt"], RuntimeStoragePaths.GetPriorityExtensions());
+        Assert.Equal([".log", ".txt", ".csv"], RuntimeStoragePaths.GetPriorityExtensions());
     }
 
     [Fact]

@@ -175,6 +175,7 @@ public class BackupService : IBackupService
                     state.CurrentTargetPath = workItem.DestinationPath;
                     state.CurrentFileSize = workItem.FileSizeBytes;
                     state.CurrentFilePriority = workItem.Priority;
+                    state.CurrentPriorityExtension = workItem.MatchedPriorityExtension;
                     state.IsLargeFileTransfer = workItem.IsLargeFile;
                     state.LastBackupUpdateTime = DateTime.Now;
                     state.Status = BackupExecutionStatus.Active;
@@ -272,6 +273,7 @@ public class BackupService : IBackupService
                     state.ErrorMessage = exception.Message;
                     state.IsLargeFileTransfer = false;
                     state.CurrentFilePriority = workItem.Priority;
+                    state.CurrentPriorityExtension = workItem.MatchedPriorityExtension;
 
                     _stateService.WriteState(state);
                     _loggerService.WriteLog(new LogEntry
@@ -340,6 +342,8 @@ public class BackupService : IBackupService
             {
                 string relativePath = Path.GetRelativePath(selectedBackupJob.Job.Source, sourceFilePath);
                 string destinationFilePath = Path.Combine(selectedBackupJob.Job.Target, relativePath);
+                string matchedPriorityExtension = GetPriorityExtension(sourceFilePath);
+                int priorityRank = GetPriorityRank(matchedPriorityExtension);
                 return new TransferWorkItem
                 {
                     JobNumber = selectedBackupJob.JobNumber,
@@ -347,10 +351,15 @@ public class BackupService : IBackupService
                     SourcePath = sourceFilePath,
                     DestinationPath = destinationFilePath,
                     FileSizeBytes = new FileInfo(sourceFilePath).Length,
-                    Priority = GetFilePriority(sourceFilePath)
+                    MatchedPriorityExtension = matchedPriorityExtension,
+                    PriorityRank = priorityRank,
+                    Priority = string.IsNullOrWhiteSpace(matchedPriorityExtension)
+                        ? FileTransferPriority.Normal
+                        : FileTransferPriority.Priority
                 };
             })
             .OrderByDescending(item => item.Priority)
+            .ThenBy(item => item.PriorityRank)
             .ThenBy(item => item.SourcePath, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -379,7 +388,8 @@ public class BackupService : IBackupService
             IsLargeFileTransfer = false,
             PauseReason = BackupPauseReason.None,
             RequestedAction = BackupControlAction.Run,
-            PauseReasonDetails = string.Empty
+            PauseReasonDetails = string.Empty,
+            CurrentPriorityExtension = string.Empty
         };
     }
 
@@ -420,6 +430,7 @@ public class BackupService : IBackupService
             state.RequestedAction = BackupControlAction.Run;
             state.PauseReason = BackupPauseReason.None;
             state.PauseReasonDetails = string.Empty;
+            state.CurrentPriorityExtension = workItem.MatchedPriorityExtension;
             _stateService.WriteState(state);
         }
     }
@@ -504,13 +515,31 @@ public class BackupService : IBackupService
         });
     }
 
-    private FileTransferPriority GetFilePriority(string filePath)
+    private string GetPriorityExtension(string filePath)
     {
         string extension = Path.GetExtension(filePath);
         return RuntimeStoragePaths.GetPriorityExtensions()
-            .Contains(extension, StringComparer.OrdinalIgnoreCase)
-            ? FileTransferPriority.Priority
-            : FileTransferPriority.Normal;
+            .FirstOrDefault(priorityExtension => string.Equals(priorityExtension, extension, StringComparison.OrdinalIgnoreCase))
+            ?? string.Empty;
+    }
+
+    private int GetPriorityRank(string matchedPriorityExtension)
+    {
+        if (string.IsNullOrWhiteSpace(matchedPriorityExtension))
+        {
+            return int.MaxValue;
+        }
+
+        IReadOnlyList<string> priorityExtensions = RuntimeStoragePaths.GetPriorityExtensions();
+        for (int index = 0; index < priorityExtensions.Count; index++)
+        {
+            if (string.Equals(priorityExtensions[index], matchedPriorityExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                return index + 1;
+            }
+        }
+
+        return int.MaxValue;
     }
 
     private BackupResult CompleteWithValidationError(BackupResult result, BackupJob backupJob, string errorMessage)
@@ -535,7 +564,8 @@ public class BackupService : IBackupService
             LastRunStartedAt = timestamp,
             LastRunCompletedAt = timestamp,
             LastRunTransferredFiles = new List<BackupTransferredFile>(),
-            RequestedAction = BackupControlAction.None
+            RequestedAction = BackupControlAction.None,
+            CurrentPriorityExtension = string.Empty
         };
 
         _stateService.WriteState(state);
@@ -568,6 +598,7 @@ public class BackupService : IBackupService
         state.RequestedAction = BackupControlAction.Stop;
         state.LastBackupUpdateTime = DateTime.Now;
         state.LastRunCompletedAt = state.LastBackupUpdateTime;
+        state.CurrentPriorityExtension = string.Empty;
         state.ErrorMessage = manualStop
             ? $"Backup job {selectedBackupJob.JobNumber} was stopped."
             : state.PauseReasonDetails;
