@@ -54,7 +54,7 @@ public class BackupJobRegistryTests
         IReadOnlyList<BackupJob> jobs = new BackupJobRegistry().LoadJobs();
 
         Assert.Single(jobs);
-        Assert.Equal("Job1", jobs[0].Name);
+        Assert.Equal("Custom", jobs[0].Name);
         Assert.Equal(@"C:\A", jobs[0].Source);
         Assert.Equal(@"D:\A", jobs[0].Target);
         Assert.Equal(BackupType.Differential, jobs[0].Type);
@@ -77,11 +77,11 @@ public class BackupJobRegistryTests
         IReadOnlyList<BackupJob> jobs = registry.LoadJobs();
         BackupJob slot = jobs[2];
 
-        Assert.Equal("Job3", created.Name);
+        Assert.Equal("Photos", created.Name);
         Assert.Equal(@"C:\Photos", created.Source);
         Assert.Equal(@"D:\Archives", created.Target);
         Assert.Equal(BackupType.Differential, created.Type);
-        Assert.Equal("Job3", slot.Name);
+        Assert.Equal("Photos", slot.Name);
         Assert.Equal(@"C:\Photos", slot.Source);
         Assert.Equal(@"D:\Archives", slot.Target);
         Assert.Equal(BackupType.Differential, slot.Type);
@@ -111,7 +111,8 @@ public class BackupJobRegistryTests
         IReadOnlyList<BackupJob> jobs = registry.LoadJobs();
         BackupJob slot = jobs[0];
 
-        Assert.Equal("Job1", updated.Name);
+        Assert.Equal("DocsUpdated", updated.Name);
+        Assert.Equal("DocsUpdated", slot.Name);
         Assert.Equal(@"E:\Src", slot.Source);
         Assert.Equal(@"F:\Dst", slot.Target);
         Assert.Equal(BackupType.Differential, slot.Type);
@@ -133,7 +134,7 @@ public class BackupJobRegistryTests
         BackupJob deleted = registry.DeleteJob(2);
         IReadOnlyList<BackupJob> jobs = registry.LoadJobs();
 
-        Assert.Equal("Job2", deleted.Name);
+        Assert.Equal("ToDelete", deleted.Name);
         Assert.Equal(@"C:\Temp", deleted.Source);
         Assert.Equal(@"D:\Temp", deleted.Target);
         Assert.Equal(BackupType.Full, deleted.Type);

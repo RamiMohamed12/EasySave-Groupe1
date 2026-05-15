@@ -158,6 +158,30 @@ public class BackupServiceTests
         Assert.True(File.Exists(Path.Combine(targetDirectory, "a.txt")));
     }
 
+    [Fact]
+    public void StartBackup_PriorityExtensions_AreTransferredInConfiguredOrder_BeforeNormalFiles()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "1.csv"), "csv");
+        File.WriteAllText(Path.Combine(sourceDirectory, "2.pdf"), "pdf");
+        File.WriteAllText(Path.Combine(sourceDirectory, "3.txt"), "txt");
+        File.WriteAllText(Path.Combine(sourceDirectory, "4.bin"), "bin");
+        RuntimeStoragePaths.SetPriorityExtensions([".pdf", ".txt", ".csv"]);
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        string[] transferredFiles = LoadLogEntries()
+            .Where(entry => entry.ActionType == "FileTransfer")
+            .Select(entry => Path.GetFileName(entry.SourcePath))
+            .ToArray();
+
+        Assert.Equal(["2.pdf", "3.txt", "1.csv", "4.bin"], transferredFiles);
+    }
+
     private static BackupService CreateBackupService(
         ICryptoService? cryptoService = null,
         IBusinessSoftwareMonitor? monitor = null)

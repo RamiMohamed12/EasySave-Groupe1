@@ -57,9 +57,9 @@ public class BackupControllerTests
         BackupJob deleted = controller.DeleteJob(4);
         IReadOnlyList<BackupJob> jobs = new BackupJobRegistry().LoadJobs();
 
-        Assert.Equal("Job4", created.Name);
-        Assert.Equal("Job4", updated.Name);
-        Assert.Equal("Job4", deleted.Name);
+        Assert.Equal("Media", created.Name);
+        Assert.Equal("MediaUpdated", updated.Name);
+        Assert.Equal("MediaUpdated", deleted.Name);
         Assert.Equal(4, jobs.Count);
         Assert.DoesNotContain(jobs, job => string.Equals(job.Source, @"E:\Media", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(jobs, job => string.Equals(job.Target, @"F:\Media", StringComparison.OrdinalIgnoreCase));

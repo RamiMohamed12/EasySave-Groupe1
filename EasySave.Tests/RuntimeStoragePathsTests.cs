@@ -148,6 +148,17 @@ public class RuntimeStoragePathsTests
     }
 
     [Fact]
+    public void SetPriorityExtensions_PreservesInputOrder_AndDeduplicates()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetPriorityExtensions([".pdf", " txt ", ".PDF", "csv", ".txt"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal([".pdf", ".txt", ".csv"], RuntimeStoragePaths.GetPriorityExtensions());
+    }
+
+    [Fact]
     public void SetLargeFileThresholdKb_PersistsAndNormalizesNegativeValues()
     {
         using var workspace = new TestWorkspace();
@@ -156,6 +167,17 @@ public class RuntimeStoragePathsTests
         RuntimeStoragePaths.Reload();
 
         Assert.Equal(0, RuntimeStoragePaths.GetLargeFileThresholdKb());
+    }
+
+    [Fact]
+    public void SetLargeFileThresholdKb_PersistsPositiveValue()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLargeFileThresholdKb(1024 * 1024);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(1024 * 1024, RuntimeStoragePaths.GetLargeFileThresholdKb());
     }
 
     [Fact]
