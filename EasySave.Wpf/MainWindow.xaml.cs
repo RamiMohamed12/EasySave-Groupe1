@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Text.Json;
 using System.IO;
 using System.Windows.Media;
@@ -19,6 +20,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _refreshTimer;
     private ApplicationTextService _textService;
     private bool _isBusy;
+    private int _lastToggledIndex = -1;
     private bool _isApplyingLanguage;
     private bool _isApplyingLogFormat;
     private bool _isApplyingTheme;
@@ -76,6 +78,7 @@ public partial class MainWindow : Window
     private void LoadJobsIntoGrid()
     {
         _jobRows.Clear();
+        _lastToggledIndex = -1;
         IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
 
         for (int index = 0; index < jobs.Count; index++)
@@ -379,6 +382,72 @@ public partial class MainWindow : Window
         UpdateDashboardMetrics();
     }
 
+    private void JobRow_ToggleSelect(object sender, MouseButtonEventArgs e)
+    {
+        var dep = (DependencyObject)e.OriginalSource;
+        while (dep != null && dep is not DataGridRow)
+            dep = VisualTreeHelper.GetParent(dep);
+
+        if (dep is not DataGridRow gridRow || gridRow.Item is not JobRow jobRow)
+            return;
+
+        int clickedIndex = _jobRows.IndexOf(jobRow);
+
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0 && _lastToggledIndex >= 0 && clickedIndex >= 0)
+        {
+            int from = Math.Min(_lastToggledIndex, clickedIndex);
+            int to = Math.Max(_lastToggledIndex, clickedIndex);
+            for (int i = from; i <= to; i++)
+                _jobRows[i].IsSelected = true;
+        }
+        else
+        {
+            jobRow.IsSelected = !jobRow.IsSelected;
+            _lastToggledIndex = clickedIndex;
+        }
+
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
+        UpdateDashboardMetrics();
+    }
+
+    private void SelectAllJobsButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (JobRow row in _jobRows)
+            row.IsSelected = true;
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
+        UpdateDashboardMetrics();
+    }
+
+    private void ClearSelectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (JobRow row in _jobRows)
+            row.IsSelected = false;
+        _lastToggledIndex = -1;
+        SafeRefresh(JobsDataGrid);
+        SafeRefresh(OverviewJobsDataGrid);
+        SafeRefresh(ExecutionJobsDataGrid);
+        UpdateDashboardMetrics();
+    }
+
+    private void JobsDataGrid_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            bool allSelected = _jobRows.Count > 0 && _jobRows.All(row => row.IsSelected);
+            foreach (JobRow row in _jobRows)
+                row.IsSelected = !allSelected;
+            SafeRefresh(JobsDataGrid);
+            SafeRefresh(OverviewJobsDataGrid);
+            SafeRefresh(ExecutionJobsDataGrid);
+            UpdateDashboardMetrics();
+            e.Handled = true;
+        }
+    }
+
     private void SetBusy(bool busy, string message)
     {
         _isBusy = busy;
@@ -491,6 +560,8 @@ public partial class MainWindow : Window
         SetButtonContent(RemoveProcessButton, "\uE74D", Text("Wpf.RemoveBlockedProcessButton"));
         SetButtonContent(AddJobButton, "\uE710", Text("Wpf.AddJobButton"));
         SetButtonContent(DeleteJobButton, "\uE74D", Text("Wpf.DeleteJobButton"));
+        SetButtonContent(SelectAllJobsButton, "\uE8B3", UiText("Select all", "Tout cocher"));
+        SetButtonContent(ClearSelectionButton, "\uE8E6", UiText("Clear selection", "Tout d\u00E9cocher"));
         SetButtonContent(RefreshButton, "\uE72C", Text("Wpf.RefreshButton"));
         SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetButtonContent(RunAllButton, "\uE102", Text("Wpf.RunAllButton"));
@@ -738,24 +809,26 @@ public partial class MainWindow : Window
 
     private void DeleteJobButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_isBusy)
-        {
-            return;
-        }
+        if (_isBusy) return;
 
-        if (JobsDataGrid.SelectedItem is not JobRow selectedRow)
+        List<JobRow> toDelete = GetCheckedRows().ToList();
+        if (toDelete.Count == 0)
         {
             StatusTextBlock.Text = Text("Wpf.SelectJobFirstStatus");
             return;
         }
 
-        _jobRegistry.DeleteJob(selectedRow.JobNumber);
+        foreach (JobRow row in toDelete.OrderByDescending(r => r.JobNumber))
+            _jobRegistry.DeleteJob(row.JobNumber);
+
+        int count = toDelete.Count;
         LoadJobsIntoGrid();
         if (_jobRows.Count > 0)
-        {
-            JobsDataGrid.SelectedIndex = Math.Min(selectedRow.JobNumber - 1, _jobRows.Count - 1);
-        }
-        StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", selectedRow.JobNumber);
+            JobsDataGrid.SelectedIndex = 0;
+
+        StatusTextBlock.Text = count == 1
+            ? Format("Wpf.JobDeletedStatus", toDelete[0].JobNumber)
+            : UiText($"{count} jobs deleted.", $"{count} tâche(s) supprimée(s).");
         RefreshStateAndLog();
     }
 
@@ -901,6 +974,16 @@ public partial class MainWindow : Window
         KpiSelectedJobsValueTextBlock.Text = selectedJobs.ToString();
         KpiStorageValueTextBlock.Text = Text("Wpf.LocalStorageSummary");
         HeroStatusTextBlock.Text = Format("Wpf.HeroReadySummary", configuredJobs, totalJobs);
+
+        if (selectedJobs == 0)
+        {
+            SelectionBadge.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            SelectionBadge.Visibility = Visibility.Visible;
+            SelectionBadgeText.Text = UiText($"{selectedJobs} selected", $"{selectedJobs} cochés");
+        }
     }
 
     private static bool IsConfigured(JobRow row)

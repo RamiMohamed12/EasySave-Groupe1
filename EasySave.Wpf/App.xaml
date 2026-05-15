@@ -319,37 +319,144 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushToken}" />
-                <Setter Property="Padding" Value="8" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type GroupBox}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0"
+                                        Background="{DynamicResource ControlBrush}"
+                                        BorderBrush="{DynamicResource BorderBrushToken}"
+                                        BorderThickness="1,1,1,0"
+                                        CornerRadius="8,8,0,0"
+                                        Padding="14,10">
+                                    <ContentPresenter Content="{TemplateBinding Header}"
+                                                      TextElement.FontWeight="SemiBold"
+                                                      TextElement.FontSize="13"
+                                                      TextElement.Foreground="{DynamicResource TextPrimaryBrush}" />
+                                </Border>
+                                <Border Grid.Row="1"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{DynamicResource BorderBrushToken}"
+                                        BorderThickness="1,0,1,1"
+                                        CornerRadius="0,0,8,8"
+                                        ClipToBounds="True">
+                                    <ContentPresenter />
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style TargetType="{x:Type DataGrid}">
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
-                <Setter Property="GridLinesVisibility" Value="None" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="GridLinesVisibility" Value="Horizontal" />
                 <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
-                <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
+                <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
                 <Setter Property="HeadersVisibility" Value="Column" />
-                <Setter Property="RowHeight" Value="34" />
-                <Setter Property="ColumnHeaderHeight" Value="36" />
+                <Setter Property="RowHeight" Value="38" />
+                <Setter Property="ColumnHeaderHeight" Value="40" />
                 <Setter Property="CanUserResizeRows" Value="False" />
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceRaisedBrush}" />
+                <Setter Property="RowBackground" Value="{DynamicResource SurfaceBrush}" />
             </Style>
 
             <Style TargetType="{x:Type DataGridColumnHeader}">
                 <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
                 <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Padding" Value="8,0" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Height" Value="40" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
+                <Setter Property="BorderThickness" Value="0,0,1,2" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type DataGridColumnHeader}">
+                            <Grid>
+                                <Border x:Name="HeaderBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Padding="{TemplateBinding Padding}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                                        <TextBlock x:Name="SortAsc"
+                                                   Grid.Column="1"
+                                                   Text="&#xE70E;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="9"
+                                                   VerticalAlignment="Center"
+                                                   Margin="4,0,2,0"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Visibility="Collapsed" />
+                                        <TextBlock x:Name="SortDesc"
+                                                   Grid.Column="1"
+                                                   Text="&#xE70D;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="9"
+                                                   VerticalAlignment="Center"
+                                                   Margin="4,0,2,0"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Visibility="Collapsed" />
+                                    </Grid>
+                                </Border>
+                                <Thumb x:Name="PART_RightHeaderGripper"
+                                       HorizontalAlignment="Right"
+                                       Width="8"
+                                       Cursor="SizeWE">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="{x:Type Thumb}">
+                                            <Border Background="Transparent" Width="8" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource ControlHoverBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource ControlSelectedBrush}" />
+                                </Trigger>
+                                <Trigger Property="SortDirection" Value="Ascending">
+                                    <Setter TargetName="SortAsc" Property="Visibility" Value="Visible" />
+                                </Trigger>
+                                <Trigger Property="SortDirection" Value="Descending">
+                                    <Setter TargetName="SortDesc" Property="Visibility" Value="Visible" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style TargetType="{x:Type DataGridRow}">
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsConfigured}" Value="False">
                         <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
                     </DataTrigger>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource ControlHoverBrush}" />
@@ -364,13 +471,49 @@
 
             <Style TargetType="{x:Type DataGridCell}">
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type DataGridCell}">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
                 <Style.Triggers>
                     <Trigger Property="IsSelected" Value="True">
                         <Setter Property="Background" Value="{DynamicResource ControlSelectedBrush}" />
                         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+
+            <Style TargetType="{x:Type ProgressBar}">
+                <Setter Property="Height" Value="8" />
+                <Setter Property="Background" Value="{DynamicResource ControlBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ProgressBar}">
+                            <Border CornerRadius="4" Background="{TemplateBinding Background}">
+                                <Border x:Name="PART_Track" CornerRadius="4" ClipToBounds="True">
+                                    <Border x:Name="PART_Indicator"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="4"
+                                            Background="{TemplateBinding Foreground}" />
+                                </Border>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
         </ResourceDictionary>
     </Application.Resources>
