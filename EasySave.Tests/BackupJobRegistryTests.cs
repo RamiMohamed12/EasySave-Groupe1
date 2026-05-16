@@ -19,6 +19,7 @@ public class BackupJobRegistryTests
         Assert.Equal(BackupType.Differential, jobs[1].Type);
         Assert.All(jobs, job =>
         {
+            Assert.False(string.IsNullOrWhiteSpace(job.Id));
             Assert.Equal(string.Empty, job.Source);
             Assert.Equal(string.Empty, job.Target);
         });
@@ -53,11 +54,37 @@ public class BackupJobRegistryTests
 
         IReadOnlyList<BackupJob> jobs = new BackupJobRegistry().LoadJobs();
 
-        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
+        Assert.Single(jobs);
         Assert.Equal("Custom", jobs[0].Name);
         Assert.Equal(@"C:\A", jobs[0].Source);
         Assert.Equal(@"D:\A", jobs[0].Target);
         Assert.Equal(BackupType.Differential, jobs[0].Type);
+        Assert.False(string.IsNullOrWhiteSpace(jobs[0].Id));
+    }
+
+    [Fact]
+    public void LoadJobs_MigratesOldJobsJsonWithStableIds()
+    {
+        using var workspace = new TestWorkspace();
+        File.WriteAllText(
+            RuntimeStoragePaths.JobsFilePath,
+            """
+            [
+              {
+                "Name": "Legacy",
+                "Source": "C:\\Legacy",
+                "Target": "D:\\Legacy",
+                "Type": "Full"
+              }
+            ]
+            """);
+
+        IReadOnlyList<BackupJob> firstLoad = new BackupJobRegistry().LoadJobs();
+        string migratedId = firstLoad[0].Id;
+        IReadOnlyList<BackupJob> secondLoad = new BackupJobRegistry().LoadJobs();
+
+        Assert.False(string.IsNullOrWhiteSpace(migratedId));
+        Assert.Equal(migratedId, secondLoad[0].Id);
     }
 
     [Fact]
@@ -119,7 +146,7 @@ public class BackupJobRegistryTests
     }
 
     [Fact]
-    public void DeleteJob_ResetsSlotToDefaultValues()
+    public void DeleteJob_RemovesJobWithoutRecreatingDefaultSlots()
     {
         using var workspace = new TestWorkspace();
         var registry = new BackupJobRegistry();
@@ -138,7 +165,7 @@ public class BackupJobRegistryTests
         Assert.Equal(@"C:\Temp", deleted.Source);
         Assert.Equal(@"D:\Temp", deleted.Target);
         Assert.Equal(BackupType.Full, deleted.Type);
-        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount - 1, jobs.Count);
         Assert.DoesNotContain(jobs, job => string.Equals(job.Source, @"C:\Temp", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(jobs, job => string.Equals(job.Target, @"D:\Temp", StringComparison.OrdinalIgnoreCase));
     }

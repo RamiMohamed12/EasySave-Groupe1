@@ -28,7 +28,8 @@ public class BackupServiceTests
         BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
 
         Assert.Equal(BackupExecutionStatus.Finished, result.Status);
-        Assert.True(File.Exists(Path.Combine(targetDirectory, "nested", "report.txt")));
+        string snapshotDirectory = GetSingleSnapshotDirectory(targetDirectory, "Job1");
+        Assert.True(File.Exists(Path.Combine(snapshotDirectory, "nested", "report.txt")));
 
         List<LogEntry> logs = LoadLogEntries();
         Assert.Contains(logs, entry => entry.ActionType == "CreateDirectory");
@@ -67,9 +68,12 @@ public class BackupServiceTests
         BackupResult result = service.StartBackup(CreateSelectedJob(1, differentialJob));
 
         Assert.Equal(BackupExecutionStatus.Finished, result.Status);
-        Assert.Equal("same", File.ReadAllText(Path.Combine(targetDirectory, "same.txt")));
-        Assert.Equal("after", File.ReadAllText(Path.Combine(targetDirectory, "changed.txt")));
-        Assert.Equal("new", File.ReadAllText(Path.Combine(targetDirectory, "new.txt")));
+        string differentialSnapshotDirectory = GetSnapshotDirectories(targetDirectory, "Job1")
+            .OrderBy(directory => directory, StringComparer.OrdinalIgnoreCase)
+            .Last();
+        Assert.False(File.Exists(Path.Combine(differentialSnapshotDirectory, "same.txt")));
+        Assert.Equal("after", File.ReadAllText(Path.Combine(differentialSnapshotDirectory, "changed.txt")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(differentialSnapshotDirectory, "new.txt")));
         Assert.Equal(2, result.TransferredFileCount);
     }
 
@@ -80,14 +84,14 @@ public class BackupServiceTests
         string sourceDirectory = workspace.CreateDirectory("source");
         string targetDirectory = workspace.CreateDirectory("target");
         File.WriteAllText(Path.Combine(sourceDirectory, "blocked.txt"), "content");
-        Directory.CreateDirectory(Path.Combine(targetDirectory, "blocked.txt"));
+        File.WriteAllText(Path.Combine(targetDirectory, "Job1"), "blocks snapshot directory");
         BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
 
         BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
 
         Assert.Equal(BackupExecutionStatus.Error, result.Status);
         LogEntry errorEntry = LoadLogEntries().Last(entry => entry.ActionType == "Error");
-        Assert.True(errorEntry.TransferTimeMilliseconds < 0);
+        Assert.Equal(-1, errorEntry.TransferTimeMilliseconds);
     }
 
     [Fact]
@@ -106,7 +110,7 @@ public class BackupServiceTests
         Assert.Equal(BackupExecutionStatus.Finished, result.Status);
         LogEntry fileTransferEntry = LoadLogEntries().Last(entry => entry.ActionType == "FileTransfer");
         Assert.Equal(23, fileTransferEntry.EncryptionTimeMilliseconds);
-        Assert.Equal(Path.Combine(targetDirectory, "secret.txt"), cryptoService.EncryptedFilePaths.Single());
+        Assert.Equal(fileTransferEntry.DestinationPath, cryptoService.EncryptedFilePaths.Single());
     }
 
     [Fact]
@@ -155,7 +159,8 @@ public class BackupServiceTests
         BackupResult result = CreateBackupService(monitor: monitor).StartBackup(CreateSelectedJob(1, job));
 
         Assert.Equal(BackupExecutionStatus.Finished, result.Status);
-        Assert.True(File.Exists(Path.Combine(targetDirectory, "a.txt")));
+        string snapshotDirectory = GetSingleSnapshotDirectory(targetDirectory, "Job1");
+        Assert.True(File.Exists(Path.Combine(snapshotDirectory, "a.txt")));
     }
 
     [Fact]
@@ -243,6 +248,18 @@ public class BackupServiceTests
     {
         string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);
         return JsonSerializer.Deserialize<List<BackupState>>(json, JsonTestHelper.SerializerOptions) ?? new List<BackupState>();
+    }
+
+    private static string GetSingleSnapshotDirectory(string targetDirectory, string jobName)
+    {
+        return Assert.Single(GetSnapshotDirectories(targetDirectory, jobName));
+    }
+
+    private static string[] GetSnapshotDirectories(string targetDirectory, string jobName)
+    {
+        string jobBackupDirectory = Path.Combine(targetDirectory, jobName);
+        Assert.True(Directory.Exists(jobBackupDirectory), $"Expected snapshot parent directory: {jobBackupDirectory}");
+        return Directory.GetDirectories(jobBackupDirectory);
     }
 
     private sealed class FakeCryptoService : ICryptoService

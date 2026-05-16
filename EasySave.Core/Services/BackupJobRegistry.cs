@@ -96,18 +96,13 @@ public class BackupJobRegistry
 
     private static List<BackupJob> NormalizeJobs(IReadOnlyList<BackupJob> jobs)
     {
-        int targetCount = Math.Max(DefaultJobCount, jobs.Count);
+        int targetCount = jobs.Count;
         var normalizedJobs = new List<BackupJob>(targetCount);
+        var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int index = 0; index < targetCount; index++)
         {
-            if (index < jobs.Count)
-            {
-                BackupJob existingJob = jobs[index] ?? CreateDefaultJob(index);
-                normalizedJobs.Add(NormalizeJob(existingJob, index));
-                continue;
-            }
-
-            normalizedJobs.Add(CreateDefaultJob(index));
+            BackupJob existingJob = jobs[index] ?? CreateDefaultJob(index);
+            normalizedJobs.Add(NormalizeJob(existingJob, index, usedIds));
         }
 
         return normalizedJobs;
@@ -128,6 +123,7 @@ public class BackupJobRegistry
     {
         return new BackupJob
         {
+            Id = CreateJobId(),
             Name = $"Job{jobIndex + 1}",
             Source = string.Empty,
             Target = string.Empty,
@@ -156,19 +152,36 @@ public class BackupJobRegistry
         List<BackupJob> jobs = LoadJobs().ToList();
         int jobIndex = GetJobIndex(jobNumber);
         EnsureJobCapacity(jobs, jobIndex);
-        BackupJob savedJob = NormalizeJob(job, jobIndex);
+        string existingId = jobs[jobIndex].Id;
+        BackupJob savedJob = NormalizeJob(job, jobIndex, existingId);
         jobs[jobIndex] = savedJob;
         SaveJobs(jobs);
         return savedJob;
     }
 
-    private static BackupJob NormalizeJob(BackupJob job, int jobIndex)
+    private static BackupJob NormalizeJob(BackupJob job, int jobIndex, ISet<string> usedIds)
+    {
+        BackupJob normalizedJob = NormalizeJob(job, jobIndex, string.Empty);
+        if (string.IsNullOrWhiteSpace(normalizedJob.Id) || !usedIds.Add(normalizedJob.Id))
+        {
+            normalizedJob.Id = CreateJobId();
+            usedIds.Add(normalizedJob.Id);
+        }
+
+        return normalizedJob;
+    }
+
+    private static BackupJob NormalizeJob(BackupJob job, int jobIndex, string fallbackId)
     {
         BackupJob template = CreateDefaultJob(jobIndex);
         string name = string.IsNullOrWhiteSpace(job.Name) ? template.Name : job.Name.Trim();
+        string id = string.IsNullOrWhiteSpace(job.Id)
+            ? fallbackId
+            : job.Id.Trim();
 
         return new BackupJob
         {
+            Id = string.IsNullOrWhiteSpace(id) ? CreateJobId() : id,
             Name = name,
             Source = job.Source?.Trim() ?? string.Empty,
             Target = job.Target?.Trim() ?? string.Empty,
@@ -182,5 +195,10 @@ public class BackupJobRegistry
         {
             jobs.Add(CreateDefaultJob(jobs.Count));
         }
+    }
+
+    private static string CreateJobId()
+    {
+        return Guid.NewGuid().ToString("N");
     }
 }

@@ -18,6 +18,7 @@ else
     var commandLineBackupRunner = new CommandLineBackupRunner(
         jobRegistry,
         stateService,
+        loggerService,
         CreateRuntime);
 
     commandLineBackupRunner.Run(args);

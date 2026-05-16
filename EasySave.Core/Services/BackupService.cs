@@ -3,6 +3,8 @@ using System.Diagnostics;
 public class BackupService : IBackupService
 {
     private const int CopyBufferSize = 64 * 1024;
+    private const int ProgressUpdateIntervalMilliseconds = 500;
+    private const string SnapshotTimestampFormat = "yyyy-MM-dd_HH-mm-ss";
 
     private readonly BackupHistoryService _backupHistoryService;
     private readonly LoggerService _loggerService;
@@ -136,11 +138,21 @@ public class BackupService : IBackupService
                 return CompleteWithValidationError(result, backupJob, _textService.GetSourceDirectoryMissingMessage(selectedBackupJob));
             }
 
+            string snapshotDirectory = BuildSnapshotDirectory(backupJob);
+            try
+            {
+                Directory.CreateDirectory(snapshotDirectory);
+            }
+            catch (Exception exception)
+            {
+                return CompleteWithValidationError(result, backupJob, $"Unable to create backup snapshot folder: {exception.Message}");
+            }
+
             string[] sourceFiles = Directory.GetFiles(backupJob.Source, "*", SearchOption.AllDirectories);
             DateTime? lastFullBackupUtc = backupJob.Type == BackupType.Differential
                 ? _backupHistoryService.GetLastFullBackupUtc(backupJob.Name)
                 : null;
-            List<TransferWorkItem> workItems = BuildTransferWorkItems(selectedBackupJob, sourceFiles, lastFullBackupUtc);
+            List<TransferWorkItem> workItems = BuildTransferWorkItems(selectedBackupJob, sourceFiles, snapshotDirectory, lastFullBackupUtc);
             long totalBytes = workItems.Sum(item => item.FileSizeBytes);
 
             var state = CreateInitialState(backupJob, totalBytes, workItems.Count);
@@ -333,6 +345,7 @@ public class BackupService : IBackupService
     private List<TransferWorkItem> BuildTransferWorkItems(
         SelectedBackupJob selectedBackupJob,
         IEnumerable<string> sourceFiles,
+        string snapshotDirectory,
         DateTime? lastFullBackupUtc)
     {
         IEnumerable<string> filesToCopy = FilterFilesToCopy(sourceFiles, selectedBackupJob.Job, lastFullBackupUtc);
@@ -341,7 +354,7 @@ public class BackupService : IBackupService
             .Select(sourceFilePath =>
             {
                 string relativePath = Path.GetRelativePath(selectedBackupJob.Job.Source, sourceFilePath);
-                string destinationFilePath = Path.Combine(selectedBackupJob.Job.Target, relativePath);
+                string destinationFilePath = Path.Combine(snapshotDirectory, relativePath);
                 string matchedPriorityExtension = GetPriorityExtension(sourceFilePath);
                 int priorityRank = GetPriorityRank(matchedPriorityExtension);
                 return new TransferWorkItem
@@ -362,6 +375,33 @@ public class BackupService : IBackupService
             .ThenBy(item => item.PriorityRank)
             .ThenBy(item => item.SourcePath, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static string BuildSnapshotDirectory(BackupJob backupJob)
+    {
+        string backupNameDirectory = SanitizePathSegment(backupJob.Name);
+        string timestamp = DateTime.Now.ToString(SnapshotTimestampFormat);
+        string snapshotDirectory = Path.Combine(backupJob.Target, backupNameDirectory, timestamp);
+        int suffix = 1;
+
+        while (Directory.Exists(snapshotDirectory))
+        {
+            snapshotDirectory = Path.Combine(backupJob.Target, backupNameDirectory, $"{timestamp}_{suffix}");
+            suffix++;
+        }
+
+        return snapshotDirectory;
+    }
+
+    private static string SanitizePathSegment(string value)
+    {
+        string trimmedValue = string.IsNullOrWhiteSpace(value) ? "Backup" : value.Trim();
+        char[] invalidCharacters = Path.GetInvalidFileNameChars();
+        string sanitized = new string(trimmedValue
+            .Select(character => invalidCharacters.Contains(character) ? '_' : character)
+            .ToArray());
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "Backup" : sanitized;
     }
 
     private BackupState CreateInitialState(BackupJob backupJob, long totalBytes, int fileCount)
@@ -402,6 +442,8 @@ public class BackupService : IBackupService
         using FileStream sourceStream = new FileStream(workItem.SourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         using FileStream destinationStream = new FileStream(workItem.DestinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
         byte[] buffer = new byte[CopyBufferSize];
+        bool writeProgressEveryChunk = IsEncryptionConfiguredForFile(workItem.DestinationPath);
+        DateTime nextProgressWriteUtc = DateTime.UtcNow;
 
         while (true)
         {
@@ -418,7 +460,6 @@ public class BackupService : IBackupService
             }
 
             destinationStream.Write(buffer, 0, bytesRead);
-            destinationStream.Flush();
 
             fileTransferredBytes += bytesRead;
             state.TransferredBytes += bytesRead;
@@ -431,8 +472,21 @@ public class BackupService : IBackupService
             state.PauseReason = BackupPauseReason.None;
             state.PauseReasonDetails = string.Empty;
             state.CurrentPriorityExtension = workItem.MatchedPriorityExtension;
-            _stateService.WriteState(state);
+
+            DateTime nowUtc = DateTime.UtcNow;
+            if (writeProgressEveryChunk || nowUtc >= nextProgressWriteUtc)
+            {
+                _stateService.WriteState(state);
+                nextProgressWriteUtc = nowUtc.AddMilliseconds(ProgressUpdateIntervalMilliseconds);
+            }
         }
+    }
+
+    private static bool IsEncryptionConfiguredForFile(string filePath)
+    {
+        string extension = Path.GetExtension(filePath);
+        return !string.IsNullOrWhiteSpace(extension)
+            && RuntimeStoragePaths.GetEncryptedExtensions().Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
     private BackupControlAction WaitUntilJobCanProceed(SelectedBackupJob selectedBackupJob, BackupState state)
@@ -500,19 +554,7 @@ public class BackupService : IBackupService
             return sourceFiles;
         }
 
-        return sourceFiles.Where(sourceFilePath =>
-        {
-            string relativePath = Path.GetRelativePath(backupJob.Source, sourceFilePath);
-            string destinationFilePath = Path.Combine(backupJob.Target, relativePath);
-
-            if (!File.Exists(destinationFilePath))
-            {
-                return true;
-            }
-
-            DateTime sourceWriteTime = File.GetLastWriteTimeUtc(sourceFilePath);
-            return sourceWriteTime > lastFullBackupUtc.Value;
-        });
+        return sourceFiles.Where(sourceFilePath => File.GetLastWriteTimeUtc(sourceFilePath) > lastFullBackupUtc.Value);
     }
 
     private string GetPriorityExtension(string filePath)
