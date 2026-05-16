@@ -65,6 +65,57 @@ public class StateServiceTests
         Assert.Contains(states, state => state.BackupName == "Job2" && state.Status == BackupExecutionStatus.Error);
     }
 
+    [Fact]
+    public void ConcurrentWritesFromMultipleInstances_KeepValidJson()
+    {
+        using var workspace = new TestWorkspace();
+        IReadOnlyList<BackupJob> jobs = new BackupJobRegistry().LoadJobs();
+        new StateService().SynchronizeConfiguredJobs(jobs);
+
+        Parallel.For(0, 20, index =>
+        {
+            var stateService = new StateService();
+            stateService.WriteState(new BackupState
+            {
+                BackupName = $"Job{index % BackupJobRegistry.DefaultJobCount + 1}",
+                Status = BackupExecutionStatus.Active,
+                IsRunning = true,
+                LastBackupUpdateTime = DateTime.Now
+            });
+        });
+
+        List<BackupState> states = LoadStates();
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, states.Count);
+    }
+
+    [Fact]
+    public void RecoverInterruptedBackups_MarksRunningStatesStopped()
+    {
+        using var workspace = new TestWorkspace();
+        new BackupJobRegistry().LoadJobs();
+        var stateService = new StateService();
+        stateService.WriteState(new BackupState
+        {
+            BackupName = "Job1",
+            Status = BackupExecutionStatus.Active,
+            IsRunning = true,
+            RequestedAction = BackupControlAction.Run,
+            CurrentSourcePath = workspace.GetPath("source.txt"),
+            CurrentTargetPath = workspace.GetPath("target.txt"),
+            LastBackupUpdateTime = DateTime.Now
+        });
+
+        int recovered = new StateService().RecoverInterruptedBackups(new LoggerService());
+
+        BackupState state = LoadStates().Single(current => current.BackupName == "Job1");
+        Assert.Equal(1, recovered);
+        Assert.Equal(BackupExecutionStatus.Stopped, state.Status);
+        Assert.False(state.IsRunning);
+        Assert.Equal(BackupControlAction.Stop, state.RequestedAction);
+        Assert.NotNull(state.LastRunCompletedAt);
+        Assert.Equal(StateService.InterruptedShutdownMessage, state.ErrorMessage);
+    }
+
     private static List<BackupState> LoadStates()
     {
         string json = File.ReadAllText(RuntimeStoragePaths.StateFilePath);

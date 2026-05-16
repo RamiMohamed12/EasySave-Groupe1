@@ -182,6 +182,75 @@ public class BackupServiceTests
         Assert.Equal(["2.pdf", "3.txt", "1.csv", "4.bin"], transferredFiles);
     }
 
+    [Fact]
+    public void StartBackup_EmptySourceFolder_FinishesWithZeroTransferredFiles()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        BackupJob job = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.Equal(0, result.TransferredFileCount);
+        Assert.Contains("0 transferred files", result.ErrorMessage);
+        Assert.Contains(LoadLogEntries(), entry => entry.ActionType == "NoFiles");
+    }
+
+    [Fact]
+    public void StartBackup_DifferentialWithoutPreviousFull_CopiesEligibleFiles()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        File.WriteAllText(Path.Combine(sourceDirectory, "first.txt"), "content");
+        BackupJob job = new BackupJob
+        {
+            Name = "DiffOnly",
+            Source = sourceDirectory,
+            Target = targetDirectory,
+            Type = BackupType.Differential
+        };
+        new BackupJobRegistry().CreateJob(1, job);
+
+        BackupResult result = CreateBackupService().StartBackup(CreateSelectedJob(1, job));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.True(File.Exists(Path.Combine(targetDirectory, "first.txt")));
+        Assert.Equal(1, result.TransferredFileCount);
+    }
+
+    [Fact]
+    public void StartBackup_DifferentialAfterRename_CopiesRenamedFile()
+    {
+        using var workspace = new TestWorkspace();
+        string sourceDirectory = workspace.CreateDirectory("source");
+        string targetDirectory = workspace.CreateDirectory("target");
+        string originalPath = Path.Combine(sourceDirectory, "old.txt");
+        File.WriteAllText(originalPath, "content");
+
+        BackupJob fullJob = PrepareConfiguredSlot(1, sourceDirectory, targetDirectory);
+        BackupService service = CreateBackupService();
+        service.StartBackup(CreateSelectedJob(1, fullJob));
+
+        string renamedPath = Path.Combine(sourceDirectory, "new.txt");
+        File.Move(originalPath, renamedPath);
+        BackupJob differentialJob = new BackupJob
+        {
+            Name = fullJob.Name,
+            Source = fullJob.Source,
+            Target = fullJob.Target,
+            Type = BackupType.Differential
+        };
+
+        BackupResult result = service.StartBackup(CreateSelectedJob(1, differentialJob));
+
+        Assert.Equal(BackupExecutionStatus.Finished, result.Status);
+        Assert.True(File.Exists(Path.Combine(targetDirectory, "new.txt")));
+        Assert.Equal(1, result.TransferredFileCount);
+    }
+
     private static BackupService CreateBackupService(
         ICryptoService? cryptoService = null,
         IBusinessSoftwareMonitor? monitor = null)

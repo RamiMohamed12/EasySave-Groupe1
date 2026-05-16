@@ -62,6 +62,7 @@ public partial class MainWindow : Window
 
         _textService = ApplicationTextService.Create();
         _backupController = CreateBackupController();
+        _stateService.RecoverInterruptedBackups(new LoggerService());
 
         _jobRows = new List<JobRow>();
         ConfigureThemeSelector();
@@ -329,6 +330,14 @@ public partial class MainWindow : Window
 
     private void SaveSelectedJobButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!SaveSelectedJobButton.IsEnabled)
+        {
+            return;
+        }
+
+        SaveSelectedJobButton.IsEnabled = false;
+        try
+        {
         string jobName = NameTextBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(jobName))
         {
@@ -378,7 +387,7 @@ public partial class MainWindow : Window
         {
             _isAddingNewJob = false;
             int jobNumber = _jobRegistry.LoadJobs().Count + 1;
-            _jobRegistry.CreateJob(jobNumber, new BackupJob
+            _backupController.CreateJob(jobNumber, new BackupJob
             {
                 Name = jobName,
                 Source = jobSource,
@@ -410,7 +419,7 @@ public partial class MainWindow : Window
         SafeRefresh(OverviewJobsDataGrid);
         SafeRefresh(ExecutionJobsDataGrid);
 
-        _jobRegistry.UpdateJob(selectedRow.JobNumber, new BackupJob
+        _backupController.UpdateJob(selectedRow.JobNumber, new BackupJob
         {
             Name = selectedRow.Name,
             Source = selectedRow.Source,
@@ -423,6 +432,15 @@ public partial class MainWindow : Window
         StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
         UpdateDashboardMetrics();
         RefreshStateAndLog();
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+        }
+        finally
+        {
+            SaveSelectedJobButton.IsEnabled = !_isBusy;
+        }
     }
 
     private void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
@@ -459,9 +477,26 @@ public partial class MainWindow : Window
 
     private void SaveAllButton_Click(object sender, RoutedEventArgs e)
     {
-        SaveAllRowsToRegistry();
-        StatusTextBlock.Text = Text("Wpf.TableSavedStatus");
-        RefreshStateAndLog();
+        if (!SaveAllButton.IsEnabled)
+        {
+            return;
+        }
+
+        SaveAllButton.IsEnabled = false;
+        try
+        {
+            SaveAllRowsToRegistry();
+            StatusTextBlock.Text = Text("Wpf.TableSavedStatus");
+            RefreshStateAndLog();
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+        }
+        finally
+        {
+            SaveAllButton.IsEnabled = !_isBusy;
+        }
     }
 
     private void SaveAllRowsToRegistry()
@@ -473,7 +508,7 @@ public partial class MainWindow : Window
             row.Target = row.Target?.Trim() ?? string.Empty;
             row.ConfigurationStatus = GetConfigurationStatus(row.Source, row.Target);
             BackupType currentType = jobs[row.JobNumber - 1].Type;
-            _jobRegistry.UpdateJob(row.JobNumber, new BackupJob
+            _backupController.UpdateJob(row.JobNumber, new BackupJob
             {
                 Name = row.Name,
                 Source = row.Source,
@@ -1263,7 +1298,7 @@ public partial class MainWindow : Window
     {
         if (!TryParseThresholdKb(out int thresholdKb))
         {
-            StatusTextBlock.Text = UiText("Large file threshold must be a number >= 0.", "Le seuil gros fichiers doit etre un nombre >= 0.");
+            StatusTextBlock.Text = UiText("Large file threshold must be a number.", "Le seuil gros fichiers doit etre un nombre.");
             return;
         }
 
@@ -1373,6 +1408,12 @@ public partial class MainWindow : Window
 
     private void OpenEditPopup(JobRow row)
     {
+        if (_executionController.IsJobRunning(row.JobNumber))
+        {
+            StatusTextBlock.Text = UiText("This job cannot be edited while it is running.", "Cette tache ne peut pas etre modifiee pendant son execution.");
+            return;
+        }
+
         BackupJob job = _jobRegistry.LoadJobs()[row.JobNumber - 1];
         SelectedJobLabel.Text = Format("Wpf.SelectedJobLabel", row.JobNumber, row.Name, row.Type);
         NameTextBox.Text = row.Name;
@@ -1396,7 +1437,16 @@ public partial class MainWindow : Window
         if (((Button)sender).Tag is not JobRow row)
             return;
 
-        _jobRegistry.DeleteJob(row.JobNumber);
+        try
+        {
+            _backupController.DeleteJob(row.JobNumber);
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+            return;
+        }
+
         LoadJobsIntoGrid();
         if (_jobRows.Count > 0)
             JobsDataGrid.SelectedIndex = Math.Min(row.JobNumber - 1, _jobRows.Count - 1);
@@ -1415,8 +1465,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        foreach (JobRow row in toDelete.OrderByDescending(r => r.JobNumber))
-            _jobRegistry.DeleteJob(row.JobNumber);
+        try
+        {
+            foreach (JobRow row in toDelete.OrderByDescending(r => r.JobNumber))
+                _backupController.DeleteJob(row.JobNumber);
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+            RefreshStateAndLog();
+            return;
+        }
 
         int count = toDelete.Count;
         LoadJobsIntoGrid();
@@ -1990,7 +2049,7 @@ public partial class MainWindow : Window
             return true;
         }
 
-        if (!TryParseDecimal(rawValue, out decimal value) || value < 0)
+        if (!TryParseDecimal(rawValue, out decimal value))
         {
             return false;
         }
