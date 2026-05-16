@@ -119,6 +119,7 @@ public class ApplicationTextServiceTests : IDisposable
     [Fact]
     public void ConsoleTranslationService_UsesSharedResources()
     {
+        using var workspace = new TestWorkspace();
         var translationService = new ConsoleTranslationService();
         ApplicationTextService french = ApplicationTextService.Create("fr");
         ApplicationTextService english = ApplicationTextService.Create("en");

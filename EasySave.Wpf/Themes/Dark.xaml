@@ -1,45 +1,48 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Sober modern dark palette: near-black surfaces, soft white text, indigo accent, semantic green / amber / red -->
-    <Color x:Key="CanvasColor">#0B0D12</Color>
-    <Color x:Key="SidebarColor">#11141A</Color>
-    <Color x:Key="SurfaceColor">#141821</Color>
-    <Color x:Key="SurfaceRaisedColor">#1A1F2A</Color>
-    <Color x:Key="ControlColor">#1B2230</Color>
-    <Color x:Key="ControlHoverColor">#232B3B</Color>
-    <Color x:Key="ControlSelectedColor">#1E2A4A</Color>
-    <Color x:Key="BorderColor">#2A3142</Color>
-    <Color x:Key="BorderSoftColor">#1F2533</Color>
+    <!-- Windows 11 inspired dark palette: softer charcoal surfaces, quiet borders, familiar Fluent contrast. -->
+    <Color x:Key="CanvasColor">#202020</Color>
+    <Color x:Key="TitleBarColor">#202020</Color>
+    <Color x:Key="SidebarColor">#1C1C1C</Color>
+    <Color x:Key="SurfaceColor">#242424</Color>
+    <Color x:Key="SurfaceRaisedColor">#2C2C2C</Color>
+    <Color x:Key="ControlColor">#2B2B2B</Color>
+    <Color x:Key="ControlHoverColor">#333333</Color>
+    <Color x:Key="ControlSelectedColor">#303A52</Color>
+    <Color x:Key="BorderColor">#3A3A3A</Color>
+    <Color x:Key="BorderSoftColor">#303030</Color>
     <Color x:Key="TextPrimaryColor">#F3F4F6</Color>
     <Color x:Key="TextSecondaryColor">#D1D5DB</Color>
     <Color x:Key="TextMutedColor">#9CA3AF</Color>
     <Color x:Key="SidebarTextColor">#E5E7EB</Color>
-    <Color x:Key="OnAccentColor">#FFFFFF</Color>
-    <Color x:Key="AccentColor">#6366F1</Color>
-    <Color x:Key="AccentHoverColor">#4F46E5</Color>
-    <Color x:Key="AccentSoftColor">#1E1B4B</Color>
+    <Color x:Key="OnAccentColor">#0F172A</Color>
+    <Color x:Key="AccentColor">#5CCBFF</Color>
+    <Color x:Key="AccentHoverColor">#8BDDFF</Color>
+    <Color x:Key="AccentPressedColor">#38BDF8</Color>
+    <Color x:Key="AccentSoftColor">#263947</Color>
     <!-- Semantic indicators: green for success, orange for warning, red for failure -->
     <Color x:Key="SuccessColor">#22C55E</Color>
     <Color x:Key="WarningColor">#F59E0B</Color>
     <Color x:Key="WarningSurfaceColor">#3B2A14</Color>
     <Color x:Key="DangerColor">#EF4444</Color>
     <Color x:Key="DangerSoftColor">#3B1D22</Color>
-    <Color x:Key="LogBackgroundColor">#0A0F1A</Color>
+    <Color x:Key="LogBackgroundColor">#1B1B1B</Color>
     <Color x:Key="LogForegroundColor">#E5E7EB</Color>
-    <Color x:Key="HeroGradientStartColor">#1E1B4B</Color>
-    <Color x:Key="HeroGradientMidColor">#312E81</Color>
-    <Color x:Key="HeroGradientEndColor">#4338CA</Color>
-    <Color x:Key="HeroShapePrimaryColor">#0F0A2E</Color>
-    <Color x:Key="HeroShapeSecondaryColor">#4338CA</Color>
-    <Color x:Key="HeroShapeHighlightColor">#A5B4FC</Color>
-    <Color x:Key="HeroWaveColor">#141821</Color>
+    <Color x:Key="HeroGradientStartColor">#1F2D36</Color>
+    <Color x:Key="HeroGradientMidColor">#263947</Color>
+    <Color x:Key="HeroGradientEndColor">#1E4D66</Color>
+    <Color x:Key="HeroShapePrimaryColor">#15384D</Color>
+    <Color x:Key="HeroShapeSecondaryColor">#2B6EA6</Color>
+    <Color x:Key="HeroShapeHighlightColor">#8EDBFF</Color>
+    <Color x:Key="HeroWaveColor">#242424</Color>
     <Color x:Key="HeroTextColor">#F8FAFC</Color>
     <Color x:Key="HeroMetricTextColor">#F8FAFC</Color>
     <Color x:Key="HeroMetricMutedColor">#CBD5E1</Color>
-    <Color x:Key="HeroMetricSurfaceColor">#661F2937</Color>
-    <Color x:Key="HeroMetricBorderColor">#66FFFFFF</Color>
+    <Color x:Key="HeroMetricSurfaceColor">#802C2C2C</Color>
+    <Color x:Key="HeroMetricBorderColor">#553A3A3A</Color>
 
     <SolidColorBrush x:Key="CanvasBrush" Color="{DynamicResource CanvasColor}" />
+    <SolidColorBrush x:Key="TitleBarBrush" Color="{DynamicResource TitleBarColor}" />
     <SolidColorBrush x:Key="SidebarBrush" Color="{DynamicResource SidebarColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
     <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{DynamicResource SurfaceRaisedColor}" />
@@ -55,6 +58,7 @@
     <SolidColorBrush x:Key="OnAccentBrush" Color="{DynamicResource OnAccentColor}" />
     <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}" />
     <SolidColorBrush x:Key="AccentHoverBrush" Color="{DynamicResource AccentHoverColor}" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="{DynamicResource AccentPressedColor}" />
     <SolidColorBrush x:Key="AccentSoftBrush" Color="{DynamicResource AccentSoftColor}" />
     <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
     <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}" />

@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         Title="EasySave"
         Height="760"
@@ -10,9 +12,84 @@
         MinHeight="700"
         MinWidth="1080"
         Icon="Assets/EasySaveLogo.png"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Background="{DynamicResource CanvasBrush}">
+    <Window.Resources>
+        <sys:Double x:Key="TitleBarLogoWidth">18</sys:Double>
+        <sys:Double x:Key="TitleBarLogoHeight">18</sys:Double>
+    </Window.Resources>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="8"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Grid>
-        <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Name="TitleBarRow" Height="30" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+            Name="TitleBarBorder"
+            Background="{DynamicResource TitleBarBrush}"
+                BorderBrush="{DynamicResource BorderBrushToken}"
+                BorderThickness="0"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="10,0,0,0">
+                    <Image Name="TitleBarLogoImage"
+                           Width="{StaticResource TitleBarLogoWidth}"
+                           Height="{StaticResource TitleBarLogoHeight}"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="EasySave"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+                    <Button Name="MinimizeWindowButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MinimizeWindowButton_Click">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE921;" />
+                        </Button>
+<Button Name="MaximizeRestoreWindowButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MaximizeRestoreWindowButton_Click">
+                        <TextBlock Name="MaximizeRestoreWindowGlyph"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE922;" />
+                        </Button>
+                    <Button Name="CloseWindowButton"
+                            Style="{StaticResource TitleBarCloseButtonStyle}"
+                            Click="CloseWindowButton_Click">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE8BB;" />
+                        </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -20,13 +97,14 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="244" />
+                    <ColumnDefinition Width="16" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0"
-                CornerRadius="0"
+            CornerRadius="0"
                 Padding="10"
-                Margin="0,10,0,0"
+            Margin="0,8,0,0"
                 Background="{DynamicResource SidebarBrush}"
                 BorderBrush="{DynamicResource BorderBrushToken}"
                 BorderThickness="1">
@@ -63,35 +141,24 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Margin="-1,10,0,0">
+        <Grid Grid.Column="2" Margin="0,8,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource SectionBorderStyle}" Margin="0,0,0,12">
+            <Border Style="{StaticResource CommandHeaderBorderStyle}" Margin="0,0,0,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Name="HeadingTextBlock" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock Name="HeadingTextBlock" FontSize="22" FontWeight="SemiBold" />
                         <TextBlock Name="PageSubtitleTextBlock"
-                                   Margin="0,4,0,0"
+                                   Margin="0,3,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
-
-                    <Border Grid.Column="1"
-                            Padding="10,6"
-                            CornerRadius="6"
-                            Background="{DynamicResource AccentSoftBrush}"
-                            VerticalAlignment="Center">
-                        <TextBlock Name="StatusTextBlock"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AccentBrush}" />
-                    </Border>
                 </Grid>
             </Border>
 
@@ -130,145 +197,198 @@
                                   Opacity="0.48"
                                   Fill="{DynamicResource HeroWaveBrush}"
                                   Data="M 0,238 C 210,218 350,235 514,248 C 708,262 840,225 1016,205 C 1120,193 1190,202 1240,220 L 1240,282 L 0,282 Z" />
-                            <StackPanel Margin="38,42,0,0"
-                                        Width="420"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top">
-                                <TextBlock Text=".NET 10"
-                                           FontSize="15"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <TextBlock Text="EasySave"
-                                           Margin="0,8,0,0"
-                                           FontSize="38"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <TextBlock Name="HeroDescriptionTextBlock"
-                                           Margin="0,14,0,0"
-                                           FontSize="15"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <Border Margin="0,22,0,0"
-                                        Padding="12,7"
-                                        CornerRadius="8"
-                                        HorizontalAlignment="Left"
-                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
-                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
-                                        BorderThickness="1">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE9D2;"
-                                                   FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="14"
-                                                   Foreground="{DynamicResource AccentBrush}"
-                                                   Margin="0,0,8,0" />
-                                        <TextBlock Name="HeroStatusTextBlock"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                            <UniformGrid Rows="2"
-                                         Columns="2"
-                                         Width="500"
-                                         Height="214"
-                                         HorizontalAlignment="Right"
-                                         VerticalAlignment="Center"
-                                         Margin="0,12,38,0">
+                            <Grid Margin="34,28,34,28">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.9*" MinWidth="280" />
+                                    <ColumnDefinition Width="1.1*" MinWidth="340" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            MaxWidth="420"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text=".NET 10"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <TextBlock Text="EasySave"
+                                               Margin="0,8,0,0"
+                                               FontSize="38"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <TextBlock Name="HeroDescriptionTextBlock"
+                                               Margin="0,14,0,0"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <Border Margin="0,22,0,0"
+                                            Padding="12,7"
+                                            CornerRadius="8"
+                                            HorizontalAlignment="Left"
+                                            Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                            BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                            BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE9D2;"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="14"
+                                                       Foreground="{DynamicResource AccentBrush}"
+                                                       Margin="0,0,8,0" />
+                                            <TextBlock Name="HeroStatusTextBlock"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource HeroMetricTextBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <UniformGrid Grid.Column="1"
+                                             Rows="2"
+                                             Columns="2"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Stretch"
+                                             Margin="26,0,0,0">
                                 <Border Margin="0,0,10,10"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE8FD;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiTotalJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiTotalJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border Margin="0,0,0,10"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE73E;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiConfiguredJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiConfiguredJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border Margin="0,0,10,0"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE7C3;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiSelectedJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiSelectedJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE8B7;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiStorageLabelTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
                                         <TextBlock Name="KpiStorageValueTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="13"
+                                                   LineHeight="16"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
-                            </UniformGrid>
+                                </UniformGrid>
+                            </Grid>
                         </Grid>
                     </Border>
 
@@ -278,10 +398,12 @@
                                   IsReadOnly="True"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
-                                  CanUserDeleteRows="False">
+                                  CanUserDeleteRows="False"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="No." Binding="{Binding JobNumber}" Width="60" />
-                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160" />
                                 <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" Width="120" />
                                 <DataGridTextColumn Header="Runtime" Binding="{Binding RuntimeStatus}" Width="130" />
                                 <DataGridTemplateColumn Header="Progress" Width="120" SortMemberPath="ProgressPercentage">
@@ -297,8 +419,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="130" />
-                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" />
-                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" />
+                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="360" />
+                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="360" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </GroupBox>
@@ -311,40 +433,17 @@
                     </Grid.RowDefinitions>
 
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Orientation="Horizontal">
-                                <Button Name="AddJobButton"
-                                        Width="160"
-                                        Margin="0,0,8,0"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Click="AddJobButton_Click" />
-                                <Button Name="EditJobButton"
-                                        Width="170"
-                                        Margin="0,0,8,0"
-                                        Click="EditJobButton_Click" />
-                                <Button Name="DeleteJobButton"
-                                        Width="190"
-                                        Margin="0,0,8,0"
-                                        Style="{StaticResource DangerButtonStyle}"
-                                        Click="DeleteJobButton_Click" />
-                                <Button Name="SaveAllButton"
-                                        Width="170"
-                                        Click="SaveAllButton_Click" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <DockPanel LastChildFill="True">
+                            <WrapPanel DockPanel.Dock="Right"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Top"
+                                       Margin="16,0,0,0">
                                 <Border Name="SelectionBadge"
                                         Visibility="Collapsed"
                                         Padding="10,4"
                                         CornerRadius="12"
                                         Background="{DynamicResource AccentSoftBrush}"
-                                        Margin="0,0,10,0"
+                                        Margin="0,0,10,6"
                                         VerticalAlignment="Center">
                                     <TextBlock Name="SelectionBadgeText"
                                                FontWeight="SemiBold"
@@ -352,14 +451,40 @@
                                                Foreground="{DynamicResource AccentBrush}" />
                                 </Border>
                                 <Button Name="SelectAllJobsButton"
-                                        Width="160"
-                                        Margin="0,0,8,0"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="SelectAllJobsButton_Click" />
                                 <Button Name="ClearSelectionButton"
-                                        Width="170"
+                                        MinWidth="140"
+                                        Margin="0,0,0,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="ClearSelectionButton_Click" />
-                            </StackPanel>
-                        </Grid>
+                            </WrapPanel>
+
+                            <WrapPanel VerticalAlignment="Top">
+                                <Button Name="AddJobButton"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Click="AddJobButton_Click" />
+                                <Button Name="EditJobButton"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="EditJobButton_Click" />
+                                <Button Name="DeleteJobButton"
+                                        MinWidth="155"
+                                        Margin="0,0,8,6"
+                                        Style="{StaticResource DangerButtonStyle}"
+                                        Click="DeleteJobButton_Click" />
+                                <Button Name="SaveAllButton"
+                                        MinWidth="140"
+                                        Margin="0,0,0,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="SaveAllButton_Click" />
+                            </WrapPanel>
+                        </DockPanel>
                     </Border>
 
                     <GroupBox Grid.Row="1" Name="ConfiguredJobsGroupBox">
@@ -369,6 +494,8 @@
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                   SelectionMode="Single"
                                   SelectionChanged="JobsDataGrid_SelectionChanged"
                                   MouseLeftButtonUp="JobRow_ToggleSelect"
@@ -399,8 +526,8 @@
                                 <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" IsReadOnly="True" Width="140" />
                                 <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" IsReadOnly="True" Width="110" />
                                 <DataGridTextColumn x:Name="TypeColumn" Binding="{Binding Type}" IsReadOnly="True" Width="130" />
-                                <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" IsReadOnly="True" Width="*" />
-                                <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" IsReadOnly="True" Width="*" />
+                                <DataGridTextColumn x:Name="SourceColumn" Binding="{Binding Source}" IsReadOnly="True" Width="360" />
+                                <DataGridTextColumn x:Name="TargetColumn" Binding="{Binding Target}" IsReadOnly="True" Width="360" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </GroupBox>
@@ -414,29 +541,33 @@
                     </Grid.RowDefinitions>
 
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
-                        <StackPanel Orientation="Horizontal">
+                        <WrapPanel>
                             <Button Name="RunSelectedButton"
-                                    Width="210"
-                                    Margin="0,0,8,0"
+                                    MinWidth="175"
+                                    Margin="0,0,8,6"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="RunSelectedButton_Click" />
                             <Button Name="RunAllButton"
-                                    Width="170"
+                                    MinWidth="140"
+                                    Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="RunAllButton_Click" />
                             <Button Name="PauseSelectedButton"
-                                    Width="170"
-                                    Margin="8,0,0,0"
+                                    MinWidth="140"
+                                    Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="PauseSelectedButton_Click" />
                             <Button Name="ResumeSelectedButton"
-                                    Width="180"
-                                    Margin="8,0,0,0"
+                                    MinWidth="150"
+                                    Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="ResumeSelectedButton_Click" />
                             <Button Name="StopSelectedButton"
-                                    Width="170"
-                                    Margin="8,0,0,0"
+                                    MinWidth="140"
+                                    Margin="0,0,0,6"
                                     Style="{StaticResource DangerButtonStyle}"
                                     Click="StopSelectedButton_Click" />
-                        </StackPanel>
+                        </WrapPanel>
                     </Border>
 
                     <Border Grid.Row="1"
@@ -466,6 +597,8 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                   MouseLeftButtonUp="JobRow_ToggleSelect">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Width="48">
@@ -494,7 +627,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="No." Binding="{Binding JobNumber}" Width="60" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="160" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Status" Binding="{Binding ConfigurationStatus}" Width="120" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Runtime" Binding="{Binding RuntimeStatus}" Width="130" IsReadOnly="True" />
                                 <DataGridTemplateColumn Header="Progress" Width="120" IsReadOnly="True" SortMemberPath="ProgressPercentage">
@@ -509,11 +642,11 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Current file" Binding="{Binding CurrentFile}" Width="2*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Current file" Binding="{Binding CurrentFile}" Width="260" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Transfer mode" Binding="{Binding TransferMode}" Width="220" IsReadOnly="True" />
                                 <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="140" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="2*" IsReadOnly="True" />
-                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="360" IsReadOnly="True" />
+                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="360" IsReadOnly="True" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </GroupBox>
@@ -524,42 +657,214 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Button Name="RefreshButton"
-                            Width="150"
-                            Margin="0,0,0,12"
-                            HorizontalAlignment="Left"
-                            Click="RefreshButton_Click" />
+
+                    <!-- Barre d'actions du haut : refresh global, alignee a droite pour un rendu propre. -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Name="StateLogsPageTitle"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <TextBlock Name="StateLogsPageSubtitle"
+                                       Margin="0,2,0,0"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Name="RefreshButton"
+                                MinWidth="140"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="RefreshButton_Click" />
+                    </Grid>
+
+                    <!-- Corps : carte 'Etat' a gauche, carte 'Historique des logs' a droite. -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" MinWidth="280" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.45*" MinWidth="360" />
                         </Grid.ColumnDefinitions>
-                        <GroupBox Grid.Column="0" Name="StateGroupBox" Margin="0,0,8,0">
-                            <TextBox Name="StateTextBox"
-                                     Margin="4"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Background="{DynamicResource LogBackgroundBrush}"
-                                     Foreground="{DynamicResource LogForegroundBrush}"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap" />
-                        </GroupBox>
-                        <GroupBox Grid.Column="1" Name="LogGroupBox" Margin="8,0,0,0">
-                            <TextBox Name="LogTextBox"
-                                     Margin="4"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Background="{DynamicResource LogBackgroundBrush}"
-                                     Foreground="{DynamicResource LogForegroundBrush}"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap" />
-                        </GroupBox>
+
+                        <!-- Carte etat (state.json) -->
+                        <Border Grid.Column="0" Style="{StaticResource CardPanelBorderStyle}">
+                            <DockPanel LastChildFill="True">
+                                <Border DockPanel.Dock="Top" Style="{StaticResource CardHeaderBorderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource CardIconTextStyle}" Text="&#xE9F9;" />
+                                        <TextBlock Name="StateGroupBoxHeader" Style="{StaticResource CardTitleTextStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBox Name="StateTextBox"
+                                         BorderThickness="0"
+                                         Padding="14,12"
+                                         FontFamily="Cascadia Mono, Consolas"
+                                         FontSize="12"
+                                         Background="{DynamicResource LogBackgroundBrush}"
+                                         Foreground="{DynamicResource LogForegroundBrush}"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         IsReadOnly="True"
+                                         TextWrapping="NoWrap" />
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Carte historique des logs -->
+                        <Border Grid.Column="2" Style="{StaticResource CardPanelBorderStyle}">
+                            <DockPanel LastChildFill="True">
+                                <!-- Entete de carte -->
+                                <Border DockPanel.Dock="Top" Style="{StaticResource CardHeaderBorderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource CardIconTextStyle}" Text="&#xE7C3;" />
+                                        <TextBlock Name="LogGroupBoxHeader" Style="{StaticResource CardTitleTextStyle}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Toolbar pill : navigation de date + actions -->
+                                <Border DockPanel.Dock="Top" Margin="14,14,14,8" Style="{StaticResource ToolbarPillBorderStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" MinWidth="140" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Name="LogDateLabel"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,12,0"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                        <Button Grid.Column="1"
+                                                Name="PreviousLogDateButton"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Previous day"
+                                                Click="PreviousLogDateButton_Click" />
+                                        <DatePicker Grid.Column="3"
+                                                    Name="LogDatePicker"
+                                                    SelectedDateChanged="LogDatePicker_SelectedDateChanged" />
+                                        <Button Grid.Column="5"
+                                                Name="NextLogDateButton"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Next day"
+                                                Click="NextLogDateButton_Click" />
+                                        <Button Grid.Column="7"
+                                                Name="TodayLogDateButton"
+                                                MinWidth="108"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Click="TodayLogDateButton_Click" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Resume sur la date selectionnee -->
+                                <TextBlock DockPanel.Dock="Top"
+                                           Name="LogHistorySummaryTextBlock"
+                                           Margin="20,0,20,10"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+
+                                <!-- Corps : liste fichiers (gauche) + visualiseur (droite) -->
+                                <Grid Margin="14,0,14,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="240" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0"
+                                            Background="{DynamicResource SurfaceRaisedBrush}"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8">
+                                        <DockPanel LastChildFill="True">
+                                            <Border DockPanel.Dock="Top"
+                                                    Padding="14,10"
+                                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                    BorderThickness="0,0,0,1">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="12"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"
+                                                               Foreground="{DynamicResource AccentBrush}"
+                                                               Text="&#xE81C;" />
+                                                    <TextBlock Name="LogHistoryListLabel"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- Pagination footer -->
+                                            <Border DockPanel.Dock="Bottom"
+                                                    Padding="10,8"
+                                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                    BorderThickness="0,1,0,0">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Grid.Column="0"
+                                                            Name="LogHistoryPrevPageButton"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            ToolTip="Previous page"
+                                                            Click="LogHistoryPrevPageButton_Click" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Name="LogHistoryPageInfoTextBlock"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Style="{StaticResource MutedTextStyle}" />
+                                                    <Button Grid.Column="2"
+                                                            Name="LogHistoryNextPageButton"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            ToolTip="Next page"
+                                                            Click="LogHistoryNextPageButton_Click" />
+                                                </Grid>
+                                            </Border>
+                                            <ListBox Name="LogHistoryListBox"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     ItemContainerStyle="{StaticResource HistoryListBoxItemStyle}"
+                                                     Padding="0,6"
+                                                     SelectionChanged="LogHistoryListBox_SelectionChanged" />
+                                        </DockPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2"
+                                            Background="{DynamicResource LogBackgroundBrush}"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            ClipToBounds="True">
+                                        <TextBox Name="LogTextBox"
+                                                 BorderThickness="0"
+                                                 Padding="14,12"
+                                                 FontFamily="Cascadia Mono, Consolas"
+                                                 FontSize="12"
+                                                 Background="Transparent"
+                                                 Foreground="{DynamicResource LogForegroundBrush}"
+                                                 AcceptsReturn="True"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 IsReadOnly="True"
+                                                 TextWrapping="NoWrap" />
+                                    </Border>
+                                </Grid>
+                            </DockPanel>
+                        </Border>
                     </Grid>
                 </Grid>
 
@@ -576,6 +881,7 @@
                         <TextBlock Name="SettingsTitleTextBlock"
                                    FontSize="20"
                                    FontWeight="SemiBold"
+                                   Visibility="Collapsed"
                                    Margin="0,0,0,16" />
                     </StackPanel>
 
@@ -587,7 +893,7 @@
                                 <TextBlock Name="AppearanceSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="640" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,14">
                                             <Grid.ColumnDefinitions>
@@ -600,7 +906,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="ThemeComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="ThemeComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -614,7 +920,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LanguageComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LanguageComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -628,7 +934,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LogFormatComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LogFormatComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -642,7 +948,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LogStorageModeComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LogStorageModeComboBox_SelectionChanged" />
                                         </Grid>
                                         <TextBlock Name="CentralLogServerUrlLabel"
@@ -676,7 +982,7 @@
                                 <TextBlock Name="EncryptionSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="EncryptedExtensionsLabel"
                                                    Margin="0,0,0,6"
@@ -706,7 +1012,7 @@
                                 <TextBlock Name="RuntimeRulesSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="780" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="PriorityExtensionsLabel"
                                                    Margin="0,0,0,6"
@@ -804,7 +1110,7 @@
                                 <TextBlock Name="BusinessSoftwareSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="BlockedProcessesLabel"
                                                    Margin="0,0,0,6"
@@ -845,88 +1151,183 @@
 
                     </TabControl>
                 </Grid>
-                <!-- Popup overlay edition de tache -->
-                <Grid Name="EditJobOverlay" Visibility="Collapsed" Panel.ZIndex="100">
-                    <Rectangle Fill="Black" Opacity="0.55" />
-                    <Border Style="{StaticResource ModalCardStyle}"
-                            MaxWidth="520"
-                            MaxHeight="600"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <!-- Header -->
-                            <Grid Grid.Row="0">
-                                <TextBlock Name="SelectedJobLabel"
-                                           FontWeight="SemiBold"
-                                           FontSize="16"
-                                           VerticalAlignment="Center" />
-                                <Button HorizontalAlignment="Right"
-                                        Style="{StaticResource ModalCloseButtonStyle}"
-                                        Content="&#xE711;"
-                                        Click="CloseEditPopup_Click" />
-                            </Grid>
-                            <Rectangle Grid.Row="1"
-                                       Height="1"
-                                       Margin="0,16,0,20"
-                                       Fill="{DynamicResource BorderSoftBrush}" />
-
-                            <TextBlock Grid.Row="2"
-                                       Name="NameLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="3" Name="NameTextBox" Margin="0,6,0,14" MinWidth="380" />
-                            <TextBlock Grid.Row="4"
-                                       Name="SourceLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="5" Name="SourceTextBox" Margin="0,6,0,14" />
-                            <TextBlock Grid.Row="6"
-                                       Name="TargetLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="7" Name="TargetTextBox" Margin="0,6,0,14" />
-                            <TextBlock Grid.Row="8"
-                                       Name="TypeLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <ComboBox Grid.Row="9" Name="TypeComboBox" Margin="0,6,0,22" />
-                            <Grid Grid.Row="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0"
-                                        Name="CancelEditButton"
-                                        MinWidth="120"
-                                        Click="CloseEditPopup_Click" />
-                                <Button Grid.Column="2"
-                                        Name="SaveSelectedJobButton"
-                                        MinWidth="160"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Click="SaveSelectedJobButton_Click" />
-                            </Grid>
-                        </Grid>
-                    </Border>
-                </Grid>
 
             </Grid>
         </Grid>
     </Grid>
+
+        <!-- Popup overlay edition de tache (au niveau racine: couvre la barre de titre, la sidebar et le contenu pour bloquer toute interaction et rester centre sur la fenetre) -->
+        <Grid Name="EditJobOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Visibility="Collapsed"
+              Panel.ZIndex="1000">
+            <Rectangle Fill="Black" Opacity="0.55" />
+            <Border Style="{StaticResource ModalCardStyle}"
+                    MaxWidth="520"
+                    MaxHeight="600"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0">
+                        <TextBlock Name="SelectedJobLabel"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   VerticalAlignment="Center" />
+                        <Button HorizontalAlignment="Right"
+                                Style="{StaticResource ModalCloseButtonStyle}"
+                                Click="CloseEditPopup_Click">
+                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                       FontSize="12"
+                                       Text="&#xE8BB;" />
+                        </Button>
+                    </Grid>
+                    <Rectangle Grid.Row="1"
+                               Height="1"
+                               Margin="0,16,0,20"
+                               Fill="{DynamicResource BorderSoftBrush}" />
+
+                    <TextBlock Grid.Row="2"
+                               Name="NameLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <TextBox Grid.Row="3" Name="NameTextBox" Margin="0,6,0,14" MinWidth="380" />
+                    <TextBlock Grid.Row="4"
+                               Name="SourceLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <Grid Grid.Row="5" Margin="0,6,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Name="SourceTextBox" />
+                        <Button Grid.Column="2"
+                                Name="BrowseSourceButton"
+                                MinWidth="44"
+                                Padding="0"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="BrowseSourceButton_Click">
+                            <TextBlock Text="&#xE8B7;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="16"
+                                       FontWeight="Normal" />
+                        </Button>
+                    </Grid>
+                    <TextBlock Grid.Row="6"
+                               Name="TargetLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <Grid Grid.Row="7" Margin="0,6,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Name="TargetTextBox" />
+                        <Button Grid.Column="2"
+                                Name="BrowseTargetButton"
+                                MinWidth="44"
+                                Padding="0"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="BrowseTargetButton_Click">
+                            <TextBlock Text="&#xE8B7;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="16"
+                                       FontWeight="Normal" />
+                        </Button>
+                    </Grid>
+                    <TextBlock Grid.Row="8"
+                               Name="TypeLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <ComboBox Grid.Row="9" Name="TypeComboBox" Margin="0,6,0,22" />
+                    <Grid Grid.Row="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Name="CancelEditButton"
+                                MinWidth="120"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="CloseEditPopup_Click" />
+                        <Button Grid.Column="2"
+                                Name="SaveSelectedJobButton"
+                                MinWidth="160"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Click="SaveSelectedJobButton_Click" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Toast notification (Windows 11 style): apparait en haut a droite, auto-dismiss au bout de quelques secondes -->
+        <Grid Grid.Row="1"
+              Panel.ZIndex="900"
+              IsHitTestVisible="False"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Top"
+              Margin="0,18,24,0">
+            <Border Name="StatusToastCard"
+                    Visibility="Collapsed"
+                    Opacity="0"
+                    MinWidth="280"
+                    MaxWidth="420"
+                    Background="{DynamicResource SurfaceRaisedBrush}"
+                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.45" Color="Black" />
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Name="StatusToastAccentBar"
+                            Background="{DynamicResource AccentBrush}"
+                            CornerRadius="8,0,0,8" />
+                    <TextBlock Grid.Column="1"
+                               Name="StatusToastIcon"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="16"
+                               Margin="14,12,10,12"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AccentBrush}"
+                               Text="&#xE946;" />
+                    <TextBlock Grid.Column="2"
+                               Name="StatusTextBlock"
+                               Margin="0,12,16,12"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
     </Grid>
 </Window>
