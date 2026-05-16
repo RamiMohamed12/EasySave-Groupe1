@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.appdata/
+.dotnet/
+.verify-build/
+docker-data/

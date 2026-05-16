@@ -9,9 +9,7 @@ public class RuntimeStoragePathsTests
         File.Delete(RuntimeStoragePaths.ConfigurationFilePath);
         RuntimeStoragePaths.Reload();
 
-        string sharedRootDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "EasySave");
+        string sharedRootDirectory = Path.GetDirectoryName(RuntimeStoragePaths.ConfigurationFilePath)!;
         string baseDirectory = Path.GetFullPath(Path.Combine(sharedRootDirectory, "runtime"));
 
         Assert.Equal(baseDirectory, RuntimeStoragePaths.BackupStateDirectory);
@@ -19,6 +17,7 @@ public class RuntimeStoragePathsTests
         Assert.Equal(Path.Combine(baseDirectory, "state.json"), RuntimeStoragePaths.StateFilePath);
         Assert.Equal(Path.Combine(baseDirectory, "backup-history.json"), RuntimeStoragePaths.BackupHistoryFilePath);
         Assert.Equal("json", RuntimeStoragePaths.GetLogFileFormat());
+        Assert.Equal("local", RuntimeStoragePaths.GetLogStorageMode());
         Assert.Equal(RuntimeStoragePaths.DarkThemeMode, RuntimeStoragePaths.GetThemeMode());
     }
 
@@ -189,5 +188,46 @@ public class RuntimeStoragePathsTests
         RuntimeStoragePaths.Reload();
 
         Assert.Equal(2, RuntimeStoragePaths.GetMaxConcurrentJobs());
+    }
+
+    [Fact]
+    public void SetLogStorageMode_PersistsAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLogStorageMode(RuntimeStoragePaths.BothLogStorageMode);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(RuntimeStoragePaths.BothLogStorageMode, RuntimeStoragePaths.GetLogStorageMode());
+        Assert.True(RuntimeStoragePaths.ShouldWriteLocalLogs());
+        Assert.True(RuntimeStoragePaths.ShouldWriteCentralizedLogs());
+    }
+
+    [Fact]
+    public void SetCentralLogSettings_PersistsAcrossReload()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetCentralLogServerUrl(" http://localhost:5080/ ");
+        RuntimeStoragePaths.SetCentralLogUserName(" alice ");
+        RuntimeStoragePaths.SetCentralLogApiKey(" secret ");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal("http://localhost:5080", RuntimeStoragePaths.GetCentralLogServerUrl());
+        Assert.Equal("alice", RuntimeStoragePaths.GetCentralLogUserName());
+        Assert.Equal("secret", RuntimeStoragePaths.GetCentralLogApiKey());
+    }
+
+    [Fact]
+    public void GetClientId_GeneratesStableIdentifier()
+    {
+        using var workspace = new TestWorkspace();
+
+        string firstClientId = RuntimeStoragePaths.GetClientId();
+        RuntimeStoragePaths.Reload();
+        string secondClientId = RuntimeStoragePaths.GetClientId();
+
+        Assert.False(string.IsNullOrWhiteSpace(firstClientId));
+        Assert.Equal(firstClientId, secondClientId);
     }
 }

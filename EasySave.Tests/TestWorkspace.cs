@@ -4,6 +4,7 @@ public sealed class TestWorkspace : IDisposable
 {
     private readonly bool _hadExistingStorageSettings;
     private readonly string? _existingStorageSettingsContent;
+    private readonly string? _existingConfigurationDirectoryOverride;
 
     public string RootPath { get; }
     public string RuntimePath { get; }
@@ -13,6 +14,12 @@ public sealed class TestWorkspace : IDisposable
         RootPath = Path.Combine(Path.GetTempPath(), "EasySaveTests", Guid.NewGuid().ToString("N"));
         RuntimePath = Path.Combine(RootPath, "runtime");
         Directory.CreateDirectory(RuntimePath);
+        string configurationPath = Path.Combine(RootPath, "config");
+        Directory.CreateDirectory(configurationPath);
+
+        _existingConfigurationDirectoryOverride = Environment.GetEnvironmentVariable("EASYSAVE_CONFIGURATION_DIRECTORY");
+        Environment.SetEnvironmentVariable("EASYSAVE_CONFIGURATION_DIRECTORY", configurationPath);
+        RuntimeStoragePaths.Reload();
 
         _hadExistingStorageSettings = File.Exists(RuntimeStoragePaths.ConfigurationFilePath);
         _existingStorageSettingsContent = _hadExistingStorageSettings
@@ -22,6 +29,11 @@ public sealed class TestWorkspace : IDisposable
         RuntimeStoragePaths.SetStorageDirectory(RuntimePath);
         RuntimeStoragePaths.SetBlockedProcessNames(Array.Empty<string>());
         RuntimeStoragePaths.SetLanguageCode(string.Empty);
+        RuntimeStoragePaths.SetLogFileFormat(RuntimeStoragePaths.JsonLogFileFormat);
+        RuntimeStoragePaths.SetLogStorageMode(RuntimeStoragePaths.LocalLogStorageMode);
+        RuntimeStoragePaths.SetCentralLogServerUrl(string.Empty);
+        RuntimeStoragePaths.SetCentralLogUserName(string.Empty);
+        RuntimeStoragePaths.SetCentralLogApiKey(string.Empty);
     }
 
     public string GetPath(params string[] parts)
@@ -61,6 +73,7 @@ public sealed class TestWorkspace : IDisposable
             File.Delete(RuntimeStoragePaths.ConfigurationFilePath);
         }
 
+        Environment.SetEnvironmentVariable("EASYSAVE_CONFIGURATION_DIRECTORY", _existingConfigurationDirectoryOverride);
         RuntimeStoragePaths.Reload();
 
         if (Directory.Exists(RootPath))

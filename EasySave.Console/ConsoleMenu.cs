@@ -39,6 +39,7 @@ public class ConsoleMenu
                 _translationService.GetViewStateLabel(_runtime.TextService),
                 _translationService.GetViewLogsLabel(_runtime.TextService),
                 _translationService.GetChangeLogFormatLabel(_runtime.TextService),
+                _runtime.TextService.GetText("Console.ChangeLogStorageModeLabel"),
                 _runtime.TextService.GetText("Console.EncryptionSettingsLabel"),
                 _translationService.GetManageBusinessSoftwareLabel(_runtime.TextService),
                 _translationService.GetChangeLanguageLabel(_runtime.TextService),
@@ -48,7 +49,10 @@ public class ConsoleMenu
             IReadOnlyList<string> contextLines =
             [
                 _translationService.GetCurrentLanguageLine(_runtime.TextService),
-                _translationService.GetCurrentLogFormatLine(_runtime.TextService)
+                _translationService.GetCurrentLogFormatLine(_runtime.TextService),
+                _runtime.TextService.FormatText(
+                    "Console.CurrentLogStorageModeLine",
+                    _runtime.TextService.GetLogStorageModeDisplayName(RuntimeStoragePaths.GetLogStorageMode()))
             ];
 
             int selection = _interactiveConsole.SelectOption(
@@ -82,15 +86,18 @@ public class ConsoleMenu
                     _backupFeatures.ChangeLogFormat();
                     break;
                 case 6:
-                    _backupFeatures.ConfigureEncryptionSettings();
+                    _backupFeatures.ConfigureLogStorageMode();
                     break;
                 case 7:
-                    _backupFeatures.ManageBusinessSoftware();
+                    _backupFeatures.ConfigureEncryptionSettings();
                     break;
                 case 8:
-                    _backupFeatures.ChangeLanguage();
+                    _backupFeatures.ManageBusinessSoftware();
                     break;
                 case 9:
+                    _backupFeatures.ChangeLanguage();
+                    break;
+                case 10:
                     return;
             }
         }

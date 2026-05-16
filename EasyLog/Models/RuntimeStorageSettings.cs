@@ -3,6 +3,11 @@ public class RuntimeStorageSettings
     public string StorageDirectory { get; set; }
     public string LanguageCode { get; set; }
     public string LogFileFormat { get; set; }
+    public string LogStorageMode { get; set; }
+    public string CentralLogServerUrl { get; set; }
+    public string CentralLogUserName { get; set; }
+    public string CentralLogApiKey { get; set; }
+    public string ClientId { get; set; }
     public List<string> EncryptedExtensions { get; set; }
     public List<string> PriorityExtensions { get; set; }
     public string CryptoSoftKey { get; set; }
@@ -17,6 +22,11 @@ public class RuntimeStorageSettings
         StorageDirectory = string.Empty;
         LanguageCode = string.Empty;
         LogFileFormat = string.Empty;
+        LogStorageMode = string.Empty;
+        CentralLogServerUrl = string.Empty;
+        CentralLogUserName = string.Empty;
+        CentralLogApiKey = string.Empty;
+        ClientId = string.Empty;
         EncryptedExtensions = new List<string>();
         PriorityExtensions = new List<string>();
         CryptoSoftKey = string.Empty;

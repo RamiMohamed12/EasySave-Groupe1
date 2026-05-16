@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private int _lastToggledIndex = -1;
     private bool _isApplyingLanguage;
     private bool _isApplyingLogFormat;
+    private bool _isApplyingLogStorageMode;
     private bool _isApplyingTheme;
     private List<BackupTypeOption> _backupTypeOptions = new();
     private List<ThemeOption> _themeOptions = new();
@@ -50,10 +51,12 @@ public partial class MainWindow : Window
         ConfigureThemeSelector();
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
+        ConfigureLogStorageModeSelector();
         ConfigureThresholdUnitSelector();
         ApplyTexts();
         LoadRuntimeRulesIntoForm();
         LoadEncryptionSettingsIntoForm();
+        LoadCentralLogSettingsIntoForm();
         RefreshBlockedProcesses();
         LoadJobsIntoGrid();
         SetActiveSection(DashboardSection.Overview);
@@ -340,9 +343,32 @@ public partial class MainWindow : Window
     private void RefreshStateAndLog()
     {
         StateTextBox.Text = ReadFileSafely(RuntimeStoragePaths.StateFilePath);
-        string todayLogPath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
-        LogTextBox.Text = ReadFileSafely(todayLogPath);
+        LogTextBox.Text = ReadCurrentLogSafely();
         ApplyRuntimeStateToRows();
+    }
+
+    private string ReadCurrentLogSafely()
+    {
+        if (RuntimeStoragePaths.GetLogStorageMode() == RuntimeStoragePaths.CentralizedLogStorageMode)
+        {
+            try
+            {
+                string centralContent = new CentralLogClient()
+                    .GetDailyLogAsync(DateTime.Now)
+                    .GetAwaiter()
+                    .GetResult();
+                return string.IsNullOrWhiteSpace(centralContent)
+                    ? Text("Wpf.EmptyFile")
+                    : centralContent;
+            }
+            catch (Exception exception)
+            {
+                return exception.Message;
+            }
+        }
+
+        string todayLogPath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
+        return ReadFileSafely(todayLogPath);
     }
 
     private string ReadFileSafely(string path)
@@ -457,6 +483,7 @@ public partial class MainWindow : Window
         RunSelectedButton.IsEnabled = !busy;
         RunAllButton.IsEnabled = !busy;
         SaveAllButton.IsEnabled = !busy;
+        SaveCentralLogSettingsButton.IsEnabled = !busy;
         SaveEncryptionSettingsButton.IsEnabled = !busy;
         SaveRuntimeRulesButton.IsEnabled = !busy;
         AddJobButton.IsEnabled = !busy;
@@ -495,6 +522,21 @@ public partial class MainWindow : Window
         LogFormatComboBox.SelectedValuePath = nameof(LogFormatOption.Value);
         LogFormatComboBox.SelectedValue = RuntimeStoragePaths.GetLogFileFormat();
         _isApplyingLogFormat = false;
+    }
+
+    private void ConfigureLogStorageModeSelector()
+    {
+        _isApplyingLogStorageMode = true;
+        LogStorageModeComboBox.ItemsSource = new[]
+        {
+            new LogStorageModeOption(RuntimeStoragePaths.LocalLogStorageMode, _textService.GetLogStorageModeDisplayName(RuntimeStoragePaths.LocalLogStorageMode)),
+            new LogStorageModeOption(RuntimeStoragePaths.CentralizedLogStorageMode, _textService.GetLogStorageModeDisplayName(RuntimeStoragePaths.CentralizedLogStorageMode)),
+            new LogStorageModeOption(RuntimeStoragePaths.BothLogStorageMode, _textService.GetLogStorageModeDisplayName(RuntimeStoragePaths.BothLogStorageMode))
+        };
+        LogStorageModeComboBox.DisplayMemberPath = nameof(LogStorageModeOption.DisplayName);
+        LogStorageModeComboBox.SelectedValuePath = nameof(LogStorageModeOption.Value);
+        LogStorageModeComboBox.SelectedValue = RuntimeStoragePaths.GetLogStorageMode();
+        _isApplyingLogStorageMode = false;
     }
 
     private void ConfigureThemeSelector()
@@ -571,6 +613,10 @@ public partial class MainWindow : Window
         BusinessSoftwareSectionTitle.Text = Text("Wpf.BusinessSoftwareSectionTitle");
         LanguageLabel.Text = Text("Wpf.LanguageLabel");
         LogFormatLabel.Text = Text("Wpf.LogFormatLabel");
+        LogStorageModeLabel.Text = Text("Wpf.LogStorageModeLabel");
+        CentralLogServerUrlLabel.Text = Text("Wpf.CentralLogServerUrlLabel");
+        CentralLogUserNameLabel.Text = Text("Wpf.CentralLogUserNameLabel");
+        CentralLogApiKeyLabel.Text = Text("Wpf.CentralLogApiKeyLabel");
         BlockedProcessesLabel.Text = Text("Wpf.BlockedProcessesLabel");
         ProcessNameLabel.Text = Text("Wpf.ProcessNameLabel");
         SetButtonContent(AddProcessButton, "\uE710", Text("Wpf.AddBlockedProcessButton"));
@@ -589,6 +635,7 @@ public partial class MainWindow : Window
         SetButtonContent(StopSelectedButton, "\uE71A", UiText("Stop selected", "Arreter selection"));
         SetButtonContent(SaveAllButton, "\uE74E", Text("Wpf.SaveAllButton"));
         SetButtonContent(SaveSelectedJobButton, "\uE74E", Text("Wpf.SaveSelectedJobButton"));
+        SetButtonContent(SaveCentralLogSettingsButton, "\uE74E", Text("Wpf.SaveCentralLogSettingsButton"));
         SetButtonContent(SaveEncryptionSettingsButton, "\uE74E", Text("Wpf.SaveEncryptionSettingsButton"));
         SetButtonContent(SaveRuntimeRulesButton, "\uE74E", UiText("Save runtime rules", "Enregistrer regles runtime"));
         KpiTotalJobsLabelTextBlock.Text = Text("Wpf.KpiTotalJobs");
@@ -631,10 +678,12 @@ public partial class MainWindow : Window
         _textService = ApplicationTextService.Create(languageCode);
         _backupController = CreateBackupController();
         ConfigureLogFormatSelector();
+        ConfigureLogStorageModeSelector();
         LoadJobsIntoGrid();
         RefreshBlockedProcesses();
         ApplyTexts();
         LoadEncryptionSettingsIntoForm();
+        LoadCentralLogSettingsIntoForm();
         LoadRuntimeRulesIntoForm();
         StatusTextBlock.Text = _textService.GetLanguageUpdatedMessage();
         RefreshStateAndLog();
@@ -650,6 +699,19 @@ public partial class MainWindow : Window
         RuntimeStoragePaths.SetLogFileFormat(logFormat);
         ConfigureLogFormatSelector();
         StatusTextBlock.Text = Format("Wpf.LogFormatUpdatedStatus", _textService.GetLogFileFormatDisplayName(logFormat));
+        RefreshStateAndLog();
+    }
+
+    private void LogStorageModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingLogStorageMode || LogStorageModeComboBox.SelectedValue is not string logStorageMode)
+        {
+            return;
+        }
+
+        RuntimeStoragePaths.SetLogStorageMode(logStorageMode);
+        ConfigureLogStorageModeSelector();
+        StatusTextBlock.Text = Format("Wpf.LogStorageUpdatedStatus", _textService.GetLogStorageModeDisplayName(logStorageMode));
         RefreshStateAndLog();
     }
 
@@ -724,6 +786,13 @@ public partial class MainWindow : Window
         CryptoSoftKeyTextBox.Text = RuntimeStoragePaths.GetCryptoSoftKey();
     }
 
+    private void LoadCentralLogSettingsIntoForm()
+    {
+        CentralLogServerUrlTextBox.Text = RuntimeStoragePaths.GetCentralLogServerUrl();
+        CentralLogUserNameTextBox.Text = RuntimeStoragePaths.GetCentralLogUserName();
+        CentralLogApiKeyTextBox.Text = RuntimeStoragePaths.GetCentralLogApiKey();
+    }
+
     private void LoadRuntimeRulesIntoForm()
     {
         _priorityExtensions = RuntimeStoragePaths.GetPriorityExtensions().ToList();
@@ -744,6 +813,16 @@ public partial class MainWindow : Window
         RuntimeStoragePaths.SetCryptoSoftKey(CryptoSoftKeyTextBox.Text);
         LoadEncryptionSettingsIntoForm();
         StatusTextBlock.Text = Text("Wpf.EncryptionSettingsSavedStatus");
+        RefreshStateAndLog();
+    }
+
+    private void SaveCentralLogSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RuntimeStoragePaths.SetCentralLogServerUrl(CentralLogServerUrlTextBox.Text);
+        RuntimeStoragePaths.SetCentralLogUserName(CentralLogUserNameTextBox.Text);
+        RuntimeStoragePaths.SetCentralLogApiKey(CentralLogApiKeyTextBox.Text);
+        LoadCentralLogSettingsIntoForm();
+        StatusTextBlock.Text = Text("Wpf.CentralLogSettingsSavedStatus");
         RefreshStateAndLog();
     }
 
@@ -1057,7 +1136,9 @@ public partial class MainWindow : Window
         KpiTotalJobsValueTextBlock.Text = totalJobs.ToString();
         KpiConfiguredJobsValueTextBlock.Text = configuredJobs.ToString();
         KpiSelectedJobsValueTextBlock.Text = selectedJobs.ToString();
-        KpiStorageValueTextBlock.Text = Text("Wpf.LocalStorageSummary");
+        KpiStorageValueTextBlock.Text = RuntimeStoragePaths.GetLogStorageMode() == RuntimeStoragePaths.LocalLogStorageMode
+            ? Text("Wpf.LocalStorageSummary")
+            : _textService.GetLogStorageModeDisplayName(RuntimeStoragePaths.GetLogStorageMode());
         HeroStatusTextBlock.Text = Format("Wpf.HeroReadySummary", configuredJobs, totalJobs);
 
         if (selectedJobs == 0)
@@ -1365,6 +1446,10 @@ public partial class MainWindow : Window
         public override string ToString() => DisplayName;
     }
     private sealed record LogFormatOption(string Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+    private sealed record LogStorageModeOption(string Value, string DisplayName)
     {
         public override string ToString() => DisplayName;
     }

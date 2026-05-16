@@ -4,11 +4,15 @@ public static class RuntimeStoragePaths
 {
     public const string JsonLogFileFormat = "json";
     public const string XmlLogFileFormat = "xml";
+    public const string LocalLogStorageMode = "local";
+    public const string CentralizedLogStorageMode = "centralized";
+    public const string BothLogStorageMode = "both";
     public const string LightThemeMode = "Light";
     public const string DarkThemeMode = "Dark";
     public const string SystemThemeMode = "System";
     private const string SharedApplicationDirectoryName = "EasySave";
     private const string SharedStorageDirectoryName = "runtime";
+    private const string ConfigurationDirectoryEnvironmentVariable = "EASYSAVE_CONFIGURATION_DIRECTORY";
 
     private static readonly object SyncRoot = new();
     private static RuntimeStorageSettings? _settings;
@@ -31,7 +35,8 @@ public static class RuntimeStoragePaths
         return
         [
             $"????-??-??.{JsonLogFileFormat}",
-            $"????-??-??.{XmlLogFileFormat}"
+            $"????-??-??.{XmlLogFileFormat}",
+            "????-??-??.jsonl"
         ];
     }
 
@@ -49,6 +54,59 @@ public static class RuntimeStoragePaths
     public static string GetLogFileFormat()
     {
         return NormalizeLogFileFormat(GetSettings().LogFileFormat);
+    }
+
+    public static string GetLogStorageMode()
+    {
+        return NormalizeLogStorageMode(GetSettings().LogStorageMode);
+    }
+
+    public static string GetCentralLogServerUrl()
+    {
+        return NormalizeCentralLogServerUrl(GetSettings().CentralLogServerUrl);
+    }
+
+    public static string GetCentralLogUserName()
+    {
+        string configuredUserName = GetSettings().CentralLogUserName;
+        return string.IsNullOrWhiteSpace(configuredUserName)
+            ? Environment.UserName
+            : configuredUserName.Trim();
+    }
+
+    public static string GetCentralLogApiKey()
+    {
+        return GetSettings().CentralLogApiKey?.Trim() ?? string.Empty;
+    }
+
+    public static string GetClientId()
+    {
+        lock (SyncRoot)
+        {
+            RuntimeStorageSettings settings = LoadSettings();
+            if (!string.IsNullOrWhiteSpace(settings.ClientId))
+            {
+                _settings = settings;
+                return settings.ClientId.Trim();
+            }
+
+            settings.ClientId = Guid.NewGuid().ToString("N");
+            SaveSettings(settings);
+            _settings = settings;
+            return settings.ClientId;
+        }
+    }
+
+    public static bool ShouldWriteLocalLogs()
+    {
+        string mode = GetLogStorageMode();
+        return mode == LocalLogStorageMode || mode == BothLogStorageMode;
+    }
+
+    public static bool ShouldWriteCentralizedLogs()
+    {
+        string mode = GetLogStorageMode();
+        return mode == CentralizedLogStorageMode || mode == BothLogStorageMode;
     }
 
     public static string GetThemeMode()
@@ -102,6 +160,28 @@ public static class RuntimeStoragePaths
     {
         string normalizedLogFileFormat = NormalizeLogFileFormat(logFileFormat);
         UpdateSettings(settings => settings.LogFileFormat = normalizedLogFileFormat);
+    }
+
+    public static void SetLogStorageMode(string logStorageMode)
+    {
+        string normalizedLogStorageMode = NormalizeLogStorageMode(logStorageMode);
+        UpdateSettings(settings => settings.LogStorageMode = normalizedLogStorageMode);
+    }
+
+    public static void SetCentralLogServerUrl(string serverUrl)
+    {
+        string normalizedServerUrl = NormalizeCentralLogServerUrl(serverUrl);
+        UpdateSettings(settings => settings.CentralLogServerUrl = normalizedServerUrl);
+    }
+
+    public static void SetCentralLogUserName(string userName)
+    {
+        UpdateSettings(settings => settings.CentralLogUserName = userName?.Trim() ?? string.Empty);
+    }
+
+    public static void SetCentralLogApiKey(string apiKey)
+    {
+        UpdateSettings(settings => settings.CentralLogApiKey = apiKey?.Trim() ?? string.Empty);
     }
 
     public static void SetThemeMode(string themeMode)
@@ -211,6 +291,11 @@ public static class RuntimeStoragePaths
         settings.StorageDirectory ??= string.Empty;
         settings.LanguageCode ??= string.Empty;
         settings.LogFileFormat ??= string.Empty;
+        settings.LogStorageMode ??= string.Empty;
+        settings.CentralLogServerUrl ??= string.Empty;
+        settings.CentralLogUserName ??= string.Empty;
+        settings.CentralLogApiKey ??= string.Empty;
+        settings.ClientId ??= string.Empty;
         settings.EncryptedExtensions ??= new List<string>();
         settings.PriorityExtensions ??= new List<string>();
         settings.CryptoSoftKey ??= string.Empty;
@@ -240,13 +325,18 @@ public static class RuntimeStoragePaths
             RuntimeStorageSettings settings = LoadSettings();
             updateSettings(settings);
 
-            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-            File.WriteAllText(ConfigurationFilePath, json);
+            SaveSettings(settings);
             _settings = settings;
         }
+    }
+
+    private static void SaveSettings(RuntimeStorageSettings settings)
+    {
+        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        File.WriteAllText(ConfigurationFilePath, json);
     }
 
     private static string ResolveDirectoryPath(string path)
@@ -285,6 +375,30 @@ public static class RuntimeStoragePaths
         return normalizedLogFileFormat == XmlLogFileFormat
             ? XmlLogFileFormat
             : JsonLogFileFormat;
+    }
+
+    private static string NormalizeLogStorageMode(string? logStorageMode)
+    {
+        string normalizedLogStorageMode = string.IsNullOrWhiteSpace(logStorageMode)
+            ? LocalLogStorageMode
+            : logStorageMode.Trim().ToLowerInvariant();
+
+        return normalizedLogStorageMode switch
+        {
+            CentralizedLogStorageMode => CentralizedLogStorageMode,
+            BothLogStorageMode => BothLogStorageMode,
+            _ => LocalLogStorageMode
+        };
+    }
+
+    private static string NormalizeCentralLogServerUrl(string? serverUrl)
+    {
+        if (string.IsNullOrWhiteSpace(serverUrl))
+        {
+            return string.Empty;
+        }
+
+        return serverUrl.Trim().TrimEnd('/');
     }
 
     private static string NormalizeThemeMode(string? themeMode)
@@ -394,6 +508,14 @@ public static class RuntimeStoragePaths
 
     private static string GetSharedConfigurationDirectory()
     {
+        string? configuredRootDirectory = Environment.GetEnvironmentVariable(ConfigurationDirectoryEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(configuredRootDirectory))
+        {
+            string resolvedConfigurationDirectory = Path.GetFullPath(configuredRootDirectory);
+            Directory.CreateDirectory(resolvedConfigurationDirectory);
+            return resolvedConfigurationDirectory;
+        }
+
         string localApplicationDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string rootDirectory = string.IsNullOrWhiteSpace(localApplicationDataPath)
             ? GetBaseDirectory()

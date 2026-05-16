@@ -248,6 +248,16 @@ public class ApplicationTextService
         return logFileFormat == RuntimeStoragePaths.XmlLogFileFormat ? GetText("XmlLogFormat") : GetText("JsonLogFormat");
     }
 
+    public string GetLogStorageModeDisplayName(string logStorageMode)
+    {
+        return logStorageMode switch
+        {
+            RuntimeStoragePaths.CentralizedLogStorageMode => GetText("CentralizedLogStorageMode"),
+            RuntimeStoragePaths.BothLogStorageMode => GetText("BothLogStorageMode"),
+            _ => GetText("LocalLogStorageMode")
+        };
+    }
+
     private static string FormatBytes(long bytes)
     {
         string[] suffixes = ["B", "KB", "MB", "GB", "TB"];

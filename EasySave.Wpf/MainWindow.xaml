@@ -617,7 +617,7 @@
                                                       HorizontalAlignment="Left"
                                                       SelectionChanged="LanguageComboBox_SelectionChanged" />
                                         </Grid>
-                                        <Grid>
+                                        <Grid Margin="0,0,0,14">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="160" />
                                                 <ColumnDefinition Width="*" />
@@ -631,6 +631,40 @@
                                                       HorizontalAlignment="Left"
                                                       SelectionChanged="LogFormatComboBox_SelectionChanged" />
                                         </Grid>
+                                        <Grid Margin="0,0,0,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="160" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Name="LogStorageModeLabel"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource MutedTextStyle}" />
+                                            <ComboBox Grid.Column="1"
+                                                      Name="LogStorageModeComboBox"
+                                                      MinWidth="220"
+                                                      HorizontalAlignment="Left"
+                                                      SelectionChanged="LogStorageModeComboBox_SelectionChanged" />
+                                        </Grid>
+                                        <TextBlock Name="CentralLogServerUrlLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="CentralLogServerUrlTextBox" Margin="0,0,0,14" />
+                                        <TextBlock Name="CentralLogUserNameLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="CentralLogUserNameTextBox" Margin="0,0,0,14" />
+                                        <TextBlock Name="CentralLogApiKeyLabel"
+                                                   Margin="0,0,0,6"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" />
+                                        <TextBox Name="CentralLogApiKeyTextBox" Margin="0,0,0,18" />
+                                        <Button Name="SaveCentralLogSettingsButton"
+                                                HorizontalAlignment="Left"
+                                                MinWidth="220"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Click="SaveCentralLogSettingsButton_Click" />
                                     </StackPanel>
                                 </Border>
                             </ScrollViewer>
