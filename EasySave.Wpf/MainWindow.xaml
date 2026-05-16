@@ -420,14 +420,36 @@
                     </Grid.RowDefinitions>
 
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <DockPanel LastChildFill="True">
+                            <WrapPanel DockPanel.Dock="Right"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Top"
+                                       Margin="16,0,0,0">
+                                <Border Name="SelectionBadge"
+                                        Visibility="Collapsed"
+                                        Padding="10,4"
+                                        CornerRadius="12"
+                                        Background="{DynamicResource AccentSoftBrush}"
+                                        Margin="0,0,10,6"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Name="SelectionBadgeText"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AccentBrush}" />
+                                </Border>
+                                <Button Name="SelectAllJobsButton"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="SelectAllJobsButton_Click" />
+                                <Button Name="ClearSelectionButton"
+                                        MinWidth="140"
+                                        Margin="0,0,0,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="ClearSelectionButton_Click" />
+                            </WrapPanel>
 
-                            <WrapPanel>
+                            <WrapPanel VerticalAlignment="Top">
                                 <Button Name="AddJobButton"
                                         MinWidth="140"
                                         Margin="0,0,8,6"
@@ -449,31 +471,7 @@
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         Click="SaveAllButton_Click" />
                             </WrapPanel>
-
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Name="SelectionBadge"
-                                        Visibility="Collapsed"
-                                        Padding="10,4"
-                                        CornerRadius="12"
-                                        Background="{DynamicResource AccentSoftBrush}"
-                                        Margin="0,0,10,0"
-                                        VerticalAlignment="Center">
-                                    <TextBlock Name="SelectionBadgeText"
-                                               FontWeight="SemiBold"
-                                               FontSize="12"
-                                               Foreground="{DynamicResource AccentBrush}" />
-                                </Border>
-                                <Button Name="SelectAllJobsButton"
-                                        MinWidth="140"
-                                        Margin="0,0,8,0"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Click="SelectAllJobsButton_Click" />
-                                <Button Name="ClearSelectionButton"
-                                        MinWidth="140"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Click="ClearSelectionButton_Click" />
-                            </StackPanel>
-                        </Grid>
+                        </DockPanel>
                     </Border>
 
                     <GroupBox Grid.Row="1" Name="ConfiguredJobsGroupBox">
