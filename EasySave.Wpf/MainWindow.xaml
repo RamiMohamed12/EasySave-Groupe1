@@ -27,6 +27,7 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
+            Name="TitleBarBorder"
             Background="{DynamicResource TitleBarBrush}"
                 BorderBrush="{DynamicResource BorderBrushToken}"
                 BorderThickness="0"
@@ -46,6 +47,15 @@
                         <TextBlock FontFamily="Segoe MDL2 Assets"
                                FontSize="10"
                                Text="&#xE921;" />
+                        </Button>
+                    <Button Name="FullscreenWindowButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            ToolTip="Toggle fullscreen (F11)"
+                            Click="FullscreenWindowButton_Click">
+                        <TextBlock Name="FullscreenWindowGlyph"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE740;" />
                         </Button>
                     <Button Name="MaximizeRestoreWindowButton"
                             Style="{StaticResource TitleBarButtonStyle}"
@@ -636,42 +646,214 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Button Name="RefreshButton"
-                            Width="150"
-                            Margin="0,0,0,12"
-                            HorizontalAlignment="Left"
-                            Click="RefreshButton_Click" />
+
+                    <!-- Barre d'actions du haut : refresh global, alignee a droite pour un rendu propre. -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Name="StateLogsPageTitle"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <TextBlock Name="StateLogsPageSubtitle"
+                                       Margin="0,2,0,0"
+                                       FontSize="12"
+                                       Style="{StaticResource MutedTextStyle}" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Name="RefreshButton"
+                                MinWidth="140"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="RefreshButton_Click" />
+                    </Grid>
+
+                    <!-- Corps : carte 'Etat' a gauche, carte 'Historique des logs' a droite. -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" MinWidth="280" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.45*" MinWidth="360" />
                         </Grid.ColumnDefinitions>
-                        <GroupBox Grid.Column="0" Name="StateGroupBox" Margin="0,0,8,0">
-                            <TextBox Name="StateTextBox"
-                                     Margin="4"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Background="{DynamicResource LogBackgroundBrush}"
-                                     Foreground="{DynamicResource LogForegroundBrush}"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap" />
-                        </GroupBox>
-                        <GroupBox Grid.Column="1" Name="LogGroupBox" Margin="8,0,0,0">
-                            <TextBox Name="LogTextBox"
-                                     Margin="4"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Background="{DynamicResource LogBackgroundBrush}"
-                                     Foreground="{DynamicResource LogForegroundBrush}"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap" />
-                        </GroupBox>
+
+                        <!-- Carte etat (state.json) -->
+                        <Border Grid.Column="0" Style="{StaticResource CardPanelBorderStyle}">
+                            <DockPanel LastChildFill="True">
+                                <Border DockPanel.Dock="Top" Style="{StaticResource CardHeaderBorderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource CardIconTextStyle}" Text="&#xE9F9;" />
+                                        <TextBlock Name="StateGroupBoxHeader" Style="{StaticResource CardTitleTextStyle}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBox Name="StateTextBox"
+                                         BorderThickness="0"
+                                         Padding="14,12"
+                                         FontFamily="Cascadia Mono, Consolas"
+                                         FontSize="12"
+                                         Background="{DynamicResource LogBackgroundBrush}"
+                                         Foreground="{DynamicResource LogForegroundBrush}"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         IsReadOnly="True"
+                                         TextWrapping="NoWrap" />
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Carte historique des logs -->
+                        <Border Grid.Column="2" Style="{StaticResource CardPanelBorderStyle}">
+                            <DockPanel LastChildFill="True">
+                                <!-- Entete de carte -->
+                                <Border DockPanel.Dock="Top" Style="{StaticResource CardHeaderBorderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource CardIconTextStyle}" Text="&#xE7C3;" />
+                                        <TextBlock Name="LogGroupBoxHeader" Style="{StaticResource CardTitleTextStyle}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Toolbar pill : navigation de date + actions -->
+                                <Border DockPanel.Dock="Top" Margin="14,14,14,8" Style="{StaticResource ToolbarPillBorderStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" MinWidth="140" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Name="LogDateLabel"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,12,0"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                        <Button Grid.Column="1"
+                                                Name="PreviousLogDateButton"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Previous day"
+                                                Click="PreviousLogDateButton_Click" />
+                                        <DatePicker Grid.Column="3"
+                                                    Name="LogDatePicker"
+                                                    SelectedDateChanged="LogDatePicker_SelectedDateChanged" />
+                                        <Button Grid.Column="5"
+                                                Name="NextLogDateButton"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                ToolTip="Next day"
+                                                Click="NextLogDateButton_Click" />
+                                        <Button Grid.Column="7"
+                                                Name="TodayLogDateButton"
+                                                MinWidth="108"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Click="TodayLogDateButton_Click" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Resume sur la date selectionnee -->
+                                <TextBlock DockPanel.Dock="Top"
+                                           Name="LogHistorySummaryTextBlock"
+                                           Margin="20,0,20,10"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+
+                                <!-- Corps : liste fichiers (gauche) + visualiseur (droite) -->
+                                <Grid Margin="14,0,14,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="240" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0"
+                                            Background="{DynamicResource SurfaceRaisedBrush}"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8">
+                                        <DockPanel LastChildFill="True">
+                                            <Border DockPanel.Dock="Top"
+                                                    Padding="14,10"
+                                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                    BorderThickness="0,0,0,1">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="12"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"
+                                                               Foreground="{DynamicResource AccentBrush}"
+                                                               Text="&#xE81C;" />
+                                                    <TextBlock Name="LogHistoryListLabel"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- Pagination footer -->
+                                            <Border DockPanel.Dock="Bottom"
+                                                    Padding="10,8"
+                                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                    BorderThickness="0,1,0,0">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Grid.Column="0"
+                                                            Name="LogHistoryPrevPageButton"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            ToolTip="Previous page"
+                                                            Click="LogHistoryPrevPageButton_Click" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Name="LogHistoryPageInfoTextBlock"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Style="{StaticResource MutedTextStyle}" />
+                                                    <Button Grid.Column="2"
+                                                            Name="LogHistoryNextPageButton"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            ToolTip="Next page"
+                                                            Click="LogHistoryNextPageButton_Click" />
+                                                </Grid>
+                                            </Border>
+                                            <ListBox Name="LogHistoryListBox"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     ItemContainerStyle="{StaticResource HistoryListBoxItemStyle}"
+                                                     Padding="0,6"
+                                                     SelectionChanged="LogHistoryListBox_SelectionChanged" />
+                                        </DockPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2"
+                                            Background="{DynamicResource LogBackgroundBrush}"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            ClipToBounds="True">
+                                        <TextBox Name="LogTextBox"
+                                                 BorderThickness="0"
+                                                 Padding="14,12"
+                                                 FontFamily="Cascadia Mono, Consolas"
+                                                 FontSize="12"
+                                                 Background="Transparent"
+                                                 Foreground="{DynamicResource LogForegroundBrush}"
+                                                 AcceptsReturn="True"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 IsReadOnly="True"
+                                                 TextWrapping="NoWrap" />
+                                    </Border>
+                                </Grid>
+                            </DockPanel>
+                        </Border>
                     </Grid>
                 </Grid>
 
@@ -1030,9 +1212,11 @@
                                 MinWidth="44"
                                 Padding="0"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                Click="BrowseSourceButton_Click"
-                                ToolTip="Parcourir">
-                            <TextBlock Text="..." FontWeight="SemiBold" />
+                                Click="BrowseSourceButton_Click">
+                            <TextBlock Text="&#xE8B7;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="16"
+                                       FontWeight="Normal" />
                         </Button>
                     </Grid>
                     <TextBlock Grid.Row="6"
@@ -1051,9 +1235,11 @@
                                 MinWidth="44"
                                 Padding="0"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                Click="BrowseTargetButton_Click"
-                                ToolTip="Parcourir">
-                            <TextBlock Text="..." FontWeight="SemiBold" />
+                                Click="BrowseTargetButton_Click">
+                            <TextBlock Text="&#xE8B7;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="16"
+                                       FontWeight="Normal" />
                         </Button>
                     </Grid>
                     <TextBlock Grid.Row="8"

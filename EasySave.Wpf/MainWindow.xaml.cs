@@ -11,6 +11,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Text.Json.Serialization;
 using System.Globalization;
+using System.Windows.Data;
 using Microsoft.Win32;
 
 namespace EasySave.Wpf;
@@ -41,6 +42,14 @@ public partial class MainWindow : Window
     private bool _isAddingNewJob;
     private readonly DispatcherTimer _toastDismissTimer;
     private bool _toastInitialized;
+    private DateTime _selectedLogDate = DateTime.Today;
+    private bool _isApplyingLogHistorySelection;
+    private IReadOnlyList<LogHistoryEntry> _logHistoryEntries = Array.Empty<LogHistoryEntry>();
+    private string _logHistorySignature = string.Empty;
+    private const int LogHistoryPageSize = 12;
+    private int _logHistoryPageIndex;
+    private bool _isFullScreen;
+    private WindowState _preFullScreenWindowState = WindowState.Normal;
 
     public MainWindow()
     {
@@ -60,8 +69,10 @@ public partial class MainWindow : Window
         ConfigureLogFormatSelector();
         ConfigureLogStorageModeSelector();
         ConfigureThresholdUnitSelector();
+        ConfigureLogHistoryControls();
         ApplyTexts();
         UpdateMaximizeRestoreGlyph();
+        this.PreviewKeyDown += MainWindow_PreviewKeyDown;
         LoadRuntimeRulesIntoForm();
         LoadEncryptionSettingsIntoForm();
         LoadCentralLogSettingsIntoForm();
@@ -490,21 +501,126 @@ public partial class MainWindow : Window
         StatusTextBlock.Text = Text("Wpf.RefreshedStatus");
     }
 
+    private void LogDatePicker_SelectedDateChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingLogHistorySelection || LogDatePicker.SelectedDate is not DateTime selectedDate)
+        {
+            return;
+        }
+
+        SetSelectedLogDate(selectedDate);
+    }
+
+    private void PreviousLogDateButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetSelectedLogDate(_selectedLogDate.AddDays(-1));
+    }
+
+    private void TodayLogDateButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetSelectedLogDate(DateTime.Today);
+    }
+
+    private void NextLogDateButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetSelectedLogDate(_selectedLogDate.AddDays(1));
+    }
+
+    private void LogHistoryPrevPageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_logHistoryPageIndex > 0)
+        {
+            _logHistoryPageIndex--;
+            ApplyLogHistoryPage();
+        }
+    }
+
+    private void LogHistoryNextPageButton_Click(object sender, RoutedEventArgs e)
+    {
+        int totalPages = GetLogHistoryPageCount();
+        if (_logHistoryPageIndex < totalPages - 1)
+        {
+            _logHistoryPageIndex++;
+            ApplyLogHistoryPage();
+        }
+    }
+
+    private int GetLogHistoryPageCount()
+    {
+        if (_logHistoryEntries.Count == 0)
+        {
+            return 1;
+        }
+        return (int)Math.Ceiling(_logHistoryEntries.Count / (double)LogHistoryPageSize);
+    }
+
+    private void ApplyLogHistoryPage()
+    {
+        int totalPages = GetLogHistoryPageCount();
+        if (_logHistoryPageIndex >= totalPages)
+        {
+            _logHistoryPageIndex = Math.Max(0, totalPages - 1);
+        }
+
+        IEnumerable<LogHistoryEntry> pageItems = _logHistoryEntries
+            .Skip(_logHistoryPageIndex * LogHistoryPageSize)
+            .Take(LogHistoryPageSize);
+        var pageList = pageItems.ToList();
+
+        _isApplyingLogHistorySelection = true;
+        LogHistoryListBox.ItemsSource = null;
+        LogHistoryListBox.ItemsSource = pageList;
+        LogHistoryEntry? selectedEntry = pageList.FirstOrDefault(entry => entry.Date == _selectedLogDate.Date);
+        LogHistoryListBox.SelectedItem = selectedEntry;
+        _isApplyingLogHistorySelection = false;
+
+        if (LogHistoryPageInfoTextBlock is not null)
+        {
+            string pageLabel = UiText("Page", "Page");
+            LogHistoryPageInfoTextBlock.Text = $"{pageLabel} {_logHistoryPageIndex + 1} / {totalPages}";
+        }
+        if (LogHistoryPrevPageButton is not null)
+        {
+            LogHistoryPrevPageButton.IsEnabled = _logHistoryPageIndex > 0;
+        }
+        if (LogHistoryNextPageButton is not null)
+        {
+            LogHistoryNextPageButton.IsEnabled = _logHistoryPageIndex < totalPages - 1;
+        }
+    }
+
+    private void LogHistoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isApplyingLogHistorySelection || LogHistoryListBox.SelectedItem is not LogHistoryEntry selectedEntry)
+        {
+            return;
+        }
+
+        SetSelectedLogDate(selectedEntry.Date);
+    }
+
+    private void SetSelectedLogDate(DateTime selectedDate)
+    {
+        _selectedLogDate = selectedDate.Date;
+        RefreshStateAndLog();
+    }
+
     private void RefreshStateAndLog()
     {
         StateTextBox.Text = ReadFileSafely(RuntimeStoragePaths.StateFilePath);
-        LogTextBox.Text = ReadCurrentLogSafely();
+        RefreshLogHistory();
+        LogTextBox.Text = ReadSelectedLogSafely();
         ApplyRuntimeStateToRows();
     }
 
-    private string ReadCurrentLogSafely()
+    private string ReadSelectedLogSafely()
     {
         if (RuntimeStoragePaths.GetLogStorageMode() == RuntimeStoragePaths.CentralizedLogStorageMode)
         {
             try
             {
                 string centralContent = new CentralLogClient()
-                    .GetDailyLogAsync(DateTime.Now)
+                    .GetDailyLogAsync(_selectedLogDate)
                     .GetAwaiter()
                     .GetResult();
                 return string.IsNullOrWhiteSpace(centralContent)
@@ -517,8 +633,154 @@ public partial class MainWindow : Window
             }
         }
 
-        string todayLogPath = RuntimeStoragePaths.GetDailyLogFilePath(DateTime.Now);
-        return ReadFileSafely(todayLogPath);
+        IReadOnlyList<string> logFilePaths = GetLocalLogFilePathsForDate(_selectedLogDate);
+        if (logFilePaths.Count == 0)
+        {
+            return Format("Wpf.FileNotFound", RuntimeStoragePaths.GetDailyLogFilePath(_selectedLogDate));
+        }
+
+        return string.Join(
+            Environment.NewLine + Environment.NewLine,
+            logFilePaths.Select(path => $"===== {Path.GetFileName(path)} ====={Environment.NewLine}{ReadFileSafely(path)}"));
+    }
+
+    private void RefreshLogHistory()
+    {
+        IReadOnlyList<LogHistoryEntry> loadedEntries = LoadLogHistoryEntries();
+        string loadedSignature = BuildLogHistorySignature(loadedEntries);
+        IReadOnlyList<LogHistoryEntry> entries = _logHistoryEntries;
+
+        if (!string.Equals(_logHistorySignature, loadedSignature, StringComparison.Ordinal))
+        {
+            _logHistoryEntries = loadedEntries;
+            _logHistorySignature = loadedSignature;
+            entries = loadedEntries;
+            _logHistoryPageIndex = 0;
+        }
+
+        LogHistoryEntry? selectedEntry = entries.FirstOrDefault(entry => entry.Date == _selectedLogDate.Date);
+
+        // Snap page to selected entry
+        if (selectedEntry is not null)
+        {
+            int idx = entries.ToList().IndexOf(selectedEntry);
+            if (idx >= 0)
+            {
+                _logHistoryPageIndex = idx / LogHistoryPageSize;
+            }
+        }
+
+        ApplyLogHistoryPage();
+
+        _isApplyingLogHistorySelection = true;
+        LogDatePicker.SelectedDate = _selectedLogDate;
+        _isApplyingLogHistorySelection = false;
+
+        LogHistorySummaryTextBlock.Text = BuildLogHistorySummary(entries, selectedEntry);
+    }
+
+    private IReadOnlyList<LogHistoryEntry> LoadLogHistoryEntries()
+    {
+        if (RuntimeStoragePaths.GetLogStorageMode() == RuntimeStoragePaths.CentralizedLogStorageMode)
+        {
+            return
+            [
+                new LogHistoryEntry(
+                    _selectedLogDate,
+                    $"{_selectedLogDate:yyyy-MM-dd}",
+                    UiText("Centralized log", "Log centralise"),
+                    Array.Empty<string>())
+            ];
+        }
+
+        if (!Directory.Exists(RuntimeStoragePaths.LogsDirectoryPath))
+        {
+            return Array.Empty<LogHistoryEntry>();
+        }
+
+        return RuntimeStoragePaths.GetSupportedLogFilePatterns()
+            .SelectMany(pattern => Directory.EnumerateFiles(RuntimeStoragePaths.LogsDirectoryPath, pattern))
+            .Select(TryCreateLocalLogHistoryItem)
+            .Where(entry => entry is not null)
+            .Cast<LocalLogFileEntry>()
+            .GroupBy(entry => entry.Date)
+            .OrderByDescending(group => group.Key)
+            .Select(group =>
+            {
+                List<string> filePaths = group
+                    .OrderBy(entry => entry.FileName, StringComparer.OrdinalIgnoreCase)
+                    .Select(entry => entry.FilePath)
+                    .ToList();
+                string formats = string.Join(", ", group
+                    .Select(entry => Path.GetExtension(entry.FileName).TrimStart('.').ToUpperInvariant())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(format => format, StringComparer.OrdinalIgnoreCase));
+                return new LogHistoryEntry(
+                    group.Key,
+                    $"{group.Key:yyyy-MM-dd}",
+                    formats,
+                    filePaths);
+            })
+            .ToList();
+    }
+
+    private static LocalLogFileEntry? TryCreateLocalLogHistoryItem(string filePath)
+    {
+        string fileName = Path.GetFileName(filePath);
+        if (fileName.Length < "yyyy-MM-dd".Length)
+        {
+            return null;
+        }
+
+        string datePart = fileName.Substring(0, "yyyy-MM-dd".Length);
+        if (!DateTime.TryParseExact(
+                datePart,
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date))
+        {
+            return null;
+        }
+
+        return new LocalLogFileEntry(date.Date, filePath, fileName);
+    }
+
+    private static IReadOnlyList<string> GetLocalLogFilePathsForDate(DateTime date)
+    {
+        if (!Directory.Exists(RuntimeStoragePaths.LogsDirectoryPath))
+        {
+            return Array.Empty<string>();
+        }
+
+        string datePrefix = $"{date:yyyy-MM-dd}";
+        return RuntimeStoragePaths.GetSupportedLogFilePatterns()
+            .SelectMany(pattern => Directory.EnumerateFiles(RuntimeStoragePaths.LogsDirectoryPath, pattern))
+            .Where(path => Path.GetFileName(path).StartsWith(datePrefix, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private string BuildLogHistorySummary(IReadOnlyList<LogHistoryEntry> entries, LogHistoryEntry? selectedEntry)
+    {
+        string mode = _textService.GetLogStorageModeDisplayName(RuntimeStoragePaths.GetLogStorageMode());
+        if (selectedEntry is null)
+        {
+            return UiText(
+                $"{entries.Count} log day(s) found - selected date: {_selectedLogDate:yyyy-MM-dd} - {mode}",
+                $"{entries.Count} jour(s) de logs trouve(s) - date selectionnee : {_selectedLogDate:yyyy-MM-dd} - {mode}");
+        }
+
+        return UiText(
+            $"{entries.Count} log day(s) found - selected: {selectedEntry.DisplayName} ({selectedEntry.Detail}) - {mode}",
+            $"{entries.Count} jour(s) de logs trouve(s) - selection : {selectedEntry.DisplayName} ({selectedEntry.Detail}) - {mode}");
+    }
+
+    private static string BuildLogHistorySignature(IEnumerable<LogHistoryEntry> entries)
+    {
+        return string.Join(
+            "|",
+            entries.Select(entry => $"{entry.Date:yyyy-MM-dd}:{entry.Detail}:{string.Join(",", entry.FilePaths)}"));
     }
 
     private string ReadFileSafely(string path)
@@ -718,6 +980,13 @@ public partial class MainWindow : Window
         LargeFileThresholdUnitComboBox.SelectedValuePath = nameof(ThresholdUnitOption.ValueInKb);
     }
 
+    private void ConfigureLogHistoryControls()
+    {
+        _isApplyingLogHistorySelection = true;
+        LogDatePicker.SelectedDate = _selectedLogDate;
+        _isApplyingLogHistorySelection = false;
+    }
+
     private void ApplyTexts()
     {
         Title = Text("Wpf.WindowTitle");
@@ -742,12 +1011,18 @@ public partial class MainWindow : Window
         SourceLabel.Text = Text("Wpf.SourceColumnHeader");
         TargetLabel.Text = Text("Wpf.TargetColumnHeader");
         TypeLabel.Text = Text("Wpf.TypeColumnHeader");
+        BrowseSourceButton.ToolTip = UiText("Choose the source folder", "Choisir le dossier source");
+        BrowseTargetButton.ToolTip = UiText("Choose the target folder", "Choisir le dossier cible");
         EncryptedExtensionsLabel.Text = Text("Wpf.EncryptedExtensionsLabel");
         CryptoSoftKeyLabel.Text = Text("Wpf.CryptoSoftKeyLabel");
         SetButtonContent(EditJobButton, "", UiText("Edit selected", "Modifier selection"));
         SetButtonContent(CancelEditButton, "", UiText("Cancel", "Annuler"));
-        StateGroupBox.Header = Text("Wpf.StateHeader");
-        LogGroupBox.Header = Text("Wpf.LogHeader");
+        StateGroupBoxHeader.Text = Text("Wpf.StateHeader");
+        LogGroupBoxHeader.Text = Text("Wpf.LogHeader");
+        StateLogsPageTitle.Text = UiText("States & logs", "\u00C9tats & logs");
+        StateLogsPageSubtitle.Text = UiText(
+            "Inspect the live state file and browse past activity logs.",
+            "Consultez l'\u00E9tat en direct et parcourez l'historique des logs.");
         SettingsTitleTextBlock.Text = Text("Wpf.SettingsHeader");
         AppearanceSectionTitle.Text = Text("Wpf.AppearanceSectionTitle");
         ThemeLabel.Text = Text("Wpf.ThemeLabel");
@@ -778,6 +1053,14 @@ public partial class MainWindow : Window
         SetButtonContent(SelectAllJobsButton, "\uE8B3", UiText("Select all", "Tout cocher"));
         SetButtonContent(ClearSelectionButton, "\uE8E6", UiText("Clear selection", "Tout d\u00E9cocher"));
         SetButtonContent(RefreshButton, "\uE72C", Text("Wpf.RefreshButton"));
+        LogDateLabel.Text = UiText("Log date", "Date du log");
+        LogHistoryListLabel.Text = UiText("History", "Historique");
+        SetIconOnlyContent(PreviousLogDateButton, "\uE76B", UiText("Previous day", "Jour pr\u00E9c\u00E9dent"));
+        SetButtonContent(TodayLogDateButton, "\uE787", UiText("Today", "Aujourd'hui"));
+        SetIconOnlyContent(NextLogDateButton, "\uE76C", UiText("Next day", "Jour suivant"));
+        SetIconOnlyContent(LogHistoryPrevPageButton, "\uE76B", UiText("Previous page", "Page pr\u00E9c\u00E9dente"));
+        SetIconOnlyContent(LogHistoryNextPageButton, "\uE76C", UiText("Next page", "Page suivante"));
+        FullscreenWindowButton.ToolTip = UiText("Toggle fullscreen (F11)", "Plein \u00E9cran (F11)");
         SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetButtonContent(RunAllButton, "\uE102", Text("Wpf.RunAllButton"));
         SetButtonContent(PauseSelectedButton, "\uE769", UiText("Pause selected", "Pause selection"));
@@ -1202,6 +1485,60 @@ public partial class MainWindow : Window
         ToggleWindowState();
     }
 
+    private void FullscreenWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleFullScreen();
+    }
+
+    private void ToggleFullScreen()
+    {
+        if (!_isFullScreen)
+        {
+            _preFullScreenWindowState = WindowState;
+            _isFullScreen = true;
+            if (TitleBarBorder is not null)
+            {
+                TitleBarBorder.Visibility = Visibility.Collapsed;
+            }
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+            }
+            WindowState = WindowState.Maximized;
+            if (FullscreenWindowGlyph is not null)
+            {
+                FullscreenWindowGlyph.Text = "\uE73F";
+            }
+        }
+        else
+        {
+            _isFullScreen = false;
+            if (TitleBarBorder is not null)
+            {
+                TitleBarBorder.Visibility = Visibility.Visible;
+            }
+            WindowState = _preFullScreenWindowState;
+            if (FullscreenWindowGlyph is not null)
+            {
+                FullscreenWindowGlyph.Text = "\uE740";
+            }
+        }
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.F11)
+        {
+            ToggleFullScreen();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.Escape && _isFullScreen)
+        {
+            ToggleFullScreen();
+            e.Handled = true;
+        }
+    }
+
     private void CloseWindowButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
@@ -1351,6 +1688,27 @@ public partial class MainWindow : Window
         ApplyNavigationButtonStyle(SettingsNavButton, _activeSection == DashboardSection.Settings);
     }
 
+    private static void SetIconOnlyContent(Button button, string iconGlyph, string toolTip)
+    {
+        var icon = new TextBlock
+        {
+            Text = iconGlyph,
+            FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+            FontSize = 14,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            UseLayoutRounding = true
+        };
+        BindTextBlockToButtonForeground(icon);
+        TextOptions.SetTextRenderingMode(icon, TextRenderingMode.ClearType);
+        button.Content = icon;
+        if (!string.IsNullOrEmpty(toolTip))
+        {
+            button.ToolTip = toolTip;
+        }
+    }
+
     private static void SetButtonContent(Button button, string iconGlyph, string label)
     {
         var panel = new StackPanel
@@ -1370,6 +1728,7 @@ public partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             UseLayoutRounding = true
         };
+        BindTextBlockToButtonForeground(icon);
         TextOptions.SetTextRenderingMode(icon, TextRenderingMode.ClearType);
 
         var text = new TextBlock
@@ -1381,10 +1740,21 @@ public partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
+        BindTextBlockToButtonForeground(text);
 
         panel.Children.Add(icon);
         panel.Children.Add(text);
         button.Content = panel;
+    }
+
+    private static void BindTextBlockToButtonForeground(TextBlock textBlock)
+    {
+        textBlock.SetBinding(
+            TextBlock.ForegroundProperty,
+            new Binding(nameof(Control.Foreground))
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Button), 1)
+            });
     }
 
     private void ApplyNavigationButtonStyle(Button button, bool isActive)
@@ -1742,6 +2112,22 @@ public partial class MainWindow : Window
     {
         public override string ToString() => DisplayName;
     }
+
+    private sealed record LogHistoryEntry(
+        DateTime Date,
+        string DisplayName,
+        string Detail,
+        IReadOnlyList<string> FilePaths)
+    {
+        public override string ToString()
+        {
+            return string.IsNullOrWhiteSpace(Detail)
+                ? DisplayName
+                : $"{DisplayName}  -  {Detail}";
+        }
+    }
+
+    private sealed record LocalLogFileEntry(DateTime Date, string FilePath, string FileName);
 
     private enum DashboardSection
     {

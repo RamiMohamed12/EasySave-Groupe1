@@ -16,8 +16,9 @@
     <Color x:Key="TextMutedColor">#6B7280</Color>
     <Color x:Key="SidebarTextColor">#1F2937</Color>
     <Color x:Key="OnAccentColor">#FFFFFF</Color>
-    <Color x:Key="AccentColor">#0067C0</Color>
-    <Color x:Key="AccentHoverColor">#005A9E</Color>
+    <Color x:Key="AccentColor">#005FB8</Color>
+    <Color x:Key="AccentHoverColor">#004F9E</Color>
+    <Color x:Key="AccentPressedColor">#003E7E</Color>
     <Color x:Key="AccentSoftColor">#EAF4FF</Color>
     <!-- Semantic indicators: green for success, orange for warning, red for failure -->
     <Color x:Key="SuccessColor">#16A34A</Color>
@@ -57,6 +58,7 @@
     <SolidColorBrush x:Key="OnAccentBrush" Color="{DynamicResource OnAccentColor}" />
     <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}" />
     <SolidColorBrush x:Key="AccentHoverBrush" Color="{DynamicResource AccentHoverColor}" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="{DynamicResource AccentPressedColor}" />
     <SolidColorBrush x:Key="AccentSoftBrush" Color="{DynamicResource AccentSoftColor}" />
     <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
     <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}" />
