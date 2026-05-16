@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Text.Json.Serialization;
 using System.Globalization;
@@ -50,11 +51,13 @@ public partial class MainWindow : Window
     private int _logHistoryPageIndex;
     private bool _isFullScreen;
     private WindowState _preFullScreenWindowState = WindowState.Normal;
+    private bool _preFullScreenTopmost;
 
     public MainWindow()
     {
         App.ApplyConfiguredTheme();
         InitializeComponent();
+        ApplyCroppedLogoImages();
         _jobRegistry = new BackupJobRegistry();
         _stateService = new StateService();
         _executionController = new InMemoryBackupExecutionController();
@@ -210,6 +213,83 @@ public partial class MainWindow : Window
             _executionController,
             _executionCoordinator);
         return new BackupController(backupService);
+    }
+
+    private void ApplyCroppedLogoImages()
+    {
+        Icon = CreateCroppedLogoSource(4);
+        TitleBarLogoImage.Source = CreateCroppedLogoSource(16);
+    }
+
+    private static BitmapSource CreateCroppedLogoSource(int padding)
+    {
+        var source = new BitmapImage();
+        source.BeginInit();
+        source.UriSource = new Uri("pack://application:,,,/Assets/EasySaveLogo.png", UriKind.Absolute);
+        source.CacheOption = BitmapCacheOption.OnLoad;
+        source.EndInit();
+
+        BitmapSource readableSource = source.Format == PixelFormats.Bgra32
+            ? source
+            : new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+
+        Int32Rect cropArea = FindVisibleLogoBounds(readableSource, padding);
+        var croppedSource = new CroppedBitmap(readableSource, cropArea);
+        if (croppedSource.CanFreeze)
+        {
+            croppedSource.Freeze();
+        }
+
+        return croppedSource;
+    }
+
+    private static Int32Rect FindVisibleLogoBounds(BitmapSource source, int padding)
+    {
+        int width = source.PixelWidth;
+        int height = source.PixelHeight;
+        int stride = width * 4;
+        byte[] pixels = new byte[stride * height];
+        source.CopyPixels(pixels, stride, 0);
+
+        int minX = width;
+        int minY = height;
+        int maxX = -1;
+        int maxY = -1;
+
+        for (int y = 0; y < height; y++)
+        {
+            int rowOffset = y * stride;
+            for (int x = 0; x < width; x++)
+            {
+                int offset = rowOffset + x * 4;
+                byte blue = pixels[offset];
+                byte green = pixels[offset + 1];
+                byte red = pixels[offset + 2];
+                byte alpha = pixels[offset + 3];
+
+                if (alpha <= 10 || (red >= 245 && green >= 245 && blue >= 245))
+                {
+                    continue;
+                }
+
+                minX = Math.Min(minX, x);
+                minY = Math.Min(minY, y);
+                maxX = Math.Max(maxX, x);
+                maxY = Math.Max(maxY, y);
+            }
+        }
+
+        if (maxX < minX || maxY < minY)
+        {
+            return new Int32Rect(0, 0, width, height);
+        }
+
+        int left = Math.Max(0, minX - padding);
+        int top = Math.Max(0, minY - padding);
+        int right = Math.Min(width - 1, maxX + padding);
+        int bottom = Math.Min(height - 1, maxY + padding);
+
+        return new Int32Rect(left, top, right - left + 1, bottom - top + 1);
     }
 
     private void LoadJobsIntoGrid()
@@ -1495,10 +1575,16 @@ public partial class MainWindow : Window
         if (!_isFullScreen)
         {
             _preFullScreenWindowState = WindowState;
+            _preFullScreenTopmost = Topmost;
             _isFullScreen = true;
+            Topmost = true;
             if (TitleBarBorder is not null)
             {
                 TitleBarBorder.Visibility = Visibility.Collapsed;
+            }
+            if (TitleBarRow is not null)
+            {
+                TitleBarRow.Height = new GridLength(0);
             }
             if (WindowState == WindowState.Maximized)
             {
@@ -1513,9 +1599,14 @@ public partial class MainWindow : Window
         else
         {
             _isFullScreen = false;
+            Topmost = _preFullScreenTopmost;
             if (TitleBarBorder is not null)
             {
                 TitleBarBorder.Visibility = Visibility.Visible;
+            }
+            if (TitleBarRow is not null)
+            {
+                TitleBarRow.Height = new GridLength(30);
             }
             WindowState = _preFullScreenWindowState;
             if (FullscreenWindowGlyph is not null)
@@ -1585,7 +1676,7 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
-    private static IntPtr MaximizeWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr MaximizeWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == 0x0024) // WM_GETMINMAXINFO
         {
@@ -1595,10 +1686,11 @@ public partial class MainWindow : Window
             {
                 var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
                 GetMonitorInfo(monitor, ref info);
-                mmi.ptMaxPosition.X = info.rcWork.Left - info.rcMonitor.Left;
-                mmi.ptMaxPosition.Y = info.rcWork.Top - info.rcMonitor.Top;
-                mmi.ptMaxSize.X = info.rcWork.Right - info.rcWork.Left;
-                mmi.ptMaxSize.Y = info.rcWork.Bottom - info.rcWork.Top;
+                RECT targetArea = _isFullScreen ? info.rcMonitor : info.rcWork;
+                mmi.ptMaxPosition.X = targetArea.Left - info.rcMonitor.Left;
+                mmi.ptMaxPosition.Y = targetArea.Top - info.rcMonitor.Top;
+                mmi.ptMaxSize.X = targetArea.Right - targetArea.Left;
+                mmi.ptMaxSize.Y = targetArea.Bottom - targetArea.Top;
             }
 
             // Enforce a minimum trackable window size so the custom chrome cannot be shrunk

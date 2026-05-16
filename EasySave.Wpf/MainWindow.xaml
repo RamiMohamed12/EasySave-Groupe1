@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         Title="EasySave"
         Height="760"
@@ -14,6 +15,10 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="{DynamicResource CanvasBrush}">
+    <Window.Resources>
+        <sys:Double x:Key="TitleBarLogoWidth">18</sys:Double>
+        <sys:Double x:Key="TitleBarLogoHeight">18</sys:Double>
+    </Window.Resources>
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
                             ResizeBorderThickness="8"
@@ -22,7 +27,7 @@
     </shell:WindowChrome.WindowChrome>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" />
+            <RowDefinition Name="TitleBarRow" Height="30" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -37,6 +42,23 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="10,0,0,0">
+                    <Image Name="TitleBarLogoImage"
+                           Width="{StaticResource TitleBarLogoWidth}"
+                           Height="{StaticResource TitleBarLogoHeight}"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="EasySave"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
 
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
