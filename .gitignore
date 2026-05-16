@@ -44,6 +44,8 @@ CodeCoverage/
 
 # MSBuild Binary and Structured Log
 *.binlog
+*.log
+*.csproj.lscache
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -67,3 +69,7 @@ release-assets/
 .vs/
 
 .dotnet/
+
+# Local verification and tool cache output
+.appdata/
+.verify-build/
