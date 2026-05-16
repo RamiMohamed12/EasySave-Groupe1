@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="EasySave"
         Height="760"
@@ -10,9 +11,62 @@
         MinHeight="700"
         MinWidth="1080"
         Icon="Assets/EasySaveLogo.png"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Background="{DynamicResource CanvasBrush}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="8"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Grid>
-        <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+            Background="{DynamicResource TitleBarBrush}"
+                BorderBrush="{DynamicResource BorderBrushToken}"
+                BorderThickness="0"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+                    <Button Name="MinimizeWindowButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MinimizeWindowButton_Click">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE921;" />
+                        </Button>
+                    <Button Name="MaximizeRestoreWindowButton"
+                            Style="{StaticResource TitleBarButtonStyle}"
+                            Click="MaximizeRestoreWindowButton_Click">
+                        <TextBlock Name="MaximizeRestoreWindowGlyph"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE922;" />
+                        </Button>
+                    <Button Name="CloseWindowButton"
+                            Style="{StaticResource TitleBarCloseButtonStyle}"
+                            Click="CloseWindowButton_Click">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                               FontSize="10"
+                               Text="&#xE8BB;" />
+                        </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -20,13 +74,14 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="244" />
+                    <ColumnDefinition Width="16" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0"
-                CornerRadius="0"
+            CornerRadius="0"
                 Padding="10"
-                Margin="0,10,0,0"
+            Margin="0,8,0,0"
                 Background="{DynamicResource SidebarBrush}"
                 BorderBrush="{DynamicResource BorderBrushToken}"
                 BorderThickness="1">
@@ -63,13 +118,13 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Margin="-1,10,0,0">
+        <Grid Grid.Column="2" Margin="0,8,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource SectionBorderStyle}" Margin="0,0,0,12">
+            <Border Style="{StaticResource CommandHeaderBorderStyle}" Margin="0,0,0,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -77,9 +132,9 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Name="HeadingTextBlock" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock Name="HeadingTextBlock" FontSize="22" FontWeight="SemiBold" />
                         <TextBlock Name="PageSubtitleTextBlock"
-                                   Margin="0,4,0,0"
+                                   Margin="0,3,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
 
@@ -130,145 +185,198 @@
                                   Opacity="0.48"
                                   Fill="{DynamicResource HeroWaveBrush}"
                                   Data="M 0,238 C 210,218 350,235 514,248 C 708,262 840,225 1016,205 C 1120,193 1190,202 1240,220 L 1240,282 L 0,282 Z" />
-                            <StackPanel Margin="38,42,0,0"
-                                        Width="420"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top">
-                                <TextBlock Text=".NET 10"
-                                           FontSize="15"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <TextBlock Text="EasySave"
-                                           Margin="0,8,0,0"
-                                           FontSize="38"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <TextBlock Name="HeroDescriptionTextBlock"
-                                           Margin="0,14,0,0"
-                                           FontSize="15"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource HeroTextBrush}" />
-                                <Border Margin="0,22,0,0"
-                                        Padding="12,7"
-                                        CornerRadius="8"
-                                        HorizontalAlignment="Left"
-                                        Background="{DynamicResource HeroMetricSurfaceBrush}"
-                                        BorderBrush="{DynamicResource HeroMetricBorderBrush}"
-                                        BorderThickness="1">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE9D2;"
-                                                   FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="14"
-                                                   Foreground="{DynamicResource AccentBrush}"
-                                                   Margin="0,0,8,0" />
-                                        <TextBlock Name="HeroStatusTextBlock"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource HeroMetricTextBrush}" />
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                            <UniformGrid Rows="2"
-                                         Columns="2"
-                                         Width="500"
-                                         Height="214"
-                                         HorizontalAlignment="Right"
-                                         VerticalAlignment="Center"
-                                         Margin="0,12,38,0">
+                            <Grid Margin="34,28,34,28">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.9*" MinWidth="280" />
+                                    <ColumnDefinition Width="1.1*" MinWidth="340" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            MaxWidth="420"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text=".NET 10"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <TextBlock Text="EasySave"
+                                               Margin="0,8,0,0"
+                                               FontSize="38"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <TextBlock Name="HeroDescriptionTextBlock"
+                                               Margin="0,14,0,0"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource HeroTextBrush}" />
+                                    <Border Margin="0,22,0,0"
+                                            Padding="12,7"
+                                            CornerRadius="8"
+                                            HorizontalAlignment="Left"
+                                            Background="{DynamicResource HeroMetricSurfaceBrush}"
+                                            BorderBrush="{DynamicResource HeroMetricBorderBrush}"
+                                            BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE9D2;"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="14"
+                                                       Foreground="{DynamicResource AccentBrush}"
+                                                       Margin="0,0,8,0" />
+                                            <TextBlock Name="HeroStatusTextBlock"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource HeroMetricTextBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <UniformGrid Grid.Column="1"
+                                             Rows="2"
+                                             Columns="2"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Stretch"
+                                             Margin="26,0,0,0">
                                 <Border Margin="0,0,10,10"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE8FD;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiTotalJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiTotalJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border Margin="0,0,0,10"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE73E;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiConfiguredJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiConfiguredJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border Margin="0,0,10,0"
                                         CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE7C3;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiSelectedJobsValueTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
-                                                   FontSize="24"
+                                                   FontSize="22"
+                                                   LineHeight="24"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}" />
                                         <TextBlock Name="KpiSelectedJobsLabelTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
                                 <Border CornerRadius="8"
                                         Background="{DynamicResource HeroMetricSurfaceBrush}"
                                         BorderBrush="{DynamicResource HeroMetricBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="16">
-                                    <StackPanel>
+                                        Padding="14,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock Text="&#xE8B7;"
                                                    FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="20"
+                                                   FontSize="18"
                                                    Foreground="{DynamicResource AccentBrush}" />
                                         <TextBlock Name="KpiStorageLabelTextBlock"
+                                                   Grid.Row="1"
                                                    Margin="0,6,0,0"
                                                    FontSize="12"
+                                                   LineHeight="15"
                                                    Foreground="{DynamicResource HeroMetricMutedBrush}"
-                                                   TextWrapping="Wrap" />
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
                                         <TextBlock Name="KpiStorageValueTextBlock"
+                                                   Grid.Row="2"
                                                    Margin="0,2,0,0"
+                                                   VerticalAlignment="Top"
                                                    FontSize="13"
+                                                   LineHeight="16"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource HeroMetricTextBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </Border>
-                            </UniformGrid>
+                                </UniformGrid>
+                            </Grid>
                         </Grid>
                     </Border>
 
@@ -576,6 +684,7 @@
                         <TextBlock Name="SettingsTitleTextBlock"
                                    FontSize="20"
                                    FontWeight="SemiBold"
+                                   Visibility="Collapsed"
                                    Margin="0,0,0,16" />
                     </StackPanel>
 
@@ -587,7 +696,7 @@
                                 <TextBlock Name="AppearanceSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="640" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,14">
                                             <Grid.ColumnDefinitions>
@@ -600,7 +709,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="ThemeComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="ThemeComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -614,7 +723,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LanguageComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LanguageComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -628,7 +737,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LogFormatComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LogFormatComboBox_SelectionChanged" />
                                         </Grid>
                                         <Grid Margin="0,0,0,14">
@@ -642,7 +751,7 @@
                                             <ComboBox Grid.Column="1"
                                                       Name="LogStorageModeComboBox"
                                                       MinWidth="220"
-                                                      HorizontalAlignment="Left"
+                                                      HorizontalAlignment="Stretch"
                                                       SelectionChanged="LogStorageModeComboBox_SelectionChanged" />
                                         </Grid>
                                         <TextBlock Name="CentralLogServerUrlLabel"
@@ -676,7 +785,7 @@
                                 <TextBlock Name="EncryptionSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="EncryptedExtensionsLabel"
                                                    Margin="0,0,0,6"
@@ -706,7 +815,7 @@
                                 <TextBlock Name="RuntimeRulesSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="780" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="PriorityExtensionsLabel"
                                                    Margin="0,0,0,6"
@@ -804,7 +913,7 @@
                                 <TextBlock Name="BusinessSoftwareSectionTitle" />
                             </TabItem.Header>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-                                <Border Style="{StaticResource SectionBorderStyle}" MaxWidth="720" HorizontalAlignment="Left">
+                                <Border Style="{StaticResource SectionBorderStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel>
                                         <TextBlock Name="BlockedProcessesLabel"
                                                    Margin="0,0,0,6"

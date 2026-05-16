@@ -24,19 +24,21 @@
 
             <Style x:Key="PanelBorderStyle" TargetType="{x:Type Border}">
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushToken}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="16" />
-                <Setter Property="Effect">
-                    <Setter.Value>
-                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.08" Color="Black" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="14" />
             </Style>
 
             <Style x:Key="SectionBorderStyle" BasedOn="{StaticResource PanelBorderStyle}" TargetType="{x:Type Border}">
-                <Setter Property="Padding" Value="16" />
+                <Setter Property="Padding" Value="14" />
+            </Style>
+
+            <Style x:Key="CommandHeaderBorderStyle" TargetType="{x:Type Border}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="0,2,0,4" />
             </Style>
 
             <Style TargetType="{x:Type TextBlock}">
@@ -65,7 +67,7 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="8"
+                                    CornerRadius="4"
                                     TextElement.Foreground="{TemplateBinding Foreground}">
                                 <ContentPresenter Margin="{TemplateBinding Padding}"
                                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -107,11 +109,31 @@
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderBrush" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="4,0,0,0" />
+                <Setter Property="BorderThickness" Value="3,0,0,0" />
                 <Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" />
-                <Setter Property="Margin" Value="0,0,0,4" />
-                <Setter Property="Padding" Value="10,10" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+                <Setter Property="Padding" Value="10,8" />
                 <Setter Property="FontSize" Value="14" />
+            </Style>
+
+            <Style x:Key="TitleBarButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Width" Value="42" />
+                <Setter Property="Height" Value="30" />
+                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+                <Setter Property="FontSize" Value="10" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="TitleBarCloseButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource TitleBarButtonStyle}">
+                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
             </Style>
 
             <Style TargetType="{x:Type ToggleButton}">
@@ -127,7 +149,7 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="8"
+                                    CornerRadius="4"
                                     TextElement.Foreground="{TemplateBinding Foreground}">
                                 <ContentPresenter HorizontalAlignment="Stretch"
                                                   VerticalAlignment="Stretch" />
@@ -266,7 +288,7 @@
                                             Background="{DynamicResource ControlBrush}"
                                             BorderBrush="{DynamicResource BorderBrushToken}"
                                             BorderThickness="1"
-                                            CornerRadius="8"
+                                            CornerRadius="4"
                                             TextElement.Foreground="{DynamicResource TextPrimaryBrush}">
                                         <ScrollViewer CanContentScroll="True">
                                             <ItemsPresenter />
@@ -323,7 +345,7 @@
             <Style TargetType="{x:Type GroupBox}">
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushToken}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Template">
@@ -336,10 +358,10 @@
                                 </Grid.RowDefinitions>
                                 <Border Grid.Row="0"
                                         Background="{DynamicResource ControlBrush}"
-                                        BorderBrush="{DynamicResource BorderBrushToken}"
+                                        BorderBrush="{DynamicResource BorderSoftBrush}"
                                         BorderThickness="1,1,1,0"
                                         CornerRadius="8,8,0,0"
-                                        Padding="14,10">
+                                        Padding="12,8">
                                     <ContentPresenter Content="{TemplateBinding Header}"
                                                       TextElement.FontWeight="SemiBold"
                                                       TextElement.FontSize="13"
@@ -347,7 +369,7 @@
                                 </Border>
                                 <Border Grid.Row="1"
                                         Background="{TemplateBinding Background}"
-                                        BorderBrush="{DynamicResource BorderBrushToken}"
+                                        BorderBrush="{DynamicResource BorderSoftBrush}"
                                         BorderThickness="1,0,1,1"
                                         CornerRadius="0,0,8,8"
                                         ClipToBounds="True">
@@ -368,8 +390,8 @@
                 <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
                 <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
                 <Setter Property="HeadersVisibility" Value="Column" />
-                <Setter Property="RowHeight" Value="44" />
-                <Setter Property="ColumnHeaderHeight" Value="42" />
+                <Setter Property="RowHeight" Value="40" />
+                <Setter Property="ColumnHeaderHeight" Value="38" />
                 <Setter Property="CanUserResizeRows" Value="False" />
                 <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceRaisedBrush}" />
                 <Setter Property="RowBackground" Value="{DynamicResource SurfaceBrush}" />
@@ -380,7 +402,7 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="FontSize" Value="12" />
-                <Setter Property="Height" Value="42" />
+                <Setter Property="Height" Value="38" />
                 <Setter Property="Padding" Value="16,0" />
                 <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
                 <Setter Property="BorderThickness" Value="0,0,1,2" />
@@ -526,6 +548,8 @@
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type TabControl}">

@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         ConfigureLogStorageModeSelector();
         ConfigureThresholdUnitSelector();
         ApplyTexts();
+        UpdateMaximizeRestoreGlyph();
         LoadRuntimeRulesIntoForm();
         LoadEncryptionSettingsIntoForm();
         LoadCentralLogSettingsIntoForm();
@@ -1026,6 +1027,63 @@ public partial class MainWindow : Window
         StatusTextBlock.Text = UiText("Stop requested for selected jobs.", "Arret demande pour les jobs selectionnes.");
     }
 
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2 && ResizeMode == ResizeMode.CanResize)
+        {
+            ToggleWindowState();
+            return;
+        }
+
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        DragMove();
+    }
+
+    private void MinimizeWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void MaximizeRestoreWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleWindowState();
+    }
+
+    private void CloseWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void ToggleWindowState()
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+        UpdateMaximizeRestoreGlyph();
+    }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+        UpdateMaximizeRestoreGlyph();
+    }
+
+    private void UpdateMaximizeRestoreGlyph()
+    {
+        if (MaximizeRestoreWindowGlyph is null)
+        {
+            return;
+        }
+
+        MaximizeRestoreWindowGlyph.Text = WindowState == WindowState.Maximized
+            ? "\uE923"
+            : "\uE922";
+    }
+
     private void OverviewNavButton_Click(object sender, RoutedEventArgs e)
     {
         SetActiveSection(DashboardSection.Overview);
@@ -1114,17 +1172,17 @@ public partial class MainWindow : Window
     {
         if (isActive)
         {
-            button.SetResourceReference(Control.BackgroundProperty, "AccentSoftBrush");
+            button.Background = Brushes.Transparent;
             button.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
             button.SetResourceReference(Control.BorderBrushProperty, "AccentBrush");
-            button.BorderThickness = new Thickness(4, 0, 0, 0);
+            button.BorderThickness = new Thickness(3, 0, 0, 0);
             return;
         }
 
         button.Background = Brushes.Transparent;
         button.SetResourceReference(Control.ForegroundProperty, "SidebarTextBrush");
         button.BorderBrush = Brushes.Transparent;
-        button.BorderThickness = new Thickness(4, 0, 0, 0);
+        button.BorderThickness = new Thickness(3, 0, 0, 0);
     }
 
     private void UpdateDashboardMetrics()

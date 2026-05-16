@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Sober modern light palette: near-white surfaces, slate text, indigo accent, semantic green / amber / red -->
     <Color x:Key="CanvasColor">#F6F7F9</Color>
+    <Color x:Key="TitleBarColor">#F6F7F9</Color>
     <Color x:Key="SidebarColor">#FFFFFF</Color>
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
     <Color x:Key="SurfaceRaisedColor">#F3F4F6</Color>
@@ -15,9 +16,9 @@
     <Color x:Key="TextMutedColor">#6B7280</Color>
     <Color x:Key="SidebarTextColor">#1F2937</Color>
     <Color x:Key="OnAccentColor">#FFFFFF</Color>
-    <Color x:Key="AccentColor">#2563EB</Color>
-    <Color x:Key="AccentHoverColor">#1D4ED8</Color>
-    <Color x:Key="AccentSoftColor">#EFF6FF</Color>
+    <Color x:Key="AccentColor">#0067C0</Color>
+    <Color x:Key="AccentHoverColor">#005A9E</Color>
+    <Color x:Key="AccentSoftColor">#EAF4FF</Color>
     <!-- Semantic indicators: green for success, orange for warning, red for failure -->
     <Color x:Key="SuccessColor">#16A34A</Color>
     <Color x:Key="WarningColor">#F59E0B</Color>
@@ -27,11 +28,11 @@
     <Color x:Key="LogBackgroundColor">#0F172A</Color>
     <Color x:Key="LogForegroundColor">#E5E7EB</Color>
     <Color x:Key="HeroGradientStartColor">#EEF2FF</Color>
-    <Color x:Key="HeroGradientMidColor">#DDD6FE</Color>
+    <Color x:Key="HeroGradientMidColor">#D7ECFF</Color>
     <Color x:Key="HeroGradientEndColor">#E0E7FF</Color>
-    <Color x:Key="HeroShapePrimaryColor">#4338CA</Color>
-    <Color x:Key="HeroShapeSecondaryColor">#6366F1</Color>
-    <Color x:Key="HeroShapeHighlightColor">#C7D2FE</Color>
+    <Color x:Key="HeroShapePrimaryColor">#0067C0</Color>
+    <Color x:Key="HeroShapeSecondaryColor">#3AA0E6</Color>
+    <Color x:Key="HeroShapeHighlightColor">#B9E2FF</Color>
     <Color x:Key="HeroWaveColor">#FFFFFF</Color>
     <Color x:Key="HeroTextColor">#111827</Color>
     <Color x:Key="HeroMetricTextColor">#111827</Color>
@@ -40,6 +41,7 @@
     <Color x:Key="HeroMetricBorderColor">#99FFFFFF</Color>
 
     <SolidColorBrush x:Key="CanvasBrush" Color="{DynamicResource CanvasColor}" />
+    <SolidColorBrush x:Key="TitleBarBrush" Color="{DynamicResource TitleBarColor}" />
     <SolidColorBrush x:Key="SidebarBrush" Color="{DynamicResource SidebarColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
     <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{DynamicResource SurfaceRaisedColor}" />
