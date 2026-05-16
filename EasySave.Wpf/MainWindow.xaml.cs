@@ -11,6 +11,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Text.Json.Serialization;
 using System.Globalization;
+using Microsoft.Win32;
 
 namespace EasySave.Wpf;
 
@@ -411,6 +412,38 @@ public partial class MainWindow : Window
         StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
         UpdateDashboardMetrics();
         RefreshStateAndLog();
+    }
+
+    private void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
+    {
+        BrowseForJobFolder(SourceTextBox, UiText("Select source folder", "Selectionner le dossier source"));
+    }
+
+    private void BrowseTargetButton_Click(object sender, RoutedEventArgs e)
+    {
+        BrowseForJobFolder(TargetTextBox, UiText("Select target folder", "Selectionner le dossier cible"));
+    }
+
+    private void BrowseForJobFolder(TextBox targetTextBox, string title)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = title,
+            Multiselect = false
+        };
+
+        string currentPath = targetTextBox.Text.Trim();
+        if (Directory.Exists(currentPath))
+        {
+            dialog.InitialDirectory = currentPath;
+        }
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            targetTextBox.Text = dialog.FolderName;
+            targetTextBox.CaretIndex = targetTextBox.Text.Length;
+            targetTextBox.Focus();
+        }
     }
 
     private void SaveAllButton_Click(object sender, RoutedEventArgs e)
