@@ -114,6 +114,17 @@ public class RuntimeStoragePathsTests
     }
 
     [Fact]
+    public void SetEncryptedExtensions_IgnoresEmptyEntriesAndLoneSeparators()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetEncryptedExtensions([".TXT ; ; pdf", ";", " "]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal([".pdf", ".txt"], RuntimeStoragePaths.GetEncryptedExtensions());
+    }
+
+    [Fact]
     public void SetCryptoSoftKey_PersistsKeyAcrossReload()
     {
         using var workspace = new TestWorkspace();
@@ -147,6 +158,19 @@ public class RuntimeStoragePathsTests
     }
 
     [Fact]
+    public void ExtensionCanBeBothEncryptedAndPriority()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetEncryptedExtensions(["TXT"]);
+        RuntimeStoragePaths.SetPriorityExtensions([".txt"]);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal([".txt"], RuntimeStoragePaths.GetEncryptedExtensions());
+        Assert.Equal([".txt"], RuntimeStoragePaths.GetPriorityExtensions());
+    }
+
+    [Fact]
     public void SetPriorityExtensions_PreservesInputOrder_AndDeduplicates()
     {
         using var workspace = new TestWorkspace();
@@ -177,6 +201,36 @@ public class RuntimeStoragePathsTests
         RuntimeStoragePaths.Reload();
 
         Assert.Equal(1024 * 1024, RuntimeStoragePaths.GetLargeFileThresholdKb());
+    }
+
+    [Fact]
+    public void SetLargeFileThresholdKb_ZeroDisablesLargeFileRule()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetLargeFileThresholdKb(0);
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(0, RuntimeStoragePaths.GetLargeFileThresholdKb());
+    }
+
+    [Fact]
+    public void SetCryptoSoftPath_RejectsInvalidCustomPath()
+    {
+        using var workspace = new TestWorkspace();
+
+        Assert.Throws<FileNotFoundException>(() => RuntimeStoragePaths.SetCryptoSoftPath(workspace.GetPath("missing.exe")));
+    }
+
+    [Fact]
+    public void EmptyCryptoSoftPath_UsesDefaultPath()
+    {
+        using var workspace = new TestWorkspace();
+
+        RuntimeStoragePaths.SetCryptoSoftPath("");
+        RuntimeStoragePaths.Reload();
+
+        Assert.Equal(RuntimeStoragePaths.DefaultCryptoSoftExecutablePath, RuntimeStoragePaths.GetCryptoSoftPath());
     }
 
     [Fact]

@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 public class BackupJobRegistry
 {
     public const int DefaultJobCount = 5;
+    public const int MaximumJobNameLength = 100;
+    private static readonly char[] InvalidJobNameCharacters = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
 
     private readonly string _jobsFilePath;
     private readonly JsonSerializerOptions _serializerOptions;
@@ -103,7 +105,7 @@ public class BackupJobRegistry
             if (index < jobs.Count)
             {
                 BackupJob existingJob = jobs[index] ?? CreateDefaultJob(index);
-                normalizedJobs.Add(NormalizeJob(existingJob, index));
+                normalizedJobs.Add(NormalizeJob(existingJob, index, useDefaultForMissingName: true));
                 continue;
             }
 
@@ -156,16 +158,19 @@ public class BackupJobRegistry
         List<BackupJob> jobs = LoadJobs().ToList();
         int jobIndex = GetJobIndex(jobNumber);
         EnsureJobCapacity(jobs, jobIndex);
-        BackupJob savedJob = NormalizeJob(job, jobIndex);
+        BackupJob savedJob = NormalizeJob(job, jobIndex, useDefaultForMissingName: false);
+        ValidateJobName(savedJob.Name, jobs, jobIndex);
         jobs[jobIndex] = savedJob;
         SaveJobs(jobs);
         return savedJob;
     }
 
-    private static BackupJob NormalizeJob(BackupJob job, int jobIndex)
+    private static BackupJob NormalizeJob(BackupJob job, int jobIndex, bool useDefaultForMissingName)
     {
         BackupJob template = CreateDefaultJob(jobIndex);
-        string name = string.IsNullOrWhiteSpace(job.Name) ? template.Name : job.Name.Trim();
+        string name = useDefaultForMissingName && job.Name is null
+            ? template.Name
+            : job.Name?.Trim() ?? string.Empty;
 
         return new BackupJob
         {
@@ -181,6 +186,37 @@ public class BackupJobRegistry
         while (jobs.Count <= jobIndex)
         {
             jobs.Add(CreateDefaultJob(jobs.Count));
+        }
+    }
+
+    private static void ValidateJobName(string name, IReadOnlyList<BackupJob> existingJobs, int currentJobIndex)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Backup job name cannot be empty.", nameof(name));
+        }
+
+        if (name.Length > MaximumJobNameLength)
+        {
+            throw new ArgumentException($"Backup job name cannot exceed {MaximumJobNameLength} characters.", nameof(name));
+        }
+
+        if (name.IndexOfAny(InvalidJobNameCharacters) >= 0)
+        {
+            throw new ArgumentException("Backup job name contains invalid Windows filename characters.", nameof(name));
+        }
+
+        for (int index = 0; index < existingJobs.Count; index++)
+        {
+            if (index == currentJobIndex)
+            {
+                continue;
+            }
+
+            if (string.Equals(existingJobs[index].Name?.Trim(), name, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"A backup job named '{name}' already exists.", nameof(name));
+            }
         }
     }
 }

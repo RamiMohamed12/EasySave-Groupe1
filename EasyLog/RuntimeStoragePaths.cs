@@ -224,6 +224,11 @@ public static class RuntimeStoragePaths
         string normalizedPath = string.IsNullOrWhiteSpace(path)
             ? string.Empty
             : ResolveFilePath(path);
+        if (!string.IsNullOrWhiteSpace(normalizedPath) && !File.Exists(normalizedPath))
+        {
+            throw new FileNotFoundException("CryptoSoft executable path does not exist.", normalizedPath);
+        }
+
         UpdateSettings(settings => settings.CryptoSoftPath = normalizedPath);
     }
 

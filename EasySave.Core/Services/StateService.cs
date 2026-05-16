@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 public class StateService
 {
+    public const string InterruptedShutdownMessage = "Backup stopped because the application closed.";
+    private static readonly object SnapshotSyncRoot = new();
     private readonly string _stateFilePath;
     private readonly string _jobsFilePath;
     private readonly Dictionary<string, BackupState> _statesByBackupName;
@@ -24,9 +26,13 @@ public class StateService
 
     public void WriteState(BackupState state)
     {
-        _statesByBackupName[state.BackupName] = state;
-        SynchronizeConfiguredJobsCore(LoadConfiguredJobs());
-        WriteStateSnapshot();
+        lock (SnapshotSyncRoot)
+        {
+            MergeExistingStates();
+            _statesByBackupName[state.BackupName] = state;
+            SynchronizeConfiguredJobsCore(LoadConfiguredJobs());
+            WriteStateSnapshot();
+        }
     }
 
     public IReadOnlyList<BackupState> ReadAllStates()
@@ -40,8 +46,80 @@ public class StateService
 
     public void SynchronizeConfiguredJobs(IEnumerable<BackupJob> jobs)
     {
-        SynchronizeConfiguredJobsCore(jobs);
-        WriteStateSnapshot();
+        lock (SnapshotSyncRoot)
+        {
+            MergeExistingStates();
+            SynchronizeConfiguredJobsCore(jobs);
+            WriteStateSnapshot();
+        }
+    }
+
+    public int RecoverInterruptedBackups(LoggerService loggerService)
+    {
+        if (loggerService is null)
+        {
+            throw new ArgumentNullException(nameof(loggerService));
+        }
+
+        lock (SnapshotSyncRoot)
+        {
+            MergeExistingStates();
+            DateTime timestamp = DateTime.Now;
+            int recoveredCount = 0;
+
+            foreach (BackupState state in _statesByBackupName.Values)
+            {
+                if (!IsInterruptedStatus(state.Status))
+                {
+                    continue;
+                }
+
+                state.Status = BackupExecutionStatus.Stopped;
+                state.IsRunning = false;
+                state.RequestedAction = BackupControlAction.Stop;
+                state.LastBackupUpdateTime = timestamp;
+                state.LastRunCompletedAt = timestamp;
+                state.ErrorMessage = InterruptedShutdownMessage;
+                state.PauseReason = BackupPauseReason.None;
+                state.PauseReasonDetails = string.Empty;
+                recoveredCount++;
+
+                loggerService.WriteLog(new LogEntry
+                {
+                    Timestamp = timestamp,
+                    BackupName = state.BackupName,
+                    SourcePath = state.CurrentSourcePath,
+                    DestinationPath = state.CurrentTargetPath,
+                    ActionType = "Stopped",
+                    ErrorMessage = InterruptedShutdownMessage,
+                    FileSizeBytes = state.CurrentFileSize,
+                    TransferTimeMilliseconds = 0
+                });
+            }
+
+            if (recoveredCount > 0)
+            {
+                WriteStateSnapshot();
+            }
+
+            return recoveredCount;
+        }
+    }
+
+    private static bool IsInterruptedStatus(BackupExecutionStatus status)
+    {
+        return status == BackupExecutionStatus.Active
+            || status == BackupExecutionStatus.Stopping
+            || status == BackupExecutionStatus.Paused
+            || status == BackupExecutionStatus.PausedByBusinessSoftware;
+    }
+
+    private void MergeExistingStates()
+    {
+        foreach (BackupState state in LoadExistingStates().Values)
+        {
+            _statesByBackupName[state.BackupName] = state;
+        }
     }
 
     private void SynchronizeConfiguredJobsCore(IEnumerable<BackupJob> jobs)

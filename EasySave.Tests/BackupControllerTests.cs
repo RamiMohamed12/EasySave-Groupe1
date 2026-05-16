@@ -35,6 +35,32 @@ public class BackupControllerTests
     }
 
     [Fact]
+    public void UpdateDeleteJob_RejectRunningJob()
+    {
+        using var workspace = new TestWorkspace();
+        var fakeController = new FakeExecutionController();
+        var controller = new BackupController(new FakeBackupService(), new BackupJobRegistry(), fakeController);
+        fakeController.BeginJobRun(1);
+
+        Assert.Throws<InvalidOperationException>(() => controller.UpdateJob(1, new BackupJob { Name = "Job1", Source = "C", Target = "D" }));
+        Assert.Throws<InvalidOperationException>(() => controller.DeleteJob(1));
+    }
+
+    [Fact]
+    public void StartBackup_RejectsManualRunDuringBatchRun()
+    {
+        var fakeController = new FakeExecutionController();
+        var controller = new BackupController(new FakeBackupService(), new BackupJobRegistry(), fakeController);
+        fakeController.BeginBatchRun();
+
+        Assert.Throws<InvalidOperationException>(() => controller.StartBackup(new SelectedBackupJob
+        {
+            JobNumber = 1,
+            Job = new BackupJob { Name = "Job1" }
+        }));
+    }
+
+    [Fact]
     public void CreateUpdateDeleteJob_UsesRegistryFromCore()
     {
         using var workspace = new TestWorkspace();
@@ -91,6 +117,12 @@ public class BackupControllerTests
 
         public void BeginJobRun(int jobNumber)
         {
+            RunningJobs.Add(jobNumber);
+        }
+
+        public void BeginBatchRun()
+        {
+            BatchRunDepth++;
         }
 
         public void RequestPause(int jobNumber)
@@ -122,8 +154,20 @@ public class BackupControllerTests
             };
         }
 
+        public HashSet<int> RunningJobs { get; } = new();
+        public int BatchRunDepth { get; private set; }
+        public bool IsBatchRunActive => BatchRunDepth > 0;
+        public bool IsJobRunning(int jobNumber) => RunningJobs.Contains(jobNumber);
+        public bool IsAnyJobRunning() => RunningJobs.Count > 0;
+
         public void CompleteJob(int jobNumber)
         {
+            RunningJobs.Remove(jobNumber);
+        }
+
+        public void CompleteBatchRun()
+        {
+            BatchRunDepth = Math.Max(0, BatchRunDepth - 1);
         }
     }
 }

@@ -24,21 +24,40 @@ public class BackupController
 
     public BackupResult StartBackup(SelectedBackupJob selectedBackupJob)
     {
+        if (_executionController?.IsBatchRunActive == true)
+        {
+            throw new InvalidOperationException("Cannot start a manual backup while a batch backup is running.");
+        }
+
         return _backupService.StartBackup(selectedBackupJob);
     }
 
     public IReadOnlyList<BackupResult> StartBackups(IEnumerable<SelectedBackupJob> backupJobs)
     {
+        if (_executionController?.IsAnyJobRunning() == true)
+        {
+            throw new InvalidOperationException("Cannot start a batch backup while another backup is running.");
+        }
+
         List<SelectedBackupJob> orderedJobs = backupJobs.ToList();
-        Task<BackupResult>[] tasks = orderedJobs
-            .Select(backupJob => Task.Run(() => _backupService.StartBackup(backupJob)))
-            .ToArray();
+        _executionController?.BeginBatchRun();
 
-        Task.WaitAll(tasks);
+        try
+        {
+            Task<BackupResult>[] tasks = orderedJobs
+                .Select(backupJob => Task.Run(() => _backupService.StartBackup(backupJob)))
+                .ToArray();
 
-        return tasks
-            .Select(task => task.Result)
-            .ToList();
+            Task.WaitAll(tasks);
+
+            return tasks
+                .Select(task => task.Result)
+                .ToList();
+        }
+        finally
+        {
+            _executionController?.CompleteBatchRun();
+        }
     }
 
     public void PauseJob(int jobNumber)
@@ -58,16 +77,32 @@ public class BackupController
 
     public BackupJob CreateJob(int jobNumber, BackupJob job)
     {
+        EnsureConfigurationCanChange(jobNumber, includeJobSpecificCheck: false);
         return _jobRegistry.CreateJob(jobNumber, job);
     }
 
     public BackupJob UpdateJob(int jobNumber, BackupJob job)
     {
+        EnsureConfigurationCanChange(jobNumber, includeJobSpecificCheck: true);
         return _jobRegistry.UpdateJob(jobNumber, job);
     }
 
     public BackupJob DeleteJob(int jobNumber)
     {
+        EnsureConfigurationCanChange(jobNumber, includeJobSpecificCheck: true);
         return _jobRegistry.DeleteJob(jobNumber);
+    }
+
+    private void EnsureConfigurationCanChange(int jobNumber, bool includeJobSpecificCheck)
+    {
+        if (_executionController?.IsBatchRunActive == true)
+        {
+            throw new InvalidOperationException("Cannot change backup jobs while a batch backup is running.");
+        }
+
+        if (includeJobSpecificCheck && _executionController?.IsJobRunning(jobNumber) == true)
+        {
+            throw new InvalidOperationException($"Cannot change backup job {jobNumber} while it is running.");
+        }
     }
 }

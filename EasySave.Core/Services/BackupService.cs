@@ -143,9 +143,42 @@ public class BackupService : IBackupService
             List<TransferWorkItem> workItems = BuildTransferWorkItems(selectedBackupJob, sourceFiles, lastFullBackupUtc);
             long totalBytes = workItems.Sum(item => item.FileSizeBytes);
 
-            var state = CreateInitialState(backupJob, totalBytes, workItems.Count);
+            var state = CreateInitialState(backupJob, totalBytes, workItems);
             _executionCoordinator.RegisterPendingWork(workItems);
             _stateService.WriteState(state);
+
+            if (workItems.Count == 0)
+            {
+                DateTime emptyTimestamp = DateTime.Now;
+                state.IsRunning = false;
+                state.Status = BackupExecutionStatus.Finished;
+                state.LastBackupUpdateTime = emptyTimestamp;
+                state.LastRunCompletedAt = emptyTimestamp;
+                state.ErrorMessage = "Backup completed successfully with 0 transferred files.";
+                state.CurrentSourcePath = string.Empty;
+                state.CurrentTargetPath = string.Empty;
+                _stateService.WriteState(state);
+                _loggerService.WriteLog(new LogEntry
+                {
+                    Timestamp = emptyTimestamp,
+                    BackupName = backupJob.Name,
+                    SourcePath = backupJob.Source,
+                    DestinationPath = backupJob.Target,
+                    ActionType = "NoFiles",
+                    ErrorMessage = state.ErrorMessage,
+                    FileSizeBytes = 0,
+                    TransferTimeMilliseconds = 0,
+                    EncryptionTimeMilliseconds = 0
+                });
+
+                globalStopwatch.Stop();
+                result.Status = BackupExecutionStatus.Finished;
+                result.TransferredFileCount = 0;
+                result.TransferredBytes = 0;
+                result.ErrorMessage = state.ErrorMessage;
+                result.ElapsedTime = globalStopwatch.Elapsed;
+                return result;
+            }
 
             var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             bool hasErrors = false;
@@ -309,6 +342,8 @@ public class BackupService : IBackupService
             state.RequestedAction = BackupControlAction.Run;
             state.PauseReason = BackupPauseReason.None;
             state.PauseReasonDetails = string.Empty;
+            state.CurrentSourcePath = string.Empty;
+            state.CurrentTargetPath = string.Empty;
             _stateService.WriteState(state);
 
             if (backupJob.Type == BackupType.Full && !hasErrors)
@@ -350,7 +385,7 @@ public class BackupService : IBackupService
                     BackupName = selectedBackupJob.Job.Name,
                     SourcePath = sourceFilePath,
                     DestinationPath = destinationFilePath,
-                    FileSizeBytes = new FileInfo(sourceFilePath).Length,
+                    FileSizeBytes = File.Exists(sourceFilePath) ? new FileInfo(sourceFilePath).Length : 0,
                     MatchedPriorityExtension = matchedPriorityExtension,
                     PriorityRank = priorityRank,
                     Priority = string.IsNullOrWhiteSpace(matchedPriorityExtension)
@@ -364,18 +399,19 @@ public class BackupService : IBackupService
             .ToList();
     }
 
-    private BackupState CreateInitialState(BackupJob backupJob, long totalBytes, int fileCount)
+    private BackupState CreateInitialState(BackupJob backupJob, long totalBytes, IReadOnlyList<TransferWorkItem> workItems)
     {
+        TransferWorkItem? firstWorkItem = workItems.FirstOrDefault();
         return new BackupState
         {
             BackupName = backupJob.Name,
-            CurrentSourcePath = string.Empty,
-            CurrentTargetPath = string.Empty,
+            CurrentSourcePath = firstWorkItem?.SourcePath ?? string.Empty,
+            CurrentTargetPath = firstWorkItem?.DestinationPath ?? string.Empty,
             IsRunning = true,
             Status = BackupExecutionStatus.Active,
             LastBackupUpdateTime = DateTime.Now,
-            TotalEligibleFileCount = fileCount,
-            RemainingFileCount = fileCount,
+            TotalEligibleFileCount = workItems.Count,
+            RemainingFileCount = workItems.Count,
             TotalEligibleBytes = totalBytes,
             RemainingBytes = totalBytes,
             TransferredBytes = 0,

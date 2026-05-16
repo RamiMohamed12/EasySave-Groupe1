@@ -151,6 +151,7 @@ public class BackupJobRegistryTests
 
         BackupJob created = registry.CreateJob(7, new BackupJob
         {
+            Name = "Archive7",
             Source = @"C:\S7",
             Target = @"D:\T7",
             Type = BackupType.Full
@@ -159,9 +160,113 @@ public class BackupJobRegistryTests
         IReadOnlyList<BackupJob> jobs = registry.LoadJobs();
 
         Assert.Equal(7, jobs.Count);
-        Assert.Equal("Job7", created.Name);
+        Assert.Equal("Archive7", created.Name);
         Assert.Equal(@"C:\S7", jobs[6].Source);
         Assert.Equal(@"D:\T7", jobs[6].Target);
         Assert.Equal(BackupType.Full, jobs[6].Type);
+    }
+
+    [Fact]
+    public void CreateJob_RejectsSpacesOnlyName()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+
+        Assert.Throws<ArgumentException>(() => registry.CreateJob(1, new BackupJob
+        {
+            Name = "   ",
+            Source = @"C:\S",
+            Target = @"D:\T"
+        }));
+    }
+
+    [Fact]
+    public void CreateJob_RejectsDuplicateNameCaseInsensitively()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+        registry.CreateJob(1, new BackupJob { Name = "Docs", Source = @"C:\A", Target = @"D:\A" });
+
+        Assert.Throws<ArgumentException>(() => registry.CreateJob(2, new BackupJob
+        {
+            Name = "docs",
+            Source = @"C:\B",
+            Target = @"D:\B"
+        }));
+    }
+
+    [Fact]
+    public void UpdateJob_RejectsDuplicateNameCaseInsensitively()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+        registry.CreateJob(1, new BackupJob { Name = "Docs", Source = @"C:\A", Target = @"D:\A" });
+        registry.CreateJob(2, new BackupJob { Name = "Media", Source = @"C:\B", Target = @"D:\B" });
+
+        Assert.Throws<ArgumentException>(() => registry.UpdateJob(2, new BackupJob
+        {
+            Name = "DOCS",
+            Source = @"C:\B",
+            Target = @"D:\B"
+        }));
+    }
+
+    [Fact]
+    public void CreateJob_RejectsInvalidWindowsFilenameCharacters()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+
+        Assert.Throws<ArgumentException>(() => registry.CreateJob(1, new BackupJob
+        {
+            Name = "Bad:Name",
+            Source = @"C:\S",
+            Target = @"D:\T"
+        }));
+    }
+
+    [Fact]
+    public void CreateJob_RejectsVeryLongName()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+
+        Assert.Throws<ArgumentException>(() => registry.CreateJob(1, new BackupJob
+        {
+            Name = new string('A', BackupJobRegistry.MaximumJobNameLength + 1),
+            Source = @"C:\S",
+            Target = @"D:\T"
+        }));
+    }
+
+    [Fact]
+    public void CreateJob_AllowsAccentedNameAndPaths()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+
+        BackupJob job = registry.CreateJob(1, new BackupJob
+        {
+            Name = "Sauvegarde été",
+            Source = @"C:\Données",
+            Target = @"D:\Archives",
+            Type = BackupType.Full
+        });
+
+        Assert.Equal("Sauvegarde été", job.Name);
+        Assert.Equal(@"C:\Données", job.Source);
+        Assert.Equal(@"D:\Archives", job.Target);
+    }
+
+    [Fact]
+    public void CreateJob_AllowsSameSourceAndTargetAcrossDifferentJobNames()
+    {
+        using var workspace = new TestWorkspace();
+        var registry = new BackupJobRegistry();
+
+        registry.CreateJob(1, new BackupJob { Name = "Docs", Source = @"C:\Shared", Target = @"D:\Shared" });
+        BackupJob second = registry.CreateJob(2, new BackupJob { Name = "DocsCopy", Source = @"C:\Shared", Target = @"D:\Shared" });
+
+        Assert.Equal("DocsCopy", second.Name);
     }
 }

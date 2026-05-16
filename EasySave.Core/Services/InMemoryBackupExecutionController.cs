@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 public class InMemoryBackupExecutionController : IBackupExecutionController
 {
     private readonly ConcurrentDictionary<int, BackupExecutionCommandState> _commandStates = new();
+    private int _batchRunDepth;
 
     public void BeginJobRun(int jobNumber)
     {
@@ -10,6 +11,11 @@ public class InMemoryBackupExecutionController : IBackupExecutionController
             jobNumber,
             _ => CreateState(jobNumber, BackupControlAction.Run, BackupPauseReason.None, string.Empty),
             (_, _) => CreateState(jobNumber, BackupControlAction.Run, BackupPauseReason.None, string.Empty));
+    }
+
+    public void BeginBatchRun()
+    {
+        Interlocked.Increment(ref _batchRunDepth);
     }
 
     public void RequestPause(int jobNumber)
@@ -51,9 +57,35 @@ public class InMemoryBackupExecutionController : IBackupExecutionController
             : CreateState(jobNumber, BackupControlAction.None, BackupPauseReason.None, string.Empty);
     }
 
+    public bool IsJobRunning(int jobNumber)
+    {
+        return _commandStates.ContainsKey(jobNumber);
+    }
+
+    public bool IsAnyJobRunning()
+    {
+        return !_commandStates.IsEmpty;
+    }
+
+    public bool IsBatchRunActive => Volatile.Read(ref _batchRunDepth) > 0;
+
     public void CompleteJob(int jobNumber)
     {
         _commandStates.TryRemove(jobNumber, out _);
+    }
+
+    public void CompleteBatchRun()
+    {
+        int current;
+        do
+        {
+            current = Volatile.Read(ref _batchRunDepth);
+            if (current <= 0)
+            {
+                return;
+            }
+        }
+        while (Interlocked.CompareExchange(ref _batchRunDepth, current - 1, current) != current);
     }
 
     private static BackupExecutionCommandState CreateState(
