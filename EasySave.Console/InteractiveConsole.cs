@@ -217,6 +217,12 @@ public sealed class InteractiveConsole
         string? footer = null,
         IReadOnlyList<string>? contextLines = null)
     {
+        if (!CanRenderInteractiveOutput())
+        {
+            RenderPlainOutput(title, lines, footer, contextLines);
+            return;
+        }
+
         RenderOutputScreen(title, lines, footer, contextLines, scrollOffset: 0, showOverflow: true);
     }
 
@@ -225,6 +231,12 @@ public sealed class InteractiveConsole
         IReadOnlyList<ScreenLine> lines,
         IReadOnlyList<string>? contextLines = null)
     {
+        if (!CanRenderInteractiveOutput() || Console.IsInputRedirected)
+        {
+            RenderPlainOutput(title, lines, footer: null, contextLines);
+            return;
+        }
+
         WithHiddenCursor(() =>
         {
             int scrollOffset = 0;
@@ -274,6 +286,45 @@ public sealed class InteractiveConsole
                 }
             }
         });
+    }
+
+    private static bool CanRenderInteractiveOutput()
+    {
+        try
+        {
+            return !Console.IsOutputRedirected;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void RenderPlainOutput(
+        string title,
+        IReadOnlyList<ScreenLine> lines,
+        string? footer,
+        IReadOnlyList<string>? contextLines)
+    {
+        Console.WriteLine(title);
+
+        if (contextLines is { Count: > 0 })
+        {
+            foreach (string contextLine in contextLines)
+            {
+                Console.WriteLine(contextLine);
+            }
+        }
+
+        foreach (ScreenLine line in lines)
+        {
+            Console.WriteLine(line.Text);
+        }
+
+        if (!string.IsNullOrWhiteSpace(footer))
+        {
+            Console.WriteLine(footer);
+        }
     }
 
     private static OutputLayout RenderOutputScreen(

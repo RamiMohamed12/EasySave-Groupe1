@@ -21,6 +21,14 @@ public class CommandLineBackupRunner
     public void Run(string[] args)
     {
         ConsoleMenuRuntime runtime = _runtimeFactory(null);
+        if (args.Length == 1 && IsHelpArgument(args[0]))
+        {
+            _interactiveConsole.RenderOutputScreen(
+                "EasySave",
+                runtime.TextService.GetHelpLines().Select(line => new InteractiveConsole.ScreenLine(line)).ToArray());
+            return;
+        }
+
         if (args.Length == 2 && string.Equals(args[0], "--run-schedule", StringComparison.OrdinalIgnoreCase))
         {
             RunSchedule(args[1], runtime);
@@ -118,6 +126,12 @@ public class CommandLineBackupRunner
     private static string BuildSelection(string[] args)
     {
         return string.Concat(args).Replace(" ", string.Empty);
+    }
+
+    private static bool IsHelpArgument(string argument)
+    {
+        return argument.Equals("--help", StringComparison.OrdinalIgnoreCase)
+            || argument.Equals("-h", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildBackupSuccessMessage(ApplicationTextService textService, BackupResult result, bool showHeader)
