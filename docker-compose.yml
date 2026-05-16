@@ -1,0 +1,14 @@
+services:
+  easylog-server:
+    build:
+      context: .
+      dockerfile: EasyLog.Server/Dockerfile
+    container_name: easylog-server
+    ports:
+      - "5080:8080"
+    environment:
+      EASYLOG_LOGS_DIRECTORY: /logs
+      EASYLOG_API_KEY: ${EASYLOG_API_KEY:-}
+    volumes:
+      - ./docker-data/easylog/logs:/logs
+    restart: unless-stopped

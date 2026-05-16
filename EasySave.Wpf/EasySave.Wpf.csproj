@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\CryptoSoft\CryptoSoft.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="..\CryptoSoft\CryptoSoft.csproj" ReferenceOutputAssembly="false" Private="false" BuildReference="false" />
     <ProjectReference Include="..\EasySave.Core\EasySave.Core.csproj" />
     <ProjectReference Include="..\EasyLog\EasyLog.csproj" />
   </ItemGroup>

@@ -12,6 +12,12 @@ public class LogEntry
 
     public string ErrorMessage { get; set; }
 
+    public string UserName { get; set; }
+
+    public string MachineName { get; set; }
+
+    public string ClientId { get; set; }
+
     // One log entry represents one copied file, so this stores a single file size.
     public long FileSizeBytes { get; set; }
 
@@ -29,6 +35,9 @@ public class LogEntry
         DestinationPath = string.Empty;
         ActionType = string.Empty;
         ErrorMessage = string.Empty;
+        UserName = string.Empty;
+        MachineName = string.Empty;
+        ClientId = string.Empty;
         FileSizeBytes = 0;
         TransferTimeMilliseconds = 0;
         EncryptionTimeMilliseconds = 0;

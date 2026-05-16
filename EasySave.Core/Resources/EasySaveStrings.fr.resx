@@ -70,6 +70,9 @@ Temps ecoule : {2}</value></data>
   <data name="FrenchLanguageDisplayName" xml:space="preserve"><value>francais</value></data>
   <data name="XmlLogFormat" xml:space="preserve"><value>XML</value></data>
   <data name="JsonLogFormat" xml:space="preserve"><value>JSON</value></data>
+  <data name="LocalLogStorageMode" xml:space="preserve"><value>Local</value></data>
+  <data name="CentralizedLogStorageMode" xml:space="preserve"><value>Centralise</value></data>
+  <data name="BothLogStorageMode" xml:space="preserve"><value>Local + centralise</value></data>
   <data name="ConfiguredLabel" xml:space="preserve"><value>Configure</value></data>
   <data name="IncompleteLabel" xml:space="preserve"><value>Incomplet</value></data>
   <data name="NotConfiguredLabel" xml:space="preserve"><value>&lt;non configure&gt;</value></data>
@@ -86,6 +89,7 @@ Temps ecoule : {2}</value></data>
   <data name="Console.ViewStateLabel" xml:space="preserve"><value>Voir l'etat</value></data>
   <data name="Console.ViewLogsLabel" xml:space="preserve"><value>Voir les logs</value></data>
   <data name="Console.ChangeLogFormatLabel" xml:space="preserve"><value>Changer le format des logs</value></data>
+  <data name="Console.ChangeLogStorageModeLabel" xml:space="preserve"><value>Changer le mode de stockage des logs</value></data>
   <data name="Console.EncryptionSettingsLabel" xml:space="preserve"><value>Parametres de cryptage</value></data>
   <data name="Console.ConfigureEncryptedExtensionsLabel" xml:space="preserve"><value>Configurer les extensions a crypter</value></data>
   <data name="Console.ConfigureCryptoSoftKeyLabel" xml:space="preserve"><value>Configurer la cle CryptoSoft</value></data>
@@ -160,6 +164,10 @@ Temps ecoule : {2}</value></data>
   <data name="Console.FileEmptyMessage" xml:space="preserve"><value>{0} est vide.</value></data>
   <data name="Console.CurrentLanguageLine" xml:space="preserve"><value>Langue actuelle : {0}</value></data>
   <data name="Console.CurrentLogFormatLine" xml:space="preserve"><value>Format de log actuel : {0}</value></data>
+  <data name="Console.CurrentLogStorageModeLine" xml:space="preserve"><value>Stockage des logs actuel : {0}</value></data>
+  <data name="Console.CurrentCentralLogServerUrlLine" xml:space="preserve"><value>URL du serveur central : {0}</value></data>
+  <data name="Console.CurrentCentralLogUserNameLine" xml:space="preserve"><value>Utilisateur log central : {0}</value></data>
+  <data name="Console.CurrentCentralLogApiKeyLine" xml:space="preserve"><value>Cle API centrale : {0}</value></data>
   <data name="Console.CurrentValueLine" xml:space="preserve"><value>Valeur actuelle : {0}</value></data>
   <data name="Console.SelectedCountLine" xml:space="preserve"><value>Taches selectionnees : {0}</value></data>
   <data name="Console.MenuOptionLabel" xml:space="preserve"><value>{0}. {1}</value></data>
@@ -174,6 +182,13 @@ Temps ecoule : {2}</value></data>
   <data name="Console.JobHeader" xml:space="preserve"><value>Tache {0} : {1}</value></data>
   <data name="Console.ErrorMessage" xml:space="preserve"><value>Erreur : {0}</value></data>
   <data name="Console.LogFormatUpdatedMessage" xml:space="preserve"><value>Le format des logs a ete change en {0} avec succes.</value></data>
+  <data name="Console.LogStorageSettingsUpdatedMessage" xml:space="preserve"><value>Parametres de stockage des logs mis a jour.</value></data>
+  <data name="Console.CentralLogServerUrlLabel" xml:space="preserve"><value>URL du serveur de logs central</value></data>
+  <data name="Console.CentralLogServerUrlPrompt" xml:space="preserve"><value>Saisissez l'URL du serveur central, par exemple http://192.168.1.20:5080 : </value></data>
+  <data name="Console.CentralLogUserNameLabel" xml:space="preserve"><value>Nom utilisateur log central</value></data>
+  <data name="Console.CentralLogUserNamePrompt" xml:space="preserve"><value>Saisissez le nom utilisateur a stocker dans les logs centralises : </value></data>
+  <data name="Console.CentralLogApiKeyLabel" xml:space="preserve"><value>Cle API logs centraux</value></data>
+  <data name="Console.CentralLogApiKeyPrompt" xml:space="preserve"><value>Saisissez la cle API, ou laissez vide si aucune cle n'est configuree : </value></data>
   <data name="Console.BusinessSoftwareTitle" xml:space="preserve"><value>Detection logiciel metier</value></data>
   <data name="Console.AddProcessLabel" xml:space="preserve"><value>Ajouter un processus bloquant</value></data>
   <data name="Console.RemoveProcessLabel" xml:space="preserve"><value>Retirer un processus bloquant</value></data>
@@ -226,6 +241,11 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.EncryptionSectionTitle" xml:space="preserve"><value>Cryptage</value></data>
   <data name="Wpf.BusinessSoftwareSectionTitle" xml:space="preserve"><value>Detection logiciel metier</value></data>
   <data name="Wpf.LogFormatLabel" xml:space="preserve"><value>Format de log</value></data>
+  <data name="Wpf.LogStorageModeLabel" xml:space="preserve"><value>Stockage des logs</value></data>
+  <data name="Wpf.CentralLogServerUrlLabel" xml:space="preserve"><value>URL serveur central</value></data>
+  <data name="Wpf.CentralLogUserNameLabel" xml:space="preserve"><value>Utilisateur log central</value></data>
+  <data name="Wpf.CentralLogApiKeyLabel" xml:space="preserve"><value>Cle API centrale</value></data>
+  <data name="Wpf.SaveCentralLogSettingsButton" xml:space="preserve"><value>Enregistrer logs centraux</value></data>
   <data name="Wpf.BlockedProcessesLabel" xml:space="preserve"><value>Processus logiciels metier bloquants</value></data>
   <data name="Wpf.ProcessNameLabel" xml:space="preserve"><value>Nom du processus (exemple : winword.exe)</value></data>
   <data name="Wpf.AddBlockedProcessButton" xml:space="preserve"><value>Ajouter processus</value></data>
@@ -268,4 +288,6 @@ Temps ecoule : {2}</value></data>
   <data name="Wpf.ProcessAddedStatus" xml:space="preserve"><value>Processus ajoute : {0}</value></data>
   <data name="Wpf.ProcessRemovedStatus" xml:space="preserve"><value>Processus retire : {0}</value></data>
   <data name="Wpf.LogFormatUpdatedStatus" xml:space="preserve"><value>Format de log mis a jour : {0}</value></data>
+  <data name="Wpf.LogStorageUpdatedStatus" xml:space="preserve"><value>Stockage des logs mis a jour : {0}</value></data>
+  <data name="Wpf.CentralLogSettingsSavedStatus" xml:space="preserve"><value>Parametres de logs centraux enregistres.</value></data>
 </root>

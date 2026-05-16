@@ -214,6 +214,55 @@ Utilisé par les sauvegardes différentielles pour retrouver la dernière sauveg
 
 Contient les journaux quotidiens. Selon le format choisi, EasySave écrit les logs en JSON ou en XML.
 
+### `yyyy-MM-dd.jsonl` sur le serveur Docker
+
+Le service `EasyLog.Server` centralise les logs de plusieurs postes dans un seul fichier journalier JSONL. Chaque ligne contient une entree `LogEntry` avec `UserName`, `MachineName` et `ClientId`, ce qui permet de differencier les utilisateurs dans le meme fichier.
+
+Modes disponibles dans EasySave Console et WPF :
+
+* `Local` : les logs restent uniquement sur le PC utilisateur.
+* `Centralized` : les logs sont envoyes uniquement au serveur Docker.
+* `Local + Centralized` : les logs sont ecrits localement et envoyes au serveur Docker.
+
+Lancer le serveur depuis la racine du projet :
+
+```powershell
+docker compose up --build -d easylog-server
+```
+
+Verifier le service :
+
+```powershell
+curl http://localhost:5080/health
+```
+
+Configurer chaque poste EasySave :
+
+* mode logs : `Centralized` ou `Local + Centralized`
+* URL serveur : `http://<IP_DU_SERVEUR_DOCKER>:5080`
+* utilisateur : nom lisible, par exemple `alice` ou `poste-compta-1`
+* cle API : facultative, uniquement si `EASYLOG_API_KEY` est definie cote Docker
+
+Consulter les logs Docker :
+
+```powershell
+docker compose logs -f easylog-server
+```
+
+Lire le fichier centralise :
+
+```powershell
+Get-Content .\docker-data\easylog\logs\<yyyy-MM-dd>.jsonl
+```
+
+Arreter le service :
+
+```powershell
+docker compose down
+```
+
+Si les postes EasySave sont sur d'autres machines, ouvrir le port `5080` sur le pare-feu du serveur Docker et utiliser l'adresse IP du serveur a la place de `localhost`.
+
 ---
 
 ## Support des langues

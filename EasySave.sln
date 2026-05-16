@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySave.Wpf", "EasySave.Wp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoSoft", "CryptoSoft\CryptoSoft.csproj", "{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyLog.Server", "EasyLog.Server\EasyLog.Server.csproj", "{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,18 @@ Global
 		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x64.Build.0 = Release|Any CPU
 		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x86.ActiveCfg = Release|Any CPU
 		{8AF3C7F7-52C3-4C56-8B04-7D6489B4A03F}.Release|x86.Build.0 = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|x64.Build.0 = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Debug|x86.Build.0 = Debug|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|x64.ActiveCfg = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|x64.Build.0 = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|x86.ActiveCfg = Release|Any CPU
+		{D8FB41B9-236F-4B2E-9AA9-4CA3AC5D86D8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

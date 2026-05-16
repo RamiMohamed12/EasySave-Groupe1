@@ -299,6 +299,12 @@ public class BackupConsoleFeatures
 
     public void ViewLogs()
     {
+        if (RuntimeStoragePaths.GetLogStorageMode() == RuntimeStoragePaths.CentralizedLogStorageMode)
+        {
+            ViewCentralizedDailyLog();
+            return;
+        }
+
         IReadOnlyList<string> logFilePaths = GetLogFilePathsToDisplay();
         if (logFilePaths.Count == 0)
         {
@@ -375,6 +381,44 @@ public class BackupConsoleFeatures
             ],
             _translationService.GetPauseMessage(TextService));
         Pause();
+    }
+
+    private void ViewCentralizedDailyLog()
+    {
+        string displayName = $"{DateTime.Now:yyyy-MM-dd}.jsonl";
+
+        try
+        {
+            string content = new CentralLogClient()
+                .GetDailyLogAsync(DateTime.Now)
+                .GetAwaiter()
+                .GetResult();
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                _interactiveConsole.RenderOutputScreen(
+                    _translationService.GetViewLogsLabel(TextService),
+                    [WarningLine(_translationService.GetNoLogsFoundMessage(TextService))],
+                    _translationService.GetPauseMessage(TextService));
+                Pause();
+                return;
+            }
+
+            _interactiveConsole.BrowseOutputScreen(
+                _translationService.GetViewLogsLabel(TextService),
+                BuildContentScreenLines(
+                    RuntimeStoragePaths.GetCentralLogServerUrl(),
+                    displayName,
+                    content));
+        }
+        catch (Exception exception)
+        {
+            _interactiveConsole.RenderOutputScreen(
+                _translationService.GetViewLogsLabel(TextService),
+                [ErrorLine(exception.Message)],
+                _translationService.GetPauseMessage(TextService));
+            Pause();
+        }
     }
 
     public void ManageBusinessSoftware()
@@ -468,6 +512,96 @@ public class BackupConsoleFeatures
         Pause();
     }
 
+    public void ConfigureLogStorageMode()
+    {
+        int initialIndex = RuntimeStoragePaths.GetLogStorageMode() switch
+        {
+            RuntimeStoragePaths.CentralizedLogStorageMode => 1,
+            RuntimeStoragePaths.BothLogStorageMode => 2,
+            _ => 0
+        };
+
+        IReadOnlyList<string> options =
+        [
+            TextService.GetLogStorageModeDisplayName(RuntimeStoragePaths.LocalLogStorageMode),
+            TextService.GetLogStorageModeDisplayName(RuntimeStoragePaths.CentralizedLogStorageMode),
+            TextService.GetLogStorageModeDisplayName(RuntimeStoragePaths.BothLogStorageMode),
+            _translationService.GetBackLabel(TextService)
+        ];
+
+        int? selection = _interactiveConsole.SelectOption(
+            TextService.GetText("Console.ChangeLogStorageModeLabel"),
+            options,
+            BuildLogStorageContext(),
+            _translationService.GetNavigationHelp(TextService),
+            initialIndex: initialIndex);
+
+        if (selection == null || selection.Value == 3)
+        {
+            return;
+        }
+
+        string mode = selection.Value switch
+        {
+            1 => RuntimeStoragePaths.CentralizedLogStorageMode,
+            2 => RuntimeStoragePaths.BothLogStorageMode,
+            _ => RuntimeStoragePaths.LocalLogStorageMode
+        };
+
+        RuntimeStoragePaths.SetLogStorageMode(mode);
+
+        if (mode != RuntimeStoragePaths.LocalLogStorageMode)
+        {
+            ConfigureCentralLogConnection();
+        }
+
+        _interactiveConsole.RenderOutputScreen(
+            TextService.GetText("Console.ChangeLogStorageModeLabel"),
+            [
+                SuccessLine(TextService.GetText("Console.LogStorageSettingsUpdatedMessage")),
+                BlankLine(),
+                .. BuildLogStorageContext().Select(NormalLine)
+            ],
+            _translationService.GetPauseMessage(TextService));
+        Pause();
+    }
+
+    private void ConfigureCentralLogConnection()
+    {
+        string? serverUrl = _interactiveConsole.PromptLine(
+            TextService.GetText("Console.CentralLogServerUrlLabel"),
+            TextService.GetText("Console.CentralLogServerUrlPrompt"),
+            [TextService.FormatText("Console.CurrentCentralLogServerUrlLine", FormatOptional(RuntimeStoragePaths.GetCentralLogServerUrl()))],
+            _translationService.GetSkipLabel(TextService));
+
+        if (!string.IsNullOrWhiteSpace(serverUrl))
+        {
+            RuntimeStoragePaths.SetCentralLogServerUrl(serverUrl);
+        }
+
+        string? userName = _interactiveConsole.PromptLine(
+            TextService.GetText("Console.CentralLogUserNameLabel"),
+            TextService.GetText("Console.CentralLogUserNamePrompt"),
+            [TextService.FormatText("Console.CurrentCentralLogUserNameLine", RuntimeStoragePaths.GetCentralLogUserName())],
+            _translationService.GetSkipLabel(TextService));
+
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            RuntimeStoragePaths.SetCentralLogUserName(userName);
+        }
+
+        string? apiKey = _interactiveConsole.PromptLine(
+            TextService.GetText("Console.CentralLogApiKeyLabel"),
+            TextService.GetText("Console.CentralLogApiKeyPrompt"),
+            [TextService.FormatText("Console.CurrentCentralLogApiKeyLine", FormatSecret(RuntimeStoragePaths.GetCentralLogApiKey()))],
+            _translationService.GetSkipLabel(TextService));
+
+        if (!string.IsNullOrWhiteSpace(apiKey))
+        {
+            RuntimeStoragePaths.SetCentralLogApiKey(apiKey);
+        }
+    }
+
     public void ConfigureEncryptionSettings()
     {
         int selectedIndex = 0;
@@ -520,6 +654,19 @@ public class BackupConsoleFeatures
         [
             TextService.FormatText("Console.CurrentEncryptedExtensionsLine", extensions),
             TextService.FormatText("Console.CurrentCryptoSoftKeyLine", keyStatus)
+        ];
+    }
+
+    private IReadOnlyList<string> BuildLogStorageContext()
+    {
+        return
+        [
+            TextService.FormatText(
+                "Console.CurrentLogStorageModeLine",
+                TextService.GetLogStorageModeDisplayName(RuntimeStoragePaths.GetLogStorageMode())),
+            TextService.FormatText("Console.CurrentCentralLogServerUrlLine", FormatOptional(RuntimeStoragePaths.GetCentralLogServerUrl())),
+            TextService.FormatText("Console.CurrentCentralLogUserNameLine", RuntimeStoragePaths.GetCentralLogUserName()),
+            TextService.FormatText("Console.CurrentCentralLogApiKeyLine", FormatSecret(RuntimeStoragePaths.GetCentralLogApiKey()))
         ];
     }
 
@@ -807,11 +954,32 @@ public class BackupConsoleFeatures
         return lines;
     }
 
+    private IReadOnlyList<InteractiveConsole.ScreenLine> BuildContentScreenLines(string source, string displayName, string content)
+    {
+        var lines = new List<InteractiveConsole.ScreenLine>
+        {
+            AccentLine(_translationService.GetFilePathLine(TextService, source)),
+            BlankLine()
+        };
+
+        string formattedContent = IsDailyLogFile(displayName)
+            ? FormatLogContent(displayName, content)
+            : content;
+
+        lines.AddRange(formattedContent
+            .ReplaceLineEndings()
+            .Split(Environment.NewLine)
+            .Select(NormalLine));
+        return lines;
+    }
+
     private static bool IsDailyLogFile(string displayName)
     {
-        return displayName.Length == "yyyy-MM-dd.json".Length
+        return (displayName.Length == "yyyy-MM-dd.json".Length
+                || displayName.Length == "yyyy-MM-dd.jsonl".Length)
             && (displayName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
-                || displayName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase));
+                || displayName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+                || displayName.EndsWith(".jsonl", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string FormatLogContent(string filePath, string content)
@@ -1103,6 +1271,16 @@ public class BackupConsoleFeatures
         return extensions.Count == 0
             ? TextService.GetText("Console.NoEncryptedExtensions")
             : string.Join("; ", extensions);
+    }
+
+    private static string FormatOptional(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "(not configured)" : value;
+    }
+
+    private static string FormatSecret(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "(not configured)" : "********";
     }
 
     private static bool IsClearCommand(string value)
