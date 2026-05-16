@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,6 +7,7 @@ using System.Windows.Interop;
 using System.Text.Json;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Text.Json.Serialization;
 using System.Globalization;
@@ -36,6 +38,8 @@ public partial class MainWindow : Window
     private List<ThresholdUnitOption> _thresholdUnitOptions = new();
     private DashboardSection _activeSection = DashboardSection.Overview;
     private bool _isAddingNewJob;
+    private readonly DispatcherTimer _toastDismissTimer;
+    private bool _toastInitialized;
 
     public MainWindow()
     {
@@ -70,6 +74,116 @@ public partial class MainWindow : Window
         };
         _refreshTimer.Tick += (_, _) => RefreshStateAndLog();
         _refreshTimer.Start();
+
+        // Toast notification : surveille toute modification de StatusTextBlock.Text
+        // pour faire apparaitre un popup transitoire (auto-dismiss apres 4 secondes)
+        // au lieu d'un badge permanent dans l'entete.
+        _toastDismissTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(4200)
+        };
+        _toastDismissTimer.Tick += (_, _) => HideStatusToast();
+        var textDescriptor = DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock));
+        textDescriptor?.AddValueChanged(StatusTextBlock, (_, _) => OnStatusTextChanged());
+        _toastInitialized = true;
+    }
+
+    private void OnStatusTextChanged()
+    {
+        if (!_toastInitialized)
+        {
+            return;
+        }
+        string text = StatusTextBlock.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            HideStatusToast();
+            return;
+        }
+        ApplyToastSeverity(text);
+        ShowStatusToast();
+    }
+
+    private void ApplyToastSeverity(string text)
+    {
+        // Heuristique simple sur le contenu pour choisir l'icone et la couleur d'accent.
+        string lower = text.ToLowerInvariant();
+        string accentResource;
+        string icon;
+        if (lower.Contains("error") || lower.Contains("erreur")
+            || lower.Contains("does not exist") || lower.Contains("n'existe pas")
+            || lower.Contains("must be different") || lower.Contains("identiques"))
+        {
+            accentResource = "DangerBrush";
+            icon = "\uEA39"; // ErrorBadge
+        }
+        else if (lower.Contains("please") || lower.Contains("veuillez")
+                 || lower.Contains("select") || lower.Contains("selection"))
+        {
+            accentResource = "WarningBrush";
+            icon = "\uE7BA"; // Warning
+        }
+        else if (lower.Contains("complete") || lower.Contains("termine")
+                 || lower.Contains("added") || lower.Contains("ajoute")
+                 || lower.Contains("updated") || lower.Contains("mis a jour")
+                 || lower.Contains("saved") || lower.Contains("enregistre"))
+        {
+            accentResource = "SuccessBrush";
+            icon = "\uE930"; // Completed
+        }
+        else
+        {
+            accentResource = "AccentBrush";
+            icon = "\uE946"; // Info
+        }
+
+        if (TryFindResource(accentResource) is Brush brush)
+        {
+            StatusToastAccentBar.Background = brush;
+            StatusToastIcon.Foreground = brush;
+        }
+        StatusToastIcon.Text = icon;
+    }
+
+    private void ShowStatusToast()
+    {
+        StatusToastCard.Visibility = Visibility.Visible;
+        StatusToastCard.BeginAnimation(UIElement.OpacityProperty, null);
+        var fadeIn = new DoubleAnimation
+        {
+            From = StatusToastCard.Opacity,
+            To = 1.0,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        StatusToastCard.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+
+        _toastDismissTimer.Stop();
+        _toastDismissTimer.Start();
+    }
+
+    private void HideStatusToast()
+    {
+        _toastDismissTimer.Stop();
+        if (StatusToastCard.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+        var fadeOut = new DoubleAnimation
+        {
+            From = StatusToastCard.Opacity,
+            To = 0.0,
+            Duration = TimeSpan.FromMilliseconds(220),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        fadeOut.Completed += (_, _) =>
+        {
+            if (StatusToastCard.Opacity <= 0.01)
+            {
+                StatusToastCard.Visibility = Visibility.Collapsed;
+            }
+        };
+        StatusToastCard.BeginAnimation(UIElement.OpacityProperty, fadeOut);
     }
 
     private BackupController CreateBackupController()
@@ -1116,6 +1230,15 @@ public partial class MainWindow : Window
                 mmi.ptMaxSize.X = info.rcWork.Right - info.rcWork.Left;
                 mmi.ptMaxSize.Y = info.rcWork.Bottom - info.rcWork.Top;
             }
+
+            // Enforce a minimum trackable window size so the custom chrome cannot be shrunk
+            // below a usable layout. Values are in device pixels: convert from WPF DIPs via DPI.
+            var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+            const double minDipWidth = 1080;
+            const double minDipHeight = 700;
+            mmi.ptMinTrackSize.X = (int)Math.Ceiling(minDipWidth * dpi.DpiScaleX);
+            mmi.ptMinTrackSize.Y = (int)Math.Ceiling(minDipHeight * dpi.DpiScaleY);
+
             Marshal.StructureToPtr(mmi, lParam, true);
             handled = true;
         }

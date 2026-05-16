@@ -128,7 +128,6 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
@@ -137,16 +136,6 @@
                                    Margin="0,3,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
-
-                    <Border Grid.Column="1"
-                            Padding="10,6"
-                            CornerRadius="6"
-                            Background="{DynamicResource AccentSoftBrush}"
-                            VerticalAlignment="Center">
-                        <TextBlock Name="StatusTextBlock"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AccentBrush}" />
-                    </Border>
                 </Grid>
             </Border>
 
@@ -435,6 +424,7 @@
                                 <Button Name="EditJobButton"
                                         MinWidth="140"
                                         Margin="0,0,8,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="EditJobButton_Click" />
                                 <Button Name="DeleteJobButton"
                                         MinWidth="155"
@@ -444,6 +434,7 @@
                                 <Button Name="SaveAllButton"
                                         MinWidth="140"
                                         Margin="0,0,0,6"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="SaveAllButton_Click" />
                             </WrapPanel>
 
@@ -463,9 +454,11 @@
                                 <Button Name="SelectAllJobsButton"
                                         MinWidth="140"
                                         Margin="0,0,8,0"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="SelectAllJobsButton_Click" />
                                 <Button Name="ClearSelectionButton"
                                         MinWidth="140"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Click="ClearSelectionButton_Click" />
                             </StackPanel>
                         </Grid>
@@ -532,14 +525,17 @@
                             <Button Name="RunAllButton"
                                     MinWidth="140"
                                     Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="RunAllButton_Click" />
                             <Button Name="PauseSelectedButton"
                                     MinWidth="140"
                                     Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="PauseSelectedButton_Click" />
                             <Button Name="ResumeSelectedButton"
                                     MinWidth="150"
                                     Margin="0,0,8,6"
+                                    Style="{StaticResource SecondaryButtonStyle}"
                                     Click="ResumeSelectedButton_Click" />
                             <Button Name="StopSelectedButton"
                                     MinWidth="140"
@@ -956,88 +952,147 @@
 
                     </TabControl>
                 </Grid>
-                <!-- Popup overlay edition de tache -->
-                <Grid Name="EditJobOverlay" Visibility="Collapsed" Panel.ZIndex="100">
-                    <Rectangle Fill="Black" Opacity="0.55" />
-                    <Border Style="{StaticResource ModalCardStyle}"
-                            MaxWidth="520"
-                            MaxHeight="600"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <!-- Header -->
-                            <Grid Grid.Row="0">
-                                <TextBlock Name="SelectedJobLabel"
-                                           FontWeight="SemiBold"
-                                           FontSize="16"
-                                           VerticalAlignment="Center" />
-                                <Button HorizontalAlignment="Right"
-                                        Style="{StaticResource ModalCloseButtonStyle}"
-                                        Content="&#xE711;"
-                                        Click="CloseEditPopup_Click" />
-                            </Grid>
-                            <Rectangle Grid.Row="1"
-                                       Height="1"
-                                       Margin="0,16,0,20"
-                                       Fill="{DynamicResource BorderSoftBrush}" />
-
-                            <TextBlock Grid.Row="2"
-                                       Name="NameLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="3" Name="NameTextBox" Margin="0,6,0,14" MinWidth="380" />
-                            <TextBlock Grid.Row="4"
-                                       Name="SourceLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="5" Name="SourceTextBox" Margin="0,6,0,14" />
-                            <TextBlock Grid.Row="6"
-                                       Name="TargetLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <TextBox Grid.Row="7" Name="TargetTextBox" Margin="0,6,0,14" />
-                            <TextBlock Grid.Row="8"
-                                       Name="TypeLabel"
-                                       FontSize="12"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <ComboBox Grid.Row="9" Name="TypeComboBox" Margin="0,6,0,22" />
-                            <Grid Grid.Row="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0"
-                                        Name="CancelEditButton"
-                                        MinWidth="120"
-                                        Click="CloseEditPopup_Click" />
-                                <Button Grid.Column="2"
-                                        Name="SaveSelectedJobButton"
-                                        MinWidth="160"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Click="SaveSelectedJobButton_Click" />
-                            </Grid>
-                        </Grid>
-                    </Border>
-                </Grid>
 
             </Grid>
         </Grid>
     </Grid>
+
+        <!-- Popup overlay edition de tache (au niveau racine: couvre la barre de titre, la sidebar et le contenu pour bloquer toute interaction et rester centre sur la fenetre) -->
+        <Grid Name="EditJobOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              Visibility="Collapsed"
+              Panel.ZIndex="1000">
+            <Rectangle Fill="Black" Opacity="0.55" />
+            <Border Style="{StaticResource ModalCardStyle}"
+                    MaxWidth="520"
+                    MaxHeight="600"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0">
+                        <TextBlock Name="SelectedJobLabel"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   VerticalAlignment="Center" />
+                        <Button HorizontalAlignment="Right"
+                                Style="{StaticResource ModalCloseButtonStyle}"
+                                Click="CloseEditPopup_Click">
+                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                       FontSize="12"
+                                       Text="&#xE8BB;" />
+                        </Button>
+                    </Grid>
+                    <Rectangle Grid.Row="1"
+                               Height="1"
+                               Margin="0,16,0,20"
+                               Fill="{DynamicResource BorderSoftBrush}" />
+
+                    <TextBlock Grid.Row="2"
+                               Name="NameLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <TextBox Grid.Row="3" Name="NameTextBox" Margin="0,6,0,14" MinWidth="380" />
+                    <TextBlock Grid.Row="4"
+                               Name="SourceLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <TextBox Grid.Row="5" Name="SourceTextBox" Margin="0,6,0,14" />
+                    <TextBlock Grid.Row="6"
+                               Name="TargetLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <TextBox Grid.Row="7" Name="TargetTextBox" Margin="0,6,0,14" />
+                    <TextBlock Grid.Row="8"
+                               Name="TypeLabel"
+                               FontSize="12"
+                               Style="{StaticResource MutedTextStyle}" />
+                    <ComboBox Grid.Row="9" Name="TypeComboBox" Margin="0,6,0,22" />
+                    <Grid Grid.Row="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Name="CancelEditButton"
+                                MinWidth="120"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="CloseEditPopup_Click" />
+                        <Button Grid.Column="2"
+                                Name="SaveSelectedJobButton"
+                                MinWidth="160"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Click="SaveSelectedJobButton_Click" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Toast notification (Windows 11 style): apparait en haut a droite, auto-dismiss au bout de quelques secondes -->
+        <Grid Grid.Row="1"
+              Panel.ZIndex="900"
+              IsHitTestVisible="False"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Top"
+              Margin="0,18,24,0">
+            <Border Name="StatusToastCard"
+                    Visibility="Collapsed"
+                    Opacity="0"
+                    MinWidth="280"
+                    MaxWidth="420"
+                    Background="{DynamicResource SurfaceRaisedBrush}"
+                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.45" Color="Black" />
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Name="StatusToastAccentBar"
+                            Background="{DynamicResource AccentBrush}"
+                            CornerRadius="8,0,0,8" />
+                    <TextBlock Grid.Column="1"
+                               Name="StatusToastIcon"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="16"
+                               Margin="14,12,10,12"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AccentBrush}"
+                               Text="&#xE946;" />
+                    <TextBlock Grid.Column="2"
+                               Name="StatusTextBlock"
+                               Margin="0,12,16,12"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
     </Grid>
 </Window>
