@@ -14,7 +14,15 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <CodeSigningCertificate>$(EasySaveCodeSigningCertificate)</CodeSigningCertificate>
+    <CodeSigningCertificatePassword>$(EasySaveCodeSigningCertificatePassword)</CodeSigningCertificatePassword>
+    <SignToolPath Condition="'$(EasySaveSignToolPath)' != ''">$(EasySaveSignToolPath)</SignToolPath>
+    <SignToolPath Condition="'$(SignToolPath)' == ''">C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe</SignToolPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\EasySaveLogo.png" />
+  </ItemGroup>
 
   <Target Name="CopyCryptoSoftOutput" AfterTargets="Build" Condition="'$(SkipCryptoSoftCopy)' != 'true'">
     <ItemGroup>
@@ -36,6 +44,16 @@
           DestinationFolder="$(PublishDir)CryptoSoft\"
           SkipUnchangedFiles="true"
           Condition="'@(CryptoSoftPublishRuntimeFiles)' != ''" />
+  </Target>
+
+  <Target Name="SignEasySaveWpfExecutable"
+          AfterTargets="Build"
+          Condition="'$(SkipCodeSigning)' != 'true'
+                     and Exists('$(SignToolPath)')
+                     and Exists('$(CodeSigningCertificate)')
+                     and '$(CodeSigningCertificatePassword)' != ''
+                     and Exists('$(TargetDir)$(AssemblyName).exe')">
+    <Exec Command="&quot;$(SignToolPath)&quot; sign /fd SHA256 /f &quot;$(CodeSigningCertificate)&quot; /p &quot;$(CodeSigningCertificatePassword)&quot; &quot;$(TargetDir)$(AssemblyName).exe&quot;" />
   </Target>
 
 </Project>

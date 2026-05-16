@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 public class BackupJobRegistry
 {
     public const int DefaultJobCount = 5;
-    public const int MaximumJobs = DefaultJobCount;
 
     private readonly string _jobsFilePath;
     private readonly JsonSerializerOptions _serializerOptions;
@@ -97,7 +96,7 @@ public class BackupJobRegistry
 
     private static List<BackupJob> NormalizeJobs(IReadOnlyList<BackupJob> jobs)
     {
-        int targetCount = jobs.Count;
+        int targetCount = Math.Max(DefaultJobCount, jobs.Count);
         var normalizedJobs = new List<BackupJob>(targetCount);
         for (int index = 0; index < targetCount; index++)
         {

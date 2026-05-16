@@ -13,7 +13,7 @@ public class ApplicationViewModelTests
         Assert.True(viewModel.ShowJobList);
         Assert.False(viewModel.ShowHelp);
         Assert.Empty(viewModel.Messages);
-        Assert.Equal(BackupJobRegistry.MaximumJobs, viewModel.AvailableJobs.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, viewModel.AvailableJobs.Count);
     }
 
     [Fact]
