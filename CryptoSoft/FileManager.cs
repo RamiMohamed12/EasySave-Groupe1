@@ -20,8 +20,7 @@ public class FileManager(string path, string key)
         if (File.Exists(FilePath))
             return true;
 
-        Console.WriteLine("File not found.");
-        Thread.Sleep(1000);
+        Console.Error.WriteLine("File not found.");
         return false;
     }
 
@@ -30,7 +29,13 @@ public class FileManager(string path, string key)
     /// </summary>
     public int TransformFile()
     {
-        if (!CheckFile()) return -1;
+        if (!CheckFile()) return ExitCodes.FileNotFound;
+
+        if (string.IsNullOrWhiteSpace(Key))
+        {
+            return ExitCodes.InvalidKey;
+        }
+
         Stopwatch stopwatch = Stopwatch.StartNew();
         var fileBytes = File.ReadAllBytes(FilePath);
         var keyBytes = ConvertToByte(Key);
