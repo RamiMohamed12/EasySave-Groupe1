@@ -426,25 +426,26 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Orientation="Horizontal">
+                            <WrapPanel>
                                 <Button Name="AddJobButton"
-                                        Width="160"
-                                        Margin="0,0,8,0"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Click="AddJobButton_Click" />
                                 <Button Name="EditJobButton"
-                                        Width="170"
-                                        Margin="0,0,8,0"
+                                        MinWidth="140"
+                                        Margin="0,0,8,6"
                                         Click="EditJobButton_Click" />
                                 <Button Name="DeleteJobButton"
-                                        Width="190"
-                                        Margin="0,0,8,0"
+                                        MinWidth="155"
+                                        Margin="0,0,8,6"
                                         Style="{StaticResource DangerButtonStyle}"
                                         Click="DeleteJobButton_Click" />
                                 <Button Name="SaveAllButton"
-                                        Width="170"
+                                        MinWidth="140"
+                                        Margin="0,0,0,6"
                                         Click="SaveAllButton_Click" />
-                            </StackPanel>
+                            </WrapPanel>
 
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Name="SelectionBadge"
@@ -460,11 +461,11 @@
                                                Foreground="{DynamicResource AccentBrush}" />
                                 </Border>
                                 <Button Name="SelectAllJobsButton"
-                                        Width="160"
+                                        MinWidth="140"
                                         Margin="0,0,8,0"
                                         Click="SelectAllJobsButton_Click" />
                                 <Button Name="ClearSelectionButton"
-                                        Width="170"
+                                        MinWidth="140"
                                         Click="ClearSelectionButton_Click" />
                             </StackPanel>
                         </Grid>
@@ -522,29 +523,30 @@
                     </Grid.RowDefinitions>
 
                     <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,12">
-                        <StackPanel Orientation="Horizontal">
+                        <WrapPanel>
                             <Button Name="RunSelectedButton"
-                                    Width="210"
-                                    Margin="0,0,8,0"
+                                    MinWidth="175"
+                                    Margin="0,0,8,6"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="RunSelectedButton_Click" />
                             <Button Name="RunAllButton"
-                                    Width="170"
+                                    MinWidth="140"
+                                    Margin="0,0,8,6"
                                     Click="RunAllButton_Click" />
                             <Button Name="PauseSelectedButton"
-                                    Width="170"
-                                    Margin="8,0,0,0"
+                                    MinWidth="140"
+                                    Margin="0,0,8,6"
                                     Click="PauseSelectedButton_Click" />
                             <Button Name="ResumeSelectedButton"
-                                    Width="180"
-                                    Margin="8,0,0,0"
+                                    MinWidth="150"
+                                    Margin="0,0,8,6"
                                     Click="ResumeSelectedButton_Click" />
                             <Button Name="StopSelectedButton"
-                                    Width="170"
-                                    Margin="8,0,0,0"
+                                    MinWidth="140"
+                                    Margin="0,0,0,6"
                                     Style="{StaticResource DangerButtonStyle}"
                                     Click="StopSelectedButton_Click" />
-                        </StackPanel>
+                        </WrapPanel>
                     </Border>
 
                     <Border Grid.Row="1"

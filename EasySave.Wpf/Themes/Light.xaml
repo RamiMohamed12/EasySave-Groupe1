@@ -25,8 +25,8 @@
     <Color x:Key="WarningSurfaceColor">#FEF3C7</Color>
     <Color x:Key="DangerColor">#DC2626</Color>
     <Color x:Key="DangerSoftColor">#FEE2E2</Color>
-    <Color x:Key="LogBackgroundColor">#0F172A</Color>
-    <Color x:Key="LogForegroundColor">#E5E7EB</Color>
+    <Color x:Key="LogBackgroundColor">#FFFFFF</Color>
+    <Color x:Key="LogForegroundColor">#1E293B</Color>
     <Color x:Key="HeroGradientStartColor">#EEF2FF</Color>
     <Color x:Key="HeroGradientMidColor">#D7ECFF</Color>
     <Color x:Key="HeroGradientEndColor">#E0E7FF</Color>

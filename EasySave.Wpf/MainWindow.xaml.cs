@@ -1,6 +1,8 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Text.Json;
 using System.IO;
 using System.Windows.Media;
@@ -1066,6 +1068,60 @@ public partial class MainWindow : Window
         UpdateMaximizeRestoreGlyph();
     }
 
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(MaximizeWndProc);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MINMAXINFO
+    {
+        public POINT ptReserved, ptMaxSize, ptMaxPosition, ptMinTrackSize, ptMaxTrackSize;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    private static IntPtr MaximizeWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == 0x0024) // WM_GETMINMAXINFO
+        {
+            var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+            var monitor = MonitorFromWindow(hwnd, 0x00000002); // MONITOR_DEFAULTTONEAREST
+            if (monitor != IntPtr.Zero)
+            {
+                var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+                GetMonitorInfo(monitor, ref info);
+                mmi.ptMaxPosition.X = info.rcWork.Left - info.rcMonitor.Left;
+                mmi.ptMaxPosition.Y = info.rcWork.Top - info.rcMonitor.Top;
+                mmi.ptMaxSize.X = info.rcWork.Right - info.rcWork.Left;
+                mmi.ptMaxSize.Y = info.rcWork.Bottom - info.rcWork.Top;
+            }
+            Marshal.StructureToPtr(mmi, lParam, true);
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
@@ -1150,15 +1206,22 @@ public partial class MainWindow : Window
         var icon = new TextBlock
         {
             Text = iconGlyph,
-            FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            FontSize = 15,
-            Margin = new Thickness(0, 0, 9, 0),
-            VerticalAlignment = VerticalAlignment.Center
+            FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+            FontSize = 17,
+            Width = 24,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 11, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            UseLayoutRounding = true
         };
+        TextOptions.SetTextRenderingMode(icon, TextRenderingMode.ClearType);
 
         var text = new TextBlock
         {
             Text = label,
+            FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
+            FontSize = 13.5,
+            FontWeight = FontWeights.Normal,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
