@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     private bool _isFullScreen;
     private WindowState _preFullScreenWindowState = WindowState.Normal;
     private bool _preFullScreenTopmost;
+    private double _preFullScreenLeft, _preFullScreenTop, _preFullScreenWidth, _preFullScreenHeight;
 
     public MainWindow()
     {
@@ -1140,8 +1141,7 @@ public partial class MainWindow : Window
         SetIconOnlyContent(NextLogDateButton, "\uE76C", UiText("Next day", "Jour suivant"));
         SetIconOnlyContent(LogHistoryPrevPageButton, "\uE76B", UiText("Previous page", "Page pr\u00E9c\u00E9dente"));
         SetIconOnlyContent(LogHistoryNextPageButton, "\uE76C", UiText("Next page", "Page suivante"));
-        FullscreenWindowButton.ToolTip = UiText("Toggle fullscreen (F11)", "Plein \u00E9cran (F11)");
-        SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
+SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetButtonContent(RunAllButton, "\uE102", Text("Wpf.RunAllButton"));
         SetButtonContent(PauseSelectedButton, "\uE769", UiText("Pause selected", "Pause selection"));
         SetButtonContent(ResumeSelectedButton, "\uE768", UiText("Resume selected", "Reprendre selection"));
@@ -1562,7 +1562,10 @@ public partial class MainWindow : Window
 
     private void MaximizeRestoreWindowButton_Click(object sender, RoutedEventArgs e)
     {
-        ToggleWindowState();
+        if (_isFullScreen)
+            ToggleFullScreen();
+        else
+            ToggleWindowState();
     }
 
     private void FullscreenWindowButton_Click(object sender, RoutedEventArgs e)
@@ -1576,24 +1579,37 @@ public partial class MainWindow : Window
         {
             _preFullScreenWindowState = WindowState;
             _preFullScreenTopmost = Topmost;
+
+            // Normalize to Normal FIRST so Left/Top/Width/Height reflect the true
+            // restore bounds, not the maximized dimensions.
+            if (WindowState != WindowState.Normal)
+                WindowState = WindowState.Normal;
+
+            // Save restore bounds AFTER normalization.
+            _preFullScreenLeft   = Left;
+            _preFullScreenTop    = Top;
+            _preFullScreenWidth  = Width;
+            _preFullScreenHeight = Height;
+
             _isFullScreen = true;
             Topmost = true;
             if (TitleBarBorder is not null)
-            {
                 TitleBarBorder.Visibility = Visibility.Collapsed;
-            }
             if (TitleBarRow is not null)
-            {
                 TitleBarRow.Height = new GridLength(0);
-            }
-            if (WindowState == WindowState.Maximized)
+
+            // Cover the full monitor via explicit positioning — avoids WM_GETMINMAXINFO
+            // fighting with the taskbar that WindowState.Maximized causes.
+            var hwnd = new WindowInteropHelper(this).Handle;
+            var monitor = MonitorFromWindow(hwnd, 0x00000002);
+            var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+            if (GetMonitorInfo(monitor, ref info))
             {
-                WindowState = WindowState.Normal;
-            }
-            WindowState = WindowState.Maximized;
-            if (FullscreenWindowGlyph is not null)
-            {
-                FullscreenWindowGlyph.Text = "\uE73F";
+                var dpi = VisualTreeHelper.GetDpi(this);
+                Left   = info.rcMonitor.Left   / dpi.DpiScaleX;
+                Top    = info.rcMonitor.Top    / dpi.DpiScaleY;
+                Width  = (info.rcMonitor.Right  - info.rcMonitor.Left) / dpi.DpiScaleX;
+                Height = (info.rcMonitor.Bottom - info.rcMonitor.Top)  / dpi.DpiScaleY;
             }
         }
         else
@@ -1601,18 +1617,28 @@ public partial class MainWindow : Window
             _isFullScreen = false;
             Topmost = _preFullScreenTopmost;
             if (TitleBarBorder is not null)
-            {
                 TitleBarBorder.Visibility = Visibility.Visible;
-            }
             if (TitleBarRow is not null)
-            {
                 TitleBarRow.Height = new GridLength(30);
-            }
-            WindowState = _preFullScreenWindowState;
-            if (FullscreenWindowGlyph is not null)
+
+            if (_preFullScreenWindowState == WindowState.Maximized)
             {
-                FullscreenWindowGlyph.Text = "\uE740";
+                // Restore the correct Normal bounds before maximizing so WPF
+                // uses them as restore position when the user clicks restore later.
+                Left   = _preFullScreenLeft;
+                Top    = _preFullScreenTop;
+                Width  = _preFullScreenWidth;
+                Height = _preFullScreenHeight;
+                WindowState = WindowState.Maximized;
             }
+            else
+            {
+                Left   = _preFullScreenLeft;
+                Top    = _preFullScreenTop;
+                Width  = _preFullScreenWidth;
+                Height = _preFullScreenHeight;
+            }
+            UpdateMaximizeRestoreGlyph();
         }
     }
 
@@ -1637,6 +1663,11 @@ public partial class MainWindow : Window
 
     private void ToggleWindowState()
     {
+        if (_isFullScreen)
+        {
+            ToggleFullScreen();
+            return;
+        }
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
@@ -1720,7 +1751,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        MaximizeRestoreWindowGlyph.Text = WindowState == WindowState.Maximized
+        MaximizeRestoreWindowGlyph.Text = (WindowState == WindowState.Maximized || _isFullScreen)
             ? "\uE923"
             : "\uE922";
     }

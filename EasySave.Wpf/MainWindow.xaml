@@ -70,16 +70,7 @@
                                FontSize="10"
                                Text="&#xE921;" />
                         </Button>
-                    <Button Name="FullscreenWindowButton"
-                            Style="{StaticResource TitleBarButtonStyle}"
-                            ToolTip="Toggle fullscreen (F11)"
-                            Click="FullscreenWindowButton_Click">
-                        <TextBlock Name="FullscreenWindowGlyph"
-                               FontFamily="Segoe MDL2 Assets"
-                               FontSize="10"
-                               Text="&#xE740;" />
-                        </Button>
-                    <Button Name="MaximizeRestoreWindowButton"
+<Button Name="MaximizeRestoreWindowButton"
                             Style="{StaticResource TitleBarButtonStyle}"
                             Click="MaximizeRestoreWindowButton_Click">
                         <TextBlock Name="MaximizeRestoreWindowGlyph"
