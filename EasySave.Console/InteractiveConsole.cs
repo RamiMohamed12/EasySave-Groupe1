@@ -381,8 +381,8 @@ public sealed class InteractiveConsole
 
         try
         {
-            originalVisibility = Console.CursorVisible;
-            Console.CursorVisible = false;
+              originalVisibility = TryGetCursorVisibility();
+              SetCursorVisible(false);
         }
         catch
         {
@@ -401,7 +401,7 @@ public sealed class InteractiveConsole
             {
                 try
                 {
-                    Console.CursorVisible = originalVisibility;
+                        SetCursorVisible(originalVisibility);
                 }
                 catch
                 {
@@ -776,6 +776,11 @@ public sealed class InteractiveConsole
 
     private static bool TryGetCursorVisibility()
     {
+            if (!OperatingSystem.IsWindows())
+            {
+                return true;
+            }
+
         try
         {
             return Console.CursorVisible;
