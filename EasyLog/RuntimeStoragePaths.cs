@@ -20,6 +20,7 @@ public static class RuntimeStoragePaths
     public static string ConfigurationFilePath => Path.Combine(GetSharedConfigurationDirectory(), "storage-settings.json");
     public static string BackupStateDirectory => GetStorageDirectory();
     public static string JobsFilePath => Path.Combine(BackupStateDirectory, "jobs.json");
+    public static string SchedulesFilePath => Path.Combine(BackupStateDirectory, "schedules.json");
     public static string StateFilePath => Path.Combine(BackupStateDirectory, "state.json");
     public static string BackupHistoryFilePath => Path.Combine(BackupStateDirectory, "backup-history.json");
     public static string LogsDirectoryPath => BackupStateDirectory;

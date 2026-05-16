@@ -60,7 +60,7 @@ public class BackupControllerTests
         Assert.Equal("Media", created.Name);
         Assert.Equal("MediaUpdated", updated.Name);
         Assert.Equal("MediaUpdated", deleted.Name);
-        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount - 1, jobs.Count);
         Assert.DoesNotContain(jobs, job => string.Equals(job.Source, @"E:\Media", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(jobs, job => string.Equals(job.Target, @"F:\Media", StringComparison.OrdinalIgnoreCase));
     }

@@ -2,22 +2,31 @@ public class CommandLineBackupRunner
 {
     private readonly BackupJobRegistry _jobRegistry;
     private readonly StateService _stateService;
+    private readonly LoggerService _loggerService;
     private readonly Func<string?, ConsoleMenuRuntime> _runtimeFactory;
     private readonly InteractiveConsole _interactiveConsole = new();
 
     public CommandLineBackupRunner(
         BackupJobRegistry jobRegistry,
         StateService stateService,
+        LoggerService loggerService,
         Func<string?, ConsoleMenuRuntime> runtimeFactory)
     {
         _jobRegistry = jobRegistry;
         _stateService = stateService;
+        _loggerService = loggerService;
         _runtimeFactory = runtimeFactory;
     }
 
     public void Run(string[] args)
     {
         ConsoleMenuRuntime runtime = _runtimeFactory(null);
+        if (args.Length == 2 && string.Equals(args[0], "--run-schedule", StringComparison.OrdinalIgnoreCase))
+        {
+            RunSchedule(args[1], runtime);
+            return;
+        }
+
         string selection = BuildSelection(args);
 
         try
@@ -81,6 +90,28 @@ public class CommandLineBackupRunner
             _interactiveConsole.RenderOutputScreen(
                 "EasySave",
                 [ErrorLine(BuildErrorMessage(runtime.TextService, ex.Message))]);
+        }
+    }
+
+    private void RunSchedule(string scheduleId, ConsoleMenuRuntime runtime)
+    {
+        try
+        {
+            var schedulerService = new SchedulerService(
+                new ScheduleRegistry(),
+                _jobRegistry,
+                _stateService,
+                _loggerService,
+                new WindowsTaskSchedulerAdapter(),
+                runtime.BackupController);
+
+            ScheduledRunResult result = schedulerService.RunSchedule(scheduleId);
+            Console.WriteLine($"{result.Status}: {result.Message}");
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(BuildErrorMessage(runtime.TextService, exception.Message));
+            Environment.ExitCode = 1;
         }
     }
 

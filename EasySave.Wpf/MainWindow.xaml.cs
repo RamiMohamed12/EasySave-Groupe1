@@ -21,9 +21,13 @@ public partial class MainWindow : Window
 {
     private static readonly AtomicRuntimeFileStore RuntimeFileStore = new();
     private readonly BackupJobRegistry _jobRegistry;
+    private readonly ScheduleRegistry _scheduleRegistry;
+    private readonly IWindowsTaskSchedulerAdapter _taskSchedulerAdapter;
     private readonly StateService _stateService;
     private BackupController _backupController;
     private readonly List<JobRow> _jobRows;
+    private readonly List<ScheduleRow> _scheduleRows;
+    private readonly List<ScheduleJobChoice> _scheduleJobChoices;
     private readonly IBackupExecutionController _executionController;
     private readonly IBackupExecutionCoordinator _executionCoordinator;
     private readonly DispatcherTimer _refreshTimer;
@@ -47,9 +51,12 @@ public partial class MainWindow : Window
     private bool _isApplyingLogHistorySelection;
     private IReadOnlyList<LogHistoryEntry> _logHistoryEntries = Array.Empty<LogHistoryEntry>();
     private string _logHistorySignature = string.Empty;
+    private string _scheduleFileSignature = string.Empty;
     private const int LogHistoryPageSize = 12;
     private int _logHistoryPageIndex;
     private bool _isFullScreen;
+    private string? _editingScheduleId;
+    private IReadOnlyList<JobRow> _pendingDeleteRows = Array.Empty<JobRow>();
     private WindowState _preFullScreenWindowState = WindowState.Normal;
     private bool _preFullScreenTopmost;
     private double _preFullScreenLeft, _preFullScreenTop, _preFullScreenWidth, _preFullScreenHeight;
@@ -60,6 +67,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         ApplyCroppedLogoImages();
         _jobRegistry = new BackupJobRegistry();
+        _scheduleRegistry = new ScheduleRegistry();
+        _taskSchedulerAdapter = new WindowsTaskSchedulerAdapter();
         _stateService = new StateService();
         _executionController = new InMemoryBackupExecutionController();
         _executionCoordinator = new PriorityTransferCoordinator();
@@ -68,6 +77,8 @@ public partial class MainWindow : Window
         _backupController = CreateBackupController();
 
         _jobRows = new List<JobRow>();
+        _scheduleRows = new List<ScheduleRow>();
+        _scheduleJobChoices = new List<ScheduleJobChoice>();
         ConfigureThemeSelector();
         ConfigureLanguageSelector();
         ConfigureLogFormatSelector();
@@ -82,6 +93,7 @@ public partial class MainWindow : Window
         LoadCentralLogSettingsIntoForm();
         RefreshBlockedProcesses();
         LoadJobsIntoGrid();
+        LoadSchedulesIntoGrid();
         SetActiveSection(DashboardSection.Overview);
         RefreshStateAndLog();
         _refreshTimer = new DispatcherTimer
@@ -335,6 +347,87 @@ public partial class MainWindow : Window
         UpdateDashboardMetrics();
     }
 
+    private void LoadSchedulesIntoGrid()
+    {
+        _scheduleRows.Clear();
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+        Dictionary<string, BackupJob> jobsById = jobs
+            .Where(job => !string.IsNullOrWhiteSpace(job.Id))
+            .ToDictionary(job => job.Id, StringComparer.OrdinalIgnoreCase);
+
+        foreach (BackupSchedule schedule in _scheduleRegistry.LoadSchedules())
+        {
+            _scheduleRows.Add(new ScheduleRow
+            {
+                Id = schedule.Id,
+                Name = schedule.Name,
+                EnabledStatus = schedule.IsEnabled ? UiText("Yes", "Oui") : UiText("No", "Non"),
+                JobsSummary = BuildScheduleJobsSummary(schedule, jobsById),
+                TimeSummary = $"{schedule.LocalRunTime} - {BuildWeekdaysSummary(schedule.Weekdays)}",
+                LastRunSummary = BuildLastRunSummary(schedule)
+            });
+        }
+
+        SchedulesDataGrid.ItemsSource = null;
+        SchedulesDataGrid.ItemsSource = _scheduleRows;
+        _scheduleFileSignature = BuildScheduleFileSignature();
+    }
+
+    private void RefreshSchedulesIfChanged()
+    {
+        string currentSignature = BuildScheduleFileSignature();
+        if (!string.Equals(_scheduleFileSignature, currentSignature, StringComparison.Ordinal))
+        {
+            LoadSchedulesIntoGrid();
+        }
+    }
+
+    private static string BuildScheduleFileSignature()
+    {
+        string filePath = RuntimeStoragePaths.SchedulesFilePath;
+        if (!File.Exists(filePath))
+        {
+            return string.Empty;
+        }
+
+        var fileInfo = new FileInfo(filePath);
+        return $"{fileInfo.Length}:{fileInfo.LastWriteTimeUtc.Ticks}";
+    }
+
+    private string BuildScheduleJobsSummary(BackupSchedule schedule, IReadOnlyDictionary<string, BackupJob> jobsById)
+    {
+        List<string> jobNames = schedule.TargetJobIds
+            .Select(jobId => jobsById.TryGetValue(jobId, out BackupJob? job) ? job.Name : UiText("Missing job", "Job manquant"))
+            .ToList();
+
+        return jobNames.Count == 0 ? UiText("No jobs", "Aucun job") : string.Join(", ", jobNames);
+    }
+
+    private string BuildWeekdaysSummary(IEnumerable<DayOfWeek> weekdays)
+    {
+        DayOfWeek[] orderedWeekdays = weekdays.OrderBy(WeekdaySortOrder).ToArray();
+        if (orderedWeekdays.Length == 7)
+        {
+            return UiText("Daily", "Tous les jours");
+        }
+
+        return string.Join(", ", orderedWeekdays.Select(GetShortWeekdayName));
+    }
+
+    private string BuildLastRunSummary(BackupSchedule schedule)
+    {
+        if (!schedule.LastRunCompletedAtUtc.HasValue)
+        {
+            return UiText("Never", "Jamais");
+        }
+
+        DateTime completedLocal = schedule.LastRunCompletedAtUtc.Value.ToLocalTime();
+        string status = string.IsNullOrWhiteSpace(schedule.LastRunStatus)
+            ? UiText("Unknown", "Inconnu")
+            : schedule.LastRunStatus;
+        return $"{completedLocal:g} - {status} - {schedule.LastRunMessage}";
+    }
+
     private async void RunSelectedButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isBusy)
@@ -474,6 +567,7 @@ public partial class MainWindow : Window
             });
             _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
             LoadJobsIntoGrid();
+            LoadSchedulesIntoGrid();
             JobsDataGrid.SelectedIndex = _jobRows.Count - 1;
             EditJobOverlay.Visibility = Visibility.Collapsed;
             StatusTextBlock.Text = Format("Wpf.JobAddedStatus", jobNumber);
@@ -506,6 +600,7 @@ public partial class MainWindow : Window
         });
 
         _stateService.SynchronizeConfiguredJobs(_jobRegistry.LoadJobs());
+        LoadSchedulesIntoGrid();
         EditJobOverlay.Visibility = Visibility.Collapsed;
         StatusTextBlock.Text = Format("Wpf.JobUpdatedStatus", selectedRow.JobNumber);
         UpdateDashboardMetrics();
@@ -584,6 +679,7 @@ public partial class MainWindow : Window
         }
 
         LoadJobsIntoGrid();
+        LoadSchedulesIntoGrid();
         RefreshStateAndLog();
         StatusTextBlock.Text = Text("Wpf.RefreshedStatus");
     }
@@ -697,6 +793,7 @@ public partial class MainWindow : Window
         StateTextBox.Text = ReadFileSafely(RuntimeStoragePaths.StateFilePath);
         RefreshLogHistory();
         LogTextBox.Text = ReadSelectedLogSafely();
+        RefreshSchedulesIfChanged();
         ApplyRuntimeStateToRows();
     }
 
@@ -1081,11 +1178,13 @@ public partial class MainWindow : Window
         HeroDescriptionTextBlock.Text = Text("Wpf.HeroDescription");
         SetButtonContent(OverviewNavButton, "\uE80F", Text("Wpf.NavOverview"));
         SetButtonContent(TasksNavButton, "\uE8FD", Text("Wpf.NavTasks"));
+        SetButtonContent(SchedulesNavButton, "\uE823", UiText("Schedules", "Planifications"));
         SetButtonContent(ExecutionNavButton, "\uE768", Text("Wpf.NavExecution"));
         SetButtonContent(StateLogsNavButton, "\uE9D2", Text("Wpf.NavStateLogs"));
         SetButtonContent(SettingsNavButton, "\uE713", Text("Wpf.NavSettings"));
         PageSubtitleTextBlock.Text = Text("Wpf.SubtitleOverview");
         ConfiguredJobsGroupBox.Header = Text("Wpf.ConfiguredJobsHeader");
+        SchedulesGroupBox.Header = UiText("Schedules", "Planifications");
         OverviewJobsGroupBox.Header = Text("Wpf.OverviewJobsHeader");
         ExecutionJobsGroupBox.Header = Text("Wpf.ExecutionJobsHeader");
         RunColumn.Header = Text("Wpf.RunColumnHeader");
@@ -1137,6 +1236,10 @@ public partial class MainWindow : Window
         SetButtonContent(RemovePriorityExtensionButton, "\uE74D", UiText("Remove selected", "Supprimer selection"));
         SetButtonContent(AddJobButton, "\uE710", Text("Wpf.AddJobButton"));
         SetButtonContent(DeleteJobButton, "\uE74D", Text("Wpf.DeleteJobButton"));
+        SetButtonContent(CreateScheduleButton, "\uE823", UiText("New schedule", "Nouvelle planif."));
+        SetButtonContent(EditScheduleButton, "\uE70F", UiText("Edit schedule", "Modifier planif."));
+        SetButtonContent(ToggleScheduleButton, "\uE7E8", UiText("Enable/disable", "Activer/desactiver"));
+        SetButtonContent(DeleteScheduleButton, "\uE74D", UiText("Delete schedule", "Supprimer planif."));
         SetButtonContent(SelectAllJobsButton, "\uE8B3", UiText("Select all", "Tout cocher"));
         SetButtonContent(ClearSelectionButton, "\uE8E6", UiText("Clear selection", "Tout d\u00E9cocher"));
         SetButtonContent(RefreshButton, "\uE72C", Text("Wpf.RefreshButton"));
@@ -1157,6 +1260,23 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetButtonContent(SaveCentralLogSettingsButton, "\uE74E", Text("Wpf.SaveCentralLogSettingsButton"));
         SetButtonContent(SaveEncryptionSettingsButton, "\uE74E", Text("Wpf.SaveEncryptionSettingsButton"));
         SetButtonContent(SaveRuntimeRulesButton, "\uE74E", UiText("Save runtime rules", "Enregistrer regles runtime"));
+        ScheduleNameLabel.Text = UiText("Schedule name", "Nom de la planification");
+        ScheduleTimeLabel.Text = UiText("Run time (HH:mm)", "Heure (HH:mm)");
+        ScheduleWeekdaysLabel.Text = UiText("Weekdays", "Jours");
+        ScheduleJobsLabel.Text = UiText("Jobs", "Jobs");
+        ScheduleEnabledCheckBox.Content = UiText("Enabled", "Activee");
+        ScheduleMondayCheckBox.Content = UiText("Monday", "Lundi");
+        ScheduleTuesdayCheckBox.Content = UiText("Tuesday", "Mardi");
+        ScheduleWednesdayCheckBox.Content = UiText("Wednesday", "Mercredi");
+        ScheduleThursdayCheckBox.Content = UiText("Thursday", "Jeudi");
+        ScheduleFridayCheckBox.Content = UiText("Friday", "Vendredi");
+        ScheduleSaturdayCheckBox.Content = UiText("Saturday", "Samedi");
+        ScheduleSundayCheckBox.Content = UiText("Sunday", "Dimanche");
+        SetButtonContent(CancelScheduleButton, "\uE711", UiText("Cancel", "Annuler"));
+        SetButtonContent(SaveScheduleButton, "\uE74E", UiText("Save schedule", "Enregistrer planif."));
+        DeleteJobModalTitle.Text = UiText("Confirm deletion", "Confirmer la suppression");
+        SetButtonContent(CancelDeleteJobButton, "\uE711", UiText("Cancel", "Annuler"));
+        SetButtonContent(ConfirmDeleteJobButton, "\uE74D", Text("Wpf.DeleteJobButton"));
         KpiTotalJobsLabelTextBlock.Text = Text("Wpf.KpiTotalJobs");
         KpiConfiguredJobsLabelTextBlock.Text = Text("Wpf.KpiConfiguredJobs");
         KpiSelectedJobsLabelTextBlock.Text = Text("Wpf.KpiSelectedJobs");
@@ -1199,6 +1319,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         ConfigureLogFormatSelector();
         ConfigureLogStorageModeSelector();
         LoadJobsIntoGrid();
+        LoadSchedulesIntoGrid();
         RefreshBlockedProcesses();
         ApplyTexts();
         LoadEncryptionSettingsIntoForm();
@@ -1439,6 +1560,215 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         NameTextBox.Focus();
     }
 
+    private void CreateScheduleButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenSchedulePopup(null);
+    }
+
+    private void EditScheduleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SchedulesDataGrid.SelectedItem is not ScheduleRow row)
+        {
+            StatusTextBlock.Text = UiText("Select a schedule first.", "Selectionnez d'abord une planification.");
+            return;
+        }
+
+        OpenSchedulePopup(row.Id);
+    }
+
+    private void ToggleScheduleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SchedulesDataGrid.SelectedItem is not ScheduleRow row)
+        {
+            StatusTextBlock.Text = UiText("Select a schedule first.", "Selectionnez d'abord une planification.");
+            return;
+        }
+
+        try
+        {
+            BackupSchedule schedule = _scheduleRegistry.GetSchedule(row.Id);
+            schedule.IsEnabled = !schedule.IsEnabled;
+            CreateSchedulerService().SaveSchedule(schedule, ResolveConsoleRunnerPath());
+            LoadSchedulesIntoGrid();
+            StatusTextBlock.Text = schedule.IsEnabled
+                ? UiText("Schedule enabled.", "Planification activee.")
+                : UiText("Schedule disabled.", "Planification desactivee.");
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+        }
+    }
+
+    private void DeleteScheduleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SchedulesDataGrid.SelectedItem is not ScheduleRow row)
+        {
+            StatusTextBlock.Text = UiText("Select a schedule first.", "Selectionnez d'abord une planification.");
+            return;
+        }
+
+        try
+        {
+            CreateSchedulerService().DeleteSchedule(row.Id);
+            LoadSchedulesIntoGrid();
+            StatusTextBlock.Text = UiText("Schedule deleted.", "Planification supprimee.");
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+        }
+    }
+
+    private void OpenSchedulePopup(string? scheduleId)
+    {
+        _editingScheduleId = scheduleId;
+        BackupSchedule? schedule = string.IsNullOrWhiteSpace(scheduleId)
+            ? null
+            : _scheduleRegistry.GetSchedule(scheduleId);
+
+        ScheduleModalTitle.Text = schedule is null
+            ? UiText("New schedule", "Nouvelle planification")
+            : UiText("Edit schedule", "Modifier la planification");
+        ScheduleNameTextBox.Text = schedule?.Name ?? string.Empty;
+        ScheduleTimeTextBox.Text = schedule?.LocalRunTime ?? "04:00";
+        ScheduleEnabledCheckBox.IsChecked = schedule?.IsEnabled ?? true;
+        SetWeekdayCheckboxes(schedule?.Weekdays ?? GetWeekdays().ToList());
+        LoadScheduleJobChoices(schedule?.TargetJobIds ?? new List<string>());
+        ScheduleOverlay.Visibility = Visibility.Visible;
+        ScheduleNameTextBox.Focus();
+    }
+
+    private void CloseSchedulePopup_Click(object sender, RoutedEventArgs e)
+    {
+        _editingScheduleId = null;
+        ScheduleOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void SaveScheduleButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            BackupSchedule schedule = string.IsNullOrWhiteSpace(_editingScheduleId)
+                ? new BackupSchedule()
+                : _scheduleRegistry.GetSchedule(_editingScheduleId);
+
+            schedule.Name = ScheduleNameTextBox.Text.Trim();
+            schedule.LocalRunTime = ScheduleTimeTextBox.Text.Trim();
+            schedule.IsEnabled = ScheduleEnabledCheckBox.IsChecked == true;
+            schedule.TargetJobIds = _scheduleJobChoices
+                .Where(choice => choice.IsSelected)
+                .Select(choice => choice.JobId)
+                .ToList();
+            schedule.Weekdays = GetSelectedWeekdays().ToList();
+
+            CreateSchedulerService().SaveSchedule(schedule, ResolveConsoleRunnerPath());
+            ScheduleOverlay.Visibility = Visibility.Collapsed;
+            _editingScheduleId = null;
+            LoadSchedulesIntoGrid();
+            StatusTextBlock.Text = UiText("Schedule saved.", "Planification enregistree.");
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text = Format("Wpf.ErrorStatus", exception.Message);
+        }
+    }
+
+    private void LoadScheduleJobChoices(IEnumerable<string> selectedJobIds)
+    {
+        var selectedJobIdSet = selectedJobIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _scheduleJobChoices.Clear();
+        IReadOnlyList<BackupJob> jobs = _jobRegistry.LoadJobs();
+
+        for (int index = 0; index < jobs.Count; index++)
+        {
+            BackupJob job = jobs[index];
+            _scheduleJobChoices.Add(new ScheduleJobChoice
+            {
+                IsSelected = selectedJobIdSet.Contains(job.Id),
+                JobId = job.Id,
+                JobNumber = index + 1,
+                DisplayName = $"{index + 1}. {job.Name}"
+            });
+        }
+
+        ScheduleJobsListBox.ItemsSource = null;
+        ScheduleJobsListBox.ItemsSource = _scheduleJobChoices;
+    }
+
+    private void SetWeekdayCheckboxes(IEnumerable<DayOfWeek> weekdays)
+    {
+        var weekdaySet = weekdays.ToHashSet();
+        ScheduleMondayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Monday);
+        ScheduleTuesdayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Tuesday);
+        ScheduleWednesdayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Wednesday);
+        ScheduleThursdayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Thursday);
+        ScheduleFridayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Friday);
+        ScheduleSaturdayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Saturday);
+        ScheduleSundayCheckBox.IsChecked = weekdaySet.Contains(DayOfWeek.Sunday);
+    }
+
+    private IEnumerable<DayOfWeek> GetSelectedWeekdays()
+    {
+        if (ScheduleMondayCheckBox.IsChecked == true) yield return DayOfWeek.Monday;
+        if (ScheduleTuesdayCheckBox.IsChecked == true) yield return DayOfWeek.Tuesday;
+        if (ScheduleWednesdayCheckBox.IsChecked == true) yield return DayOfWeek.Wednesday;
+        if (ScheduleThursdayCheckBox.IsChecked == true) yield return DayOfWeek.Thursday;
+        if (ScheduleFridayCheckBox.IsChecked == true) yield return DayOfWeek.Friday;
+        if (ScheduleSaturdayCheckBox.IsChecked == true) yield return DayOfWeek.Saturday;
+        if (ScheduleSundayCheckBox.IsChecked == true) yield return DayOfWeek.Sunday;
+    }
+
+    private static IEnumerable<DayOfWeek> GetWeekdays()
+    {
+        yield return DayOfWeek.Monday;
+        yield return DayOfWeek.Tuesday;
+        yield return DayOfWeek.Wednesday;
+        yield return DayOfWeek.Thursday;
+        yield return DayOfWeek.Friday;
+    }
+
+    private SchedulerService CreateSchedulerService()
+    {
+        return new SchedulerService(
+            _scheduleRegistry,
+            _jobRegistry,
+            _stateService,
+            new LoggerService(),
+            _taskSchedulerAdapter,
+            _backupController);
+    }
+
+    private static string ResolveConsoleRunnerPath()
+    {
+        string baseDirectory = AppContext.BaseDirectory;
+        string localConsolePath = Path.Combine(baseDirectory, "EasySave.exe");
+        if (File.Exists(localConsolePath))
+        {
+            return localConsolePath;
+        }
+
+        DirectoryInfo? directory = new DirectoryInfo(baseDirectory);
+        while (directory is not null)
+        {
+            string debugPath = Path.Combine(directory.FullName, "EasySave.Console", "bin", "Debug", "net10.0", "EasySave.exe");
+            if (File.Exists(debugPath))
+            {
+                return debugPath;
+            }
+
+            string releasePath = Path.Combine(directory.FullName, "EasySave.Console", "bin", "Release", "net10.0", "EasySave.exe");
+            if (File.Exists(releasePath))
+            {
+                return releasePath;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return localConsolePath;
+    }
+
     private void EditJobButton_Click(object sender, RoutedEventArgs e)
     {
         if (JobsDataGrid.SelectedItem is not JobRow row)
@@ -1482,12 +1812,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         if (((Button)sender).Tag is not JobRow row)
             return;
 
-        _jobRegistry.DeleteJob(row.JobNumber);
-        LoadJobsIntoGrid();
-        if (_jobRows.Count > 0)
-            JobsDataGrid.SelectedIndex = Math.Min(row.JobNumber - 1, _jobRows.Count - 1);
-        StatusTextBlock.Text = Format("Wpf.JobDeletedStatus", row.JobNumber);
-        RefreshStateAndLog();
+        OpenDeleteJobPopup([row]);
     }
 
     private void DeleteJobButton_Click(object sender, RoutedEventArgs e)
@@ -1501,20 +1826,65 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
             return;
         }
 
-        foreach (JobRow row in toDelete.OrderByDescending(r => r.JobNumber))
-            _jobRegistry.DeleteJob(row.JobNumber);
-
-        int count = toDelete.Count;
-        LoadJobsIntoGrid();
-        if (_jobRows.Count > 0)
-            JobsDataGrid.SelectedIndex = 0;
-
-        StatusTextBlock.Text = count == 1
-            ? Format("Wpf.JobDeletedStatus", toDelete[0].JobNumber)
-            : UiText($"{count} jobs deleted.", $"{count} tâche(s) supprimée(s).");
-        RefreshStateAndLog();
+        OpenDeleteJobPopup(toDelete);
+        return;
     }
 
+    private void OpenDeleteJobPopup(IReadOnlyList<JobRow> rows)
+    {
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        _pendingDeleteRows = rows.ToList();
+        DeleteJobModalMessage.Text = rows.Count == 1
+            ? UiText(
+                $"Are you sure you want to delete {rows[0].Name}?",
+                $"Etes-vous sur de vouloir supprimer {rows[0].Name} ?")
+            : UiText(
+                $"Are you sure you want to delete these backup jobs?{Environment.NewLine}{string.Join(Environment.NewLine, rows.Select(row => $"- {row.Name}"))}",
+                $"Etes-vous sur de vouloir supprimer ces sauvegardes ?{Environment.NewLine}{string.Join(Environment.NewLine, rows.Select(row => $"- {row.Name}"))}");
+        DeleteJobOverlay.Visibility = Visibility.Visible;
+        ConfirmDeleteJobButton.Focus();
+    }
+
+    private void CloseDeleteJobPopup_Click(object sender, RoutedEventArgs e)
+    {
+        _pendingDeleteRows = Array.Empty<JobRow>();
+        DeleteJobOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void ConfirmDeleteJobButton_Click(object sender, RoutedEventArgs e)
+    {
+        List<JobRow> rowsToDelete = _pendingDeleteRows.ToList();
+        if (rowsToDelete.Count == 0)
+        {
+            DeleteJobOverlay.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        foreach (JobRow row in rowsToDelete.OrderByDescending(r => r.JobNumber))
+        {
+            _jobRegistry.DeleteJob(row.JobNumber);
+        }
+
+        int count = rowsToDelete.Count;
+        int firstDeletedJobNumber = rowsToDelete[0].JobNumber;
+        _pendingDeleteRows = Array.Empty<JobRow>();
+        DeleteJobOverlay.Visibility = Visibility.Collapsed;
+        LoadJobsIntoGrid();
+        LoadSchedulesIntoGrid();
+        if (_jobRows.Count > 0)
+        {
+            JobsDataGrid.SelectedIndex = Math.Min(Math.Max(0, firstDeletedJobNumber - 1), _jobRows.Count - 1);
+        }
+
+        StatusTextBlock.Text = count == 1
+            ? Format("Wpf.JobDeletedStatus", firstDeletedJobNumber)
+            : UiText($"{count} jobs deleted.", $"{count} tache(s) supprimee(s).");
+        RefreshStateAndLog();
+    }
     private void PauseSelectedButton_Click(object sender, RoutedEventArgs e)
     {
         foreach (JobRow row in GetCheckedRows())
@@ -1772,6 +2142,11 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         SetActiveSection(DashboardSection.Tasks);
     }
 
+    private void SchedulesNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveSection(DashboardSection.Schedules);
+    }
+
     private void ExecutionNavButton_Click(object sender, RoutedEventArgs e)
     {
         SetActiveSection(DashboardSection.Execution);
@@ -1792,6 +2167,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         _activeSection = section;
         OverviewPanel.Visibility = section == DashboardSection.Overview ? Visibility.Visible : Visibility.Collapsed;
         TasksPanel.Visibility = section == DashboardSection.Tasks ? Visibility.Visible : Visibility.Collapsed;
+        SchedulesPanel.Visibility = section == DashboardSection.Schedules ? Visibility.Visible : Visibility.Collapsed;
         ExecutionPanel.Visibility = section == DashboardSection.Execution ? Visibility.Visible : Visibility.Collapsed;
         StateLogsPanel.Visibility = section == DashboardSection.StateLogs ? Visibility.Visible : Visibility.Collapsed;
         SettingsPanel.Visibility = section == DashboardSection.Settings ? Visibility.Visible : Visibility.Collapsed;
@@ -1804,6 +2180,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
         {
             DashboardSection.Overview => Text("Wpf.SubtitleOverview"),
             DashboardSection.Tasks => Text("Wpf.SubtitleTasks"),
+            DashboardSection.Schedules => UiText("Create and manage Windows Task Scheduler backed backup schedules.", "Creez et gerez les planifications de sauvegarde via le Planificateur Windows."),
             DashboardSection.Execution => Text("Wpf.SubtitleExecution"),
             DashboardSection.StateLogs => Text("Wpf.SubtitleStateLogs"),
             DashboardSection.Settings => Text("Wpf.SubtitleSettings"),
@@ -1812,6 +2189,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
 
         ApplyNavigationButtonStyle(OverviewNavButton, _activeSection == DashboardSection.Overview);
         ApplyNavigationButtonStyle(TasksNavButton, _activeSection == DashboardSection.Tasks);
+        ApplyNavigationButtonStyle(SchedulesNavButton, _activeSection == DashboardSection.Schedules);
         ApplyNavigationButtonStyle(ExecutionNavButton, _activeSection == DashboardSection.Execution);
         ApplyNavigationButtonStyle(StateLogsNavButton, _activeSection == DashboardSection.StateLogs);
         ApplyNavigationButtonStyle(SettingsNavButton, _activeSection == DashboardSection.Settings);
@@ -2217,6 +2595,26 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
             : english;
     }
 
+    private static int WeekdaySortOrder(DayOfWeek weekday)
+    {
+        return weekday == DayOfWeek.Sunday ? 7 : (int)weekday;
+    }
+
+    private string GetShortWeekdayName(DayOfWeek weekday)
+    {
+        return weekday switch
+        {
+            DayOfWeek.Monday => UiText("Mon", "Lun"),
+            DayOfWeek.Tuesday => UiText("Tue", "Mar"),
+            DayOfWeek.Wednesday => UiText("Wed", "Mer"),
+            DayOfWeek.Thursday => UiText("Thu", "Jeu"),
+            DayOfWeek.Friday => UiText("Fri", "Ven"),
+            DayOfWeek.Saturday => UiText("Sat", "Sam"),
+            DayOfWeek.Sunday => UiText("Sun", "Dim"),
+            _ => string.Empty
+        };
+    }
+
     private sealed record LanguageOption(string LanguageCode, string DisplayName)
     {
         public override string ToString() => DisplayName;
@@ -2262,6 +2660,7 @@ SetButtonContent(RunSelectedButton, "\uE768", Text("Wpf.RunSelectedButton"));
     {
         Overview,
         Tasks,
+        Schedules,
         Execution,
         StateLogs,
         Settings
