@@ -122,11 +122,16 @@ public partial class MainWindow : Window
 
     private void ApplyToastSeverity(string text)
     {
-        // Heuristique simple sur le contenu pour choisir l'icone et la couleur d'accent.
         string lower = text.ToLowerInvariant();
         string accentResource;
         string icon;
-        if (lower.Contains("error") || lower.Contains("erreur")
+
+        // Check for real errors: word "erreur/error" must NOT be followed by ": 0"
+        bool hasRealError = (lower.Contains("error") || lower.Contains("erreur"))
+                            && !System.Text.RegularExpressions.Regex.IsMatch(lower,
+                                @"erreurs?\s*:\s*0\b|errors?\s*:\s*0\b");
+
+        if (hasRealError
             || lower.Contains("does not exist") || lower.Contains("n'existe pas")
             || lower.Contains("must be different") || lower.Contains("identiques"))
         {
@@ -140,6 +145,7 @@ public partial class MainWindow : Window
             icon = "\uE7BA"; // Warning
         }
         else if (lower.Contains("complete") || lower.Contains("termine")
+                 || lower.Contains("succes") || lower.Contains("success")
                  || lower.Contains("added") || lower.Contains("ajoute")
                  || lower.Contains("updated") || lower.Contains("mis a jour")
                  || lower.Contains("saved") || lower.Contains("enregistre"))
