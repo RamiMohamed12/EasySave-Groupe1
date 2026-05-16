@@ -9,6 +9,7 @@
         Width="1240"
         MinHeight="700"
         MinWidth="1080"
+        Icon="Assets/EasySaveLogo.png"
         Background="{DynamicResource CanvasBrush}">
     <Grid>
         <Grid Margin="18">

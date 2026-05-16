@@ -35,7 +35,7 @@ public class BackupServiceTests
         Assert.Contains(logs, entry => entry.ActionType == "FileTransfer");
 
         List<BackupState> states = LoadStates();
-        Assert.Equal(BackupJobRegistry.MaximumJobs, states.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, states.Count);
         Assert.Contains(states, state => state.BackupName == "Job1" && state.Status == BackupExecutionStatus.Finished);
     }
 

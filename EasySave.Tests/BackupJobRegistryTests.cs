@@ -12,7 +12,7 @@ public class BackupJobRegistryTests
 
         IReadOnlyList<BackupJob> jobs = registry.LoadJobs();
 
-        Assert.Equal(BackupJobRegistry.MaximumJobs, jobs.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
         Assert.Equal("Job1", jobs[0].Name);
         Assert.Equal(BackupType.Full, jobs[0].Type);
         Assert.Equal("Job2", jobs[1].Name);
@@ -53,7 +53,7 @@ public class BackupJobRegistryTests
 
         IReadOnlyList<BackupJob> jobs = new BackupJobRegistry().LoadJobs();
 
-        Assert.Single(jobs);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
         Assert.Equal("Custom", jobs[0].Name);
         Assert.Equal(@"C:\A", jobs[0].Source);
         Assert.Equal(@"D:\A", jobs[0].Target);
@@ -138,7 +138,7 @@ public class BackupJobRegistryTests
         Assert.Equal(@"C:\Temp", deleted.Source);
         Assert.Equal(@"D:\Temp", deleted.Target);
         Assert.Equal(BackupType.Full, deleted.Type);
-        Assert.Equal(4, jobs.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, jobs.Count);
         Assert.DoesNotContain(jobs, job => string.Equals(job.Source, @"C:\Temp", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(jobs, job => string.Equals(job.Target, @"D:\Temp", StringComparison.OrdinalIgnoreCase));
     }

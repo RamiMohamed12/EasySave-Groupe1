@@ -15,7 +15,7 @@ public class StateServiceTests
         stateService.SynchronizeConfiguredJobs(jobs);
 
         List<BackupState> states = LoadStates();
-        Assert.Equal(BackupJobRegistry.MaximumJobs, states.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, states.Count);
         Assert.All(states, state => Assert.Equal(BackupExecutionStatus.Inactive, state.Status));
     }
 
@@ -37,7 +37,7 @@ public class StateServiceTests
         });
 
         List<BackupState> states = LoadStates();
-        Assert.Equal(BackupJobRegistry.MaximumJobs, states.Count);
+        Assert.Equal(BackupJobRegistry.DefaultJobCount, states.Count);
         Assert.Contains(states, state => state.BackupName == "Job3" && state.Status == BackupExecutionStatus.Active);
         Assert.Contains(states, state => state.BackupName == "Job1" && state.Status == BackupExecutionStatus.Inactive);
     }

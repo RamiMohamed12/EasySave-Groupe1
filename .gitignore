@@ -73,3 +73,7 @@ release-assets/
 # Local verification and tool cache output
 .appdata/
 .verify-build/
+
+# Local signing secrets
+.env
+*.pfx
